@@ -1,7 +1,6 @@
 #include <liblava/lava.hpp>
 
 #include <iostream>
-#define fn auto
 
 fn main()->int {
   lava::frame_config config;

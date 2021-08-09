@@ -17,6 +17,8 @@ set(
   -warnings-as-errors=modernize-*;
 )
 
+add_compile_definitions(fn=auto)
+
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
 target_sources(
