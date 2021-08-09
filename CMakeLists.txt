@@ -12,8 +12,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/liblava ${CMAKE_CURRENT_BINARY_DIR}
 set(
   CMAKE_CXX_CLANG_TIDY
   clang-tidy;
-  -header-filter=.*;
-  -checks=bugprone-*,cppcoreguidelines-*,google-*,performance-*,misc-*,modernize-*,readability-*,-cppcoreguidelines-macro-usage;
+  -header-filter=^src;
+  -checks=bugprone-*,cppcoreguidelines-*,google-*,performance-*,misc-*,modernize-*,readability-*,-cppcoreguidelines-macro-usage,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-readability-uppercase-literal-suffix,-modernize-use-auto;
   -warnings-as-errors=modernize-*;
 )
 
