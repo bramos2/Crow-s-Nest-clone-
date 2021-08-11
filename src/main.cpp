@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "../debug_camera_control/debug_camera_control.hpp"
+
 fn main()->int {
   lava::frame_config config;
   lava::app app(config);
@@ -12,6 +14,8 @@ fn main()->int {
   app.camera.movement_speed += 10;
   app.camera.position = lava::v3(0.0f, -4.036f, 8.304f);
   app.camera.rotation = lava::v3(-15, 0, 0);
+  app.camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
+                               debug_key_right);
 
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
   lava::buffer world_matrix_buffer;
