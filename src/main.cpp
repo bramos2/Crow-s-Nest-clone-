@@ -41,11 +41,13 @@ fn main()->int {
 
     // All shapes use the same simple shaders
     if (!pipeline->add_shader(lava::file_data("../res/simple.vert.spv"),
-                              VK_SHADER_STAGE_VERTEX_BIT))
+                              VK_SHADER_STAGE_VERTEX_BIT)) {
       return false;
+    }
     if (!pipeline->add_shader(lava::file_data("../res/simple.frag.spv"),
-                              VK_SHADER_STAGE_FRAGMENT_BIT))
+                              VK_SHADER_STAGE_FRAGMENT_BIT)) {
       return false;
+    }
 
     pipeline->set_vertex_input_binding(
         {0, sizeof(lava::vertex), VK_VERTEX_INPUT_RATE_VERTEX});
@@ -122,13 +124,14 @@ fn main()->int {
     layout->destroy();
   };
 
-  app.on_update = [&](lava::delta dt) {
+  app.on_update = [&](lava::delta /*dt*/) {
     memcpy(lava::as_ptr(world_matrix_buffer.get_mapped_data()),
            &world_matrix_buffer_data, sizeof(world_matrix_buffer_data));
 
-    if (app.camera.activated())
+    if (app.camera.activated()) {
       app.camera.update_view(lava::to_dt(app.run_time.delta),
                              app.input.get_mouse_position());
+    }
 
     return true;
   };
