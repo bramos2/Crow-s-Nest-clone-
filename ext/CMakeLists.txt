@@ -1,0 +1,3 @@
+set(LIBLAVA_TESTS OFF CACHE BOOL "" FORCE)
+set(LIBLAVA_DEMO OFF CACHE BOOL "" FORCE)
+add_subdirectory(liblava)

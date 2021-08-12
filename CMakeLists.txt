@@ -3,17 +3,22 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 set(CMAKE_ENABLE_EXPORTS ON)
 
 project(crows_nest CXX)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/liblava ${CMAKE_CURRENT_BINARY_DIR}/liblava)
-
-add_compile_definitions(fn=auto)
-
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  lava::app
+)
+
+# This must be defined after adding the ext/ subdirectory.
+add_compile_definitions(fn=auto)
+
+# Control the debug camera flight controls.
 option(BUILD_CONTROLS ON)
 set(CAMERA_HPP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/debug_camera_control/debug_camera_control.hpp)
 
@@ -54,5 +59,3 @@ target_sources(
   ${PROJECT_NAME} PRIVATE
   src/main.cpp
 )
-
-target_link_libraries(${PROJECT_NAME} PRIVATE lava::app)
