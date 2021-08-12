@@ -6,13 +6,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS)
 set(CMAKE_ENABLE_EXPORTS ON)
 
-project(crows_nest CXX)
+project(crows_nest C CXX)
 
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_link_libraries(${PROJECT_NAME} PRIVATE
   lava::app
+  lava-extras::fbx
+  # lava-fbx
 )
 
 # This must be defined after adding the ext/ subdirectory.

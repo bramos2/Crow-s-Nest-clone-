@@ -1,4 +1,5 @@
 #include <liblava/lava.hpp>
+#include <liblava-extras/fbx.hpp>
 
 #include <iostream>
 

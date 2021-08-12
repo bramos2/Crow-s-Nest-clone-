@@ -2,3 +2,6 @@
 	path = ext/liblava
 	url = https://github.com/liblava/liblava.git
 	branch = master
+[submodule "ext/lava-fbx"]
+	path = ext/lava-fbx
+	url = https://github.com/cons-cat/lava-fbx.git
