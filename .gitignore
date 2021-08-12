@@ -8,3 +8,6 @@ build/
 
 # Executables
 *.exe
+
+# Batch files
+make.cmd
