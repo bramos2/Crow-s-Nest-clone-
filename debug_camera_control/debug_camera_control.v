@@ -53,7 +53,7 @@ fn main() {
 	hpp += '};\n'
 
 	file_name := 'debug_camera_control.hpp'
-	file_path := @VMODROOT + '/' + '$file_name'
+	file_path := os.real_path('./') + '$file_name'
 	if os.exists(file_path) {
 		os.rm(file_path) or { panic('Failed to remove $file_name') }
 	}

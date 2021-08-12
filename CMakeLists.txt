@@ -14,7 +14,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_link_libraries(${PROJECT_NAME} PRIVATE
   lava::app
   lava-extras::fbx
-  # lava-fbx
 )
 
 # This must be defined after adding the ext/ subdirectory.
