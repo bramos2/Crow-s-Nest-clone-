@@ -1,9 +1,18 @@
 #include <liblava-extras/fbx.hpp>
 #include <liblava/lava.hpp>
-
+#include <imgui.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <iostream>
 
+#include "hpp/component.hpp"
+#include "hpp/object.hpp"
+#include "hpp/component_box_collision.hpp"
+#include "hpp/component_player.hpp"
+#include "hpp/component_sphere_collision.hpp"
 #include "../debug_camera_control/debug_camera_control.hpp"
+
+std::vector<crow::Object> objects;
 
 auto main() -> int {
   lava::frame_config config;
@@ -35,6 +44,9 @@ auto main() -> int {
       lava::extras::load_fbx_model_by_index(scene, 0);
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
+
+  lava::mesh::ptr quad;
+  quad = create_mesh(app.device, lava::mesh_type::quad);
 
   lava::descriptor::ptr descriptor_layout;
   lava::descriptor::pool::ptr descriptor_pool;
@@ -134,6 +146,30 @@ auto main() -> int {
     layout->destroy();
   };
 
+  app.input.mouse_button.listeners.add(
+      [&](lava::mouse_button_event::ref click) {
+        if (click.released(lava::mouse_button::left)) {
+          printf("left mouse clicked ");
+          return true;
+        }
+        return false;
+      });
+  
+  app.imgui.on_draw = [&]() {
+    ImGui::SetNextWindowPos({30, 30}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({330, 85}, ImGuiCond_FirstUseEver);
+    ImGui::Begin(app.get_name());
+    if (ImGui::Button("test")) {
+      printf("test\t");
+    }
+    ImGui::End();
+
+    ImGui::Begin("hello");
+    if (ImGui::Button("test2")) {
+      printf("test afsasfd\n");
+    }
+    ImGui::End();
+  };
   app.on_update = [&](lava::delta /*dt*/) {
     memcpy(lava::as_ptr(world_matrix_buffer.get_mapped_data()),
            &world_matrix_buffer_data, sizeof(world_matrix_buffer_data));
@@ -142,6 +178,18 @@ auto main() -> int {
       app.camera.update_view(lava::to_dt(app.run_time.delta),
                              app.input.get_mouse_position());
     }
+    
+    // uncomment this to see how the beta ray casting works
+    //crow::Component_Player p;
+    //p.update(&app, nullptr);
+
+    // actual game loop; execute the entire game by simply cycling through the array of objects
+    for (int i = 0; i < objects.size(); ++i) {
+      for (int j = 0; j < objects[i].components.size(); ++j) {
+        objects[i].components[j]->update(&app, &objects);
+      }
+    }
+   //glfwSetCursorPosCallback(app.window., cursor_position_callback);
 
     return true;
   };
