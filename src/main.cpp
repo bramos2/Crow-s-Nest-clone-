@@ -1,11 +1,11 @@
-#include <liblava/lava.hpp>
 #include <liblava-extras/fbx.hpp>
+#include <liblava/lava.hpp>
 
 #include <iostream>
 
 #include "../debug_camera_control/debug_camera_control.hpp"
 
-fn main()->int {
+auto main() -> int {
   lava::frame_config config;
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
@@ -24,8 +24,17 @@ fn main()->int {
                                     sizeof(world_matrix_buffer_data),
                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-  lava::mesh::ptr cube;
-  cube = create_mesh(app.device, lava::mesh_type::cube);
+  lava::mesh::ptr cube = lava::make_mesh();
+  std::string fbx_path = ROOT_PATH;
+  fbx_path.append("/ext/lava-fbx/ext/OpenFBX/runtime/a.FBX");
+  ofbx::IScene* scene = lava::extras::load_fbx_scene(
+      fbx_path.c_str());
+  std::cout << "Loaded FBX scene.\n";
+
+  lava::extras::fbx_data fbx_data =
+      lava::extras::load_fbx_model_by_index(scene, 0);
+  cube->add_data(fbx_data.mesh_data);
+  cube->create(app.device);
 
   lava::descriptor::ptr descriptor_layout;
   lava::descriptor::pool::ptr descriptor_pool;

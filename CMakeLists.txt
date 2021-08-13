@@ -10,14 +10,14 @@ project(crows_nest C CXX)
 
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
+set(LIBLAVA_TESTS OFF CACHE BOOL "" FORCE)
+set(LIBLAVA_DEMO OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_link_libraries(${PROJECT_NAME} PRIVATE
   lava::app
   lava-extras::fbx
 )
-
-# This must be defined after adding the ext/ subdirectory.
-add_compile_definitions(fn=auto)
 
 # Control the debug camera flight controls.
 option(BUILD_CONTROLS ON)
@@ -55,6 +55,8 @@ lava::keys_ref debug_key_left = {}\;
 lava::keys_ref debug_key_right = {}\;")
   file(WRITE ${CAMERA_HPP_FILE} ${CAMERA_HPP_CONTENT} )
 endif()
+
+add_compile_definitions(ROOT_PATH="${CMAKE_SOURCE_DIR}")
 
 target_sources(
   ${PROJECT_NAME} PRIVATE
