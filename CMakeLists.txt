@@ -9,6 +9,7 @@ set(CMAKE_ENABLE_EXPORTS ON)
 project(crows_nest C CXX)
 
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
+# add_executable(${CMAKE_PROJECT_NAME})
 
 set(LIBLAVA_TESTS OFF CACHE BOOL "" FORCE)
 set(LIBLAVA_DEMO OFF CACHE BOOL "" FORCE)
@@ -20,7 +21,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 # Control the debug camera flight controls.
-option(BUILD_CONTROLS ON)
+option(BUILD_CONTROLS "Whether to populate the controls for a debug camera." ON)
 set(CAMERA_HPP_FILE ${CMAKE_CURRENT_SOURCE_DIR}/debug_camera_control/debug_camera_control.hpp)
 
 if (BUILD_CONTROLS)
@@ -49,10 +50,10 @@ if (BUILD_CONTROLS)
   message("${VHEADER_EXE} ${DEBUG_CONTROLS}")
 else()
   set(CAMERA_HPP_CONTENT "#include <liblava/lava.hpp>
-lava::keys_ref debug_key_up = {}\;
-lava::keys_ref debug_key_down = {}\;
-lava::keys_ref debug_key_left = {}\;
-lava::keys_ref debug_key_right = {}\;")
+lava::keys_ref debug_key_up = {lava::key::w}\;
+lava::keys_ref debug_key_down = {lava::key::s}\;
+lava::keys_ref debug_key_left = {lava::key::a}\;
+lava::keys_ref debug_key_right = {lava::key::d}\;")
   file(WRITE ${CAMERA_HPP_FILE} ${CAMERA_HPP_CONTENT} )
 endif()
 

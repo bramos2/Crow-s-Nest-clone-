@@ -1,16 +1,17 @@
 #include <liblava-extras/fbx.hpp>
 #include <liblava/lava.hpp>
+
 #include <imgui.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <iostream>
+#include <stb_image.h>
 
+#include "../debug_camera_control/debug_camera_control.hpp"
 #include "hpp/component.hpp"
-#include "hpp/object.hpp"
 #include "hpp/component_box_collision.hpp"
 #include "hpp/component_player.hpp"
 #include "hpp/component_sphere_collision.hpp"
-#include "../debug_camera_control/debug_camera_control.hpp"
+#include "hpp/object.hpp"
 
 std::vector<crow::Object> objects;
 
@@ -36,12 +37,11 @@ auto main() -> int {
   lava::mesh::ptr cube = lava::make_mesh();
   std::string fbx_path = ROOT_PATH;
   fbx_path.append("/ext/lava-fbx/ext/OpenFBX/runtime/a.FBX");
-  ofbx::IScene* scene = lava::extras::load_fbx_scene(
-      fbx_path.c_str());
+  ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
   lava::extras::fbx_data fbx_data =
-      lava::extras::load_fbx_model_by_index(scene, 0);
+      lava::extras::load_fbx_model(scene);
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
@@ -154,7 +154,7 @@ auto main() -> int {
         }
         return false;
       });
-  
+
   app.imgui.on_draw = [&]() {
     ImGui::SetNextWindowPos({30, 30}, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize({330, 85}, ImGuiCond_FirstUseEver);
@@ -178,18 +178,19 @@ auto main() -> int {
       app.camera.update_view(lava::to_dt(app.run_time.delta),
                              app.input.get_mouse_position());
     }
-    
-    // uncomment this to see how the beta ray casting works
-    //crow::Component_Player p;
-    //p.update(&app, nullptr);
 
-    // actual game loop; execute the entire game by simply cycling through the array of objects
+    // uncomment this to see how the beta ray casting works
+    // crow::Component_Player p;
+    // p.update(&app, nullptr);
+
+    // actual game loop; execute the entire game by simply cycling through the
+    // array of objects
     for (int i = 0; i < objects.size(); ++i) {
       for (int j = 0; j < objects[i].components.size(); ++j) {
         objects[i].components[j]->update(&app, &objects);
       }
     }
-   //glfwSetCursorPosCallback(app.window., cursor_position_callback);
+    // glfwSetCursorPosCallback(app.window., cursor_position_callback);
 
     return true;
   };
