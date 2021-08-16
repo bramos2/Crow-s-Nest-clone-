@@ -16,6 +16,11 @@
 std::vector<crow::Object> objects;
 
 auto main() -> int {
+  std::vector<lava::mesh::ptr> meshes;
+  meshes.push_back(nullptr);  // worker
+  meshes.push_back(nullptr);  // sphynx
+  objects.push_back(crow::Object{});
+  objects.push_back(crow::Object{});
   lava::frame_config config;
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
@@ -40,14 +45,22 @@ auto main() -> int {
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
-  lava::extras::fbx_data fbx_data =
-      lava::extras::load_fbx_model(scene);
+  lava::extras::fbx_data fbx_data = lava::extras::load_fbx_model(scene);
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
   lava::mesh::ptr quad;
   quad = create_mesh(app.device, lava::mesh_type::quad);
 
+  lava::mesh::ptr floor;
+  floor = std::make_shared<lava::mesh>();
+  lava::mesh_data floor_data;
+  floor_data = lava::create_mesh_data(lava::mesh_type::cube);
+  floor_data.scale_vector({100, 1, 50});
+  floor->add_data(floor_data);
+  floor->create(app.device);
+  meshes.push_back(floor);
+  objects.push_back(crow::Object{});
   lava::descriptor::ptr descriptor_layout;
   lava::descriptor::pool::ptr descriptor_pool;
   VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
@@ -185,17 +198,29 @@ auto main() -> int {
 
     // actual game loop; execute the entire game by simply cycling through the
     // array of objects
-    for (int i = 0; i < objects.size(); ++i) {
-      for (int j = 0; j < objects[i].components.size(); ++j) {
-        objects[i].components[j]->update(&app, &objects);
-      }
-    }
     // glfwSetCursorPosCallback(app.window., cursor_position_callback);
+    pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+      layout->bind(cmd_buf, descriptor_set);
+      for (int i = 0; i < objects.size(); ++i) {
+        for (int j = 0; j < objects[i].components.size(); ++j) {
+          objects[i].components[j]->update(&app, &objects);
+        }
+        if (meshes[i]) {
+          meshes[i]->bind_draw(cmd_buf);
+        }
+      }
+    };
 
     return true;
   };
 
-  app.add_run_end([&]() { cube->destroy(); });
+  app.add_run_end([&]() { cube->destroy();
+    for (size_t i = 0; i < meshes.size(); i++) {
+      if (meshes[i]) {
+        meshes[i]->destroy();
+      }
+    }
+  });
 
   return app.run();
 }
