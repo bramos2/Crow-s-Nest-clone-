@@ -147,7 +147,6 @@ auto main() -> int {
       layout->bind(cmd_buf, descriptor_set);
       cube->bind_draw(cmd_buf);
     };
-
     return true;
   };
 
@@ -169,19 +168,79 @@ auto main() -> int {
       });
 
   app.imgui.on_draw = [&]() {
-    ImGui::SetNextWindowPos({30, 30}, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize({330, 85}, ImGuiCond_FirstUseEver);
-    ImGui::Begin(app.get_name());
-    if (ImGui::Button("test")) {
-      printf("test\t");
+    // need this for having the GUI items scale with the window size
+    glm::vec2 wh = app.window.get_size();
+    // pass this flag into ImGui::Begin when you need to spawn a window that
+    // only contains a texture
+    const int texture_flag =
+        ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove;
+
+    // remove formatting for GUI windows to draw plain textures as GUI
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+    // set size parameters for the pause button icon
+    ImVec2 pause_button_xy = {wh.x - (0.0333333f * wh.x), 0};
+    ImVec2 pause_button_wh = {0.0333333f * wh.x, 0.0592592592592593f * wh.y};
+    ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
+    // finally create the pause button
+    ImGui::Begin("Pause", 0, texture_flag);
+    if (ImGui::ImageButton(0 /* INSERT TEXTURE POINTER HERE */,
+                           pause_button_wh)) {
+      printf("game paused! just kidding...\n");
+      /* gamepaused GUI code can go here */
     }
     ImGui::End();
 
-    ImGui::Begin("hello");
-    if (ImGui::Button("test2")) {
-      printf("test afsasfd\n");
-    }
+    // set size parameters for the item window
+    ImVec2 item_window_xy = {wh.x * 0.025f, wh.y * 0.5f};
+    ImVec2 item_window_wh = {wh.x * 0.0833333333f, wh.y * 0.148148148148f};
+    ImGui::SetNextWindowPos(item_window_xy, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(item_window_wh, ImGuiCond_Always);
+    // finally create the window
+    ImGui::Begin("Item", 0, texture_flag);
+    ImGui::Image(0 /* INSERT TEXTURE POINTER HERE */, item_window_wh);
     ImGui::End();
+    // all texture-only GUI items should be before this line as it resets the
+    // GUI window styling back to default
+    ImGui::PopStyleVar(3);
+
+    // set size parameters for the minimap window
+    ImVec2 minimap_window_xy = {wh.x * 0.025f, wh.y * 0.666f};
+    ImVec2 minimap_window_wh = {wh.x * 0.4f, wh.y * 0.3f};
+    ImGui::SetNextWindowPos(minimap_window_xy, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(minimap_window_wh, ImGuiCond_Always);
+    // finally create the window
+    ImGui::Begin("Facility Map", 0,
+                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                     ImGuiWindowFlags_NoMove);
+    ImGui::Text("there is supposed to be a map here but it doesnt exist yet");
+    ImGui::End();
+
+    // debug window
+#ifdef _DEBUG
+    // change to if (false) if the debug window keeps slapping you in the face
+    // and that bothers you
+    if (true) {
+      // exists just for the printf example (delete when we are actually using
+      // the debug window)
+      int example_integer = 25;
+      ImVec2 debug_window_xy = {(wh.x * 0.05f), (wh.y * 0.05f)};
+      ImVec2 debug_window_wh = {(wh.x * 0.4f), (wh.y * 0.3f)};
+      ImGui::SetNextWindowPos(debug_window_xy, ImGuiCond_Once);
+      ImGui::SetNextWindowSize(debug_window_wh, ImGuiCond_Always);
+      ImGui::Begin("debug", 0, ImGuiWindowFlags_NoResize);
+      ImGui::Text("dynamically loaded debug field here");
+      ImGui::Text("dynamically loaded debug field here");
+      ImGui::Text("dynamically loaded debug field here");
+      ImGui::Text("yes it does printf %f %f %i", debug_window_xy.x,
+                  debug_window_xy.y, example_integer);
+      ImGui::End();
+    }
+#endif
   };
   app.on_update = [&](lava::delta /*dt*/) {
     memcpy(lava::as_ptr(world_matrix_buffer.get_mapped_data()),
