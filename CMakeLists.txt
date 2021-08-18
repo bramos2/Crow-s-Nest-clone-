@@ -58,6 +58,10 @@ lava::keys_ref debug_key_right = {lava::key::d}\;")
 endif()
 
 add_compile_definitions(ROOT_PATH="${CMAKE_SOURCE_DIR}")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  add_compile_definitions(_DEBUG)
+endif()
+
 
 target_sources(
   ${PROJECT_NAME} PRIVATE
