@@ -2,6 +2,8 @@
 #include <liblava/lava.hpp>
 
 #include <imgui.h>
+
+#include "hpp/pipeline.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stb_image.h>
@@ -11,6 +13,7 @@
 #include "hpp/component_box_collision.hpp"
 #include "hpp/component_player.hpp"
 #include "hpp/component_sphere_collision.hpp"
+#include "hpp/geometry.hpp"
 #include "hpp/object.hpp"
 
 std::vector<crow::Object> objects;
@@ -33,6 +36,7 @@ auto main() -> int {
   app.camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
                                debug_key_right);
 
+  // Temporary geometry.
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
   lava::buffer world_matrix_buffer;
   world_matrix_buffer.create_mapped(app.device, &world_matrix_buffer_data,
@@ -41,7 +45,7 @@ auto main() -> int {
 
   lava::mesh::ptr cube = lava::make_mesh();
   std::string fbx_path = ROOT_PATH;
-  fbx_path.append("/ext/lava-fbx/ext/OpenFBX/runtime/a.FBX");
+  fbx_path.append("/ext/lava-fbx/ext/OpenFBX/runtime/a.FBX");  // Deer model
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
@@ -49,113 +53,114 @@ auto main() -> int {
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
-  lava::mesh::ptr quad;
-  quad = create_mesh(app.device, lava::mesh_type::quad);
+  lava::descriptor::pool::ptr descriptor_pool = lava::make_descriptor_pool();
+  descriptor_pool->create(app.device,
+                          {
+                              {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 50},
+                              {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
+                              {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
+                          },
+                          90);
 
-  lava::mesh::ptr floor;
-  floor = std::make_shared<lava::mesh>();
-  lava::mesh_data floor_data;
-  floor_data = lava::create_mesh_data(lava::mesh_type::cube);
-  floor_data.scale_vector({100, 1, 50});
-  floor->add_data(floor_data);
-  floor->create(app.device);
-  meshes.push_back(floor);
-  objects.push_back(crow::Object{});
-  lava::descriptor::ptr descriptor_layout;
-  lava::descriptor::pool::ptr descriptor_pool;
-  VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
-
-  lava::graphics_pipeline::ptr pipeline;
-  lava::pipeline_layout::ptr layout;
+  lava::graphics_pipeline::ptr environment_pipeline;
+  lava::pipeline_layout::ptr environment_pipeline_layout;
+  crow::descriptor_layouts environment_descriptor_layouts;
+  // TODO(conscat): Streamline descriptor sets.
+  crow::descriptor_sets environment_descriptor_sets;
+  VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
 
   app.on_create = [&]() {
-    pipeline = make_graphics_pipeline(app.device);
-    pipeline->add_color_blend_attachment();
-    pipeline->set_depth_test_and_write();
-    pipeline->set_depth_compare_op(VK_COMPARE_OP_LESS_OR_EQUAL);
+    lava::render_pass::ptr render_pass = app.shading.get_pass();
 
-    // All shapes use the same simple shaders
-    if (!pipeline->add_shader(lava::file_data("../res/simple.vert.spv"),
-                              VK_SHADER_STAGE_VERTEX_BIT)) {
-      return false;
-    }
-    if (!pipeline->add_shader(lava::file_data("../res/simple.frag.spv"),
-                              VK_SHADER_STAGE_FRAGMENT_BIT)) {
-      return false;
-    }
-
-    pipeline->set_vertex_input_binding(
-        {0, sizeof(lava::vertex), VK_VERTEX_INPUT_RATE_VERTEX});
-    pipeline->set_vertex_input_attributes({
+    lava::VkVertexInputAttributeDescriptions vertex_attributes = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},
         {1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(lava::vertex, color)},
         {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
-    });
+    };
 
-    descriptor_layout = lava::make_descriptor();
-    descriptor_layout->add_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                   VK_SHADER_STAGE_VERTEX_BIT);  // View matrix
-    descriptor_layout->add_binding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                   VK_SHADER_STAGE_VERTEX_BIT);  // World matrix
-    descriptor_layout->add_binding(
-        2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        VK_SHADER_STAGE_VERTEX_BIT);  // Rotation vector
-    descriptor_layout->create(app.device);
+    std::vector<crow::shader_module> environment_shaders = {{
+        crow::shader_module{
+            .file_name = "../res/simple.vert.spv",
+            .flags = VK_SHADER_STAGE_VERTEX_BIT,
+        },
+        crow::shader_module{
+            .file_name = "../res/simple.frag.spv",
+            .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+    }};
 
-    descriptor_pool = lava::make_descriptor_pool();
-    descriptor_pool->create(app.device,
-                            {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3}});
+    // Global buffers:
+    environment_descriptor_layouts[0] =
+        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // Render-pass buffers:
+    environment_descriptor_layouts[1] =
+        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // Material buffers:
+    environment_descriptor_layouts[2] =
+        crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // Object buffers:
+    environment_descriptor_layouts[3] = crow::create_descriptor_layout(
+        app,
+        {
+            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                                     .binding_slot = 0,
+                                     .descriptors_count = 1},
+        });
 
-    layout = lava::make_pipeline_layout();
-    layout->add(descriptor_layout);
-    layout->create(app.device);
-    pipeline->set_layout(layout);
+    environment_descriptor_sets = crow::create_descriptor_sets(
+        environment_descriptor_layouts, descriptor_pool);
 
-    descriptor_set = descriptor_layout->allocate(descriptor_pool->get());
-    VkWriteDescriptorSet const write_ubo_camera{
+    crow::descriptor_writes_stack descriptor_writes;
+    // TODO(conscat): Push to stack.
+    VkWriteDescriptorSet const write_ubo_global{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
+        .dstSet = environment_descriptor_sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .pBufferInfo = app.camera.get_descriptor_info(),
     };
-    VkWriteDescriptorSet const write_ubo_world{
+    VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
-        .dstBinding = 1,
+        .dstSet = environment_descriptor_sets[1],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_material{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = environment_descriptor_sets[2],
+        .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_object{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
-        .dstBinding = 2,
+        .dstSet = environment_descriptor_sets[3],
+        .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
     };
-    app.device->vkUpdateDescriptorSets(
-        {write_ubo_camera, write_ubo_world, write_ubo_object});
+    app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
+                                        write_ubo_material, write_ubo_object});
 
-    lava::render_pass::ptr render_pass = app.shading.get_pass();
-
-    pipeline->create(render_pass->get());
-    render_pass->add_front(pipeline);
-    pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-      layout->bind(cmd_buf, descriptor_set);
-      cube->bind_draw(cmd_buf);
-    };
+    environment_pipeline = crow::create_rasterization_pipeline(
+        app, environment_pipeline_layout, environment_shaders,
+        environment_descriptor_layouts, vertex_attributes);
     return true;
   };
 
   app.on_destroy = [&]() {
-    descriptor_layout->free(descriptor_set, descriptor_pool->get());
+    // TODO(conscat): Free all arrays of lava objects.
+    environment_descriptor_layouts[0]->destroy();
+    environment_descriptor_layouts[3]->destroy();
     descriptor_pool->destroy();
-    descriptor_layout->destroy();
-    pipeline->destroy();
-    layout->destroy();
+    environment_pipeline->destroy();
+    environment_pipeline_layout->destroy();
   };
 
   app.input.mouse_button.listeners.add(
@@ -242,6 +247,7 @@ auto main() -> int {
     }
 #endif
   };
+
   app.on_update = [&](lava::delta /*dt*/) {
     memcpy(lava::as_ptr(world_matrix_buffer.get_mapped_data()),
            &world_matrix_buffer_data, sizeof(world_matrix_buffer_data));
@@ -251,32 +257,36 @@ auto main() -> int {
                              app.input.get_mouse_position());
     }
 
-    // uncomment this to see how the beta ray casting works
-    // crow::Component_Player p;
-    // p.update(&app, nullptr);
-
     // actual game loop; execute the entire game by simply cycling through the
     // array of objects
-    // glfwSetCursorPosCallback(app.window., cursor_position_callback);
-    pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-      layout->bind(cmd_buf, descriptor_set);
-      for (int i = 0; i < objects.size(); ++i) {
-        for (int j = 0; j < objects[i].components.size(); ++j) {
-          objects[i].components[j]->update(&app, &objects);
-        }
-        if (meshes[i]) {
-          meshes[i]->bind_draw(cmd_buf);
-        }
+    for (crow::Object& object : objects) {
+      for (int j = 0; j < object.components.size(); ++j) {
+        object.components[j]->update(&app, &objects);
       }
+    }
+    environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+      app.device->call().vkCmdBindDescriptorSets(
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+          environment_pipeline_layout->get(), 0, 4,
+          environment_descriptor_sets.data(), 0, nullptr);
+      // TODO(conscat): Write a bind_descriptor_sets() method.
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[0], 0);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[1], 1);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[2], 2);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[3], 3);
+      cube->bind_draw(cmd_buf);
     };
-
     return true;
   };
 
   app.add_run_end([&]() { cube->destroy();
-    for (size_t i = 0; i < meshes.size(); i++) {
-      if (meshes[i]) {
-        meshes[i]->destroy();
+    for (auto& meshes : meshes) {
+      if (meshes) {
+        meshes->destroy();
       }
     }
   });

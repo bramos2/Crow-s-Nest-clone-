@@ -69,6 +69,11 @@ target_sources(
   src/hpp/component_player.hpp
   src/cpp/component_player.cpp
   src/hpp/component_sphere_collision.hpp
+  src/hpp/geometry.hpp
+  src/cpp/geometry.tpp
+  src/hpp/pipeline.hpp
+  src/cpp/pipeline.cpp
+  src/cpp/pipeline.tpp
   src/hpp/tile.hpp
   src/hpp/search_theta.hpp
 )
