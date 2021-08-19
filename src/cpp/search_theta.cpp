@@ -2,6 +2,16 @@
 #include "../hpp/search_theta.hpp"
 
 namespace path {
+
+path::theta_star::~theta_star() {
+  for (size_t c = 0; c < nodes.size(); ++c) {
+    for (size_t r = 0; r < nodes[c].size(); ++r) {
+      node* curr = nodes[c][r];
+      delete curr;
+    }
+  }
+}
+
 void theta_star::set_weight(float w) { weight = w; }
 
 float theta_star::get_weight() { return weight; }
@@ -75,6 +85,9 @@ void theta_star::search_theta_star() {
         cpath = cpath->parent;
       }
 
+      //TODO: REMOVE AFTER TEST
+      path.push_back(start->tileptr);
+
       return;
     }
 
@@ -120,4 +133,6 @@ void theta_star::update_vertex(node* s, node* neighbor) {
     }
   }
 }
-} // path namespace
+
+}  // namespace path
+

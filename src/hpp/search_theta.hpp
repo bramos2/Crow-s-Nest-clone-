@@ -50,7 +50,8 @@ class theta_star {
 
  public:
   theta_star() = default;
-  ~theta_star() = default;
+
+  ~theta_star();
 
   // sets heuristic weight
   void set_weight(float w);
@@ -71,4 +72,5 @@ class theta_star {
   // theta* part of the algorithm
   void update_vertex(node* s, node* neighbor);
 };
+  
 }  // namespace path

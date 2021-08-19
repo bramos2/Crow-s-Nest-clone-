@@ -82,6 +82,9 @@ target_sources(
   src/cpp/pipeline.tpp
   src/hpp/tile.hpp
   src/cpp/tile.cpp
+  src/hpp/search_theta.hpp
+  src/cpp/search_theta.cpp
+  src/hpp/path_tester.hpp
   src/hpp/camera.hpp
   src/cpp/camera.cpp
   src/hpp/search_theta.hpp
