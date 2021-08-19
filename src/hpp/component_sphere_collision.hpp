@@ -1,13 +1,12 @@
 #pragma once
 
-#include "component.hpp"
+//#include "component.hpp"
 
 namespace crow {
 
 struct Component_Sphere_Collision : Component {
   glm::vec3 position;
   float radius;
-
 
   // begin collision checking methods
 
@@ -17,9 +16,10 @@ struct Component_Sphere_Collision : Component {
   }
 
   // end collision checking methods
-  
 
-  inline Component_Type get_type() const { return Component_Type::SPHERE_COLLISION; }
+  inline Component_Type get_type() const {
+    return Component_Type::SPHERE_COLLISION;
+  }
   // does nothing
   void update(const lava::app* const _app, std::vector<Object>* _objects) {}
 };

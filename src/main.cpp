@@ -4,26 +4,20 @@
 #include <imgui.h>
 
 #include "hpp/pipeline.hpp"
+#include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stb_image.h>
 
 #include "../debug_camera_control/debug_camera_control.hpp"
 #include "hpp/component.hpp"
-#include "hpp/component_box_collision.hpp"
-#include "hpp/component_player.hpp"
-#include "hpp/component_sphere_collision.hpp"
+//#include "hpp/component_box_collision.hpp"
+//#include "hpp/component_player.hpp"
+//#include "hpp/component_sphere_collision.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/object.hpp"
 
-std::vector<crow::Object> objects;
-
 auto main() -> int {
-  std::vector<lava::mesh::ptr> meshes;
-  meshes.push_back(nullptr);  // worker
-  meshes.push_back(nullptr);  // sphynx
-  objects.push_back(crow::Object{});
-  objects.push_back(crow::Object{});
   lava::frame_config config;
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
@@ -68,6 +62,9 @@ auto main() -> int {
   // TODO(conscat): Streamline descriptor sets.
   crow::descriptor_sets environment_descriptor_sets;
   VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
+  crow::descriptor_writes_stack descriptor_writes;
+
+  crow::entities entities;
 
   app.on_create = [&]() {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
@@ -111,7 +108,6 @@ auto main() -> int {
     environment_descriptor_sets = crow::create_descriptor_sets(
         environment_descriptor_layouts, descriptor_pool);
 
-    crow::descriptor_writes_stack descriptor_writes;
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -148,6 +144,20 @@ auto main() -> int {
     app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
                                         write_ubo_material, write_ubo_object});
 
+    // Create entities.
+    lava::mesh::ptr player_mesh = lava::make_mesh();
+    lava::mesh_data player_mesh_data =
+        lava::create_mesh_data(lava::mesh_type::cube);
+    player_mesh->add_data(player_mesh_data);
+    player_mesh->create(app.device);
+    entities.meshes[crow::entity::WORKER] = player_mesh;
+    entities.initialize_transforms(app, crow::entity::WORKER,
+                                   &environment_descriptor_sets,
+                                   &descriptor_writes);
+    entities.velocities[crow::entity::WORKER] = glm::vec3{0.1f, 0, 0};
+    crow::update_descriptor_writes(app, &descriptor_writes);
+
+    // Create pipelines.
     environment_pipeline = crow::create_rasterization_pipeline(
         app, environment_pipeline_layout, environment_shaders,
         environment_descriptor_layouts, vertex_attributes);
@@ -166,7 +176,7 @@ auto main() -> int {
   app.input.mouse_button.listeners.add(
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
-          printf("left mouse clicked ");
+          fmt::print("left mouse clicked ");
           return true;
         }
         return false;
@@ -195,7 +205,7 @@ auto main() -> int {
     ImGui::Begin("Pause", 0, texture_flag);
     if (ImGui::ImageButton(0 /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
-      printf("game paused! just kidding...\n");
+      fmt::print("game paused! just kidding...\n");
       /* gamepaused GUI code can go here */
     }
     ImGui::End();
@@ -230,8 +240,8 @@ auto main() -> int {
     // change to if (false) if the debug window keeps slapping you in the face
     // and that bothers you
     if (true) {
-      // exists just for the printf example (delete when we are actually using
-      // the debug window)
+      // exists just for the fmt::print example (delete when we are actually
+      // using the debug window)
       int example_integer = 25;
       ImVec2 debug_window_xy = {(wh.x * 0.05f), (wh.y * 0.05f)};
       ImVec2 debug_window_wh = {(wh.x * 0.4f), (wh.y * 0.3f)};
@@ -241,29 +251,26 @@ auto main() -> int {
       ImGui::Text("dynamically loaded debug field here");
       ImGui::Text("dynamically loaded debug field here");
       ImGui::Text("dynamically loaded debug field here");
-      ImGui::Text("yes it does printf %f %f %i", debug_window_xy.x,
+      ImGui::Text("yes it does fmt::print %f %f %i", debug_window_xy.x,
                   debug_window_xy.y, example_integer);
       ImGui::End();
     }
 #endif
   };
 
-  app.on_update = [&](lava::delta /*dt*/) {
-    memcpy(lava::as_ptr(world_matrix_buffer.get_mapped_data()),
-           &world_matrix_buffer_data, sizeof(world_matrix_buffer_data));
-
+  app.on_update = [&](lava::delta dt) {
     if (app.camera.activated()) {
       app.camera.update_view(lava::to_dt(app.run_time.delta),
                              app.input.get_mouse_position());
     }
 
-    // actual game loop; execute the entire game by simply cycling through the
-    // array of objects
-    for (crow::Object& object : objects) {
-      for (int j = 0; j < object.components.size(); ++j) {
-        object.components[j]->update(&app, &objects);
-      }
+    // actual game loop; execute the entire game by simply cycling through
+    // the array of objects
+    for (size_t i = 0; i < entities.pcomponents.size(); i++) {
     }
+    entities.update_transform_data(crow::entity::WORKER, dt);
+    entities.update_transform_buffer(crow::entity::WORKER);
+
     environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -278,17 +285,25 @@ auto main() -> int {
       //     cmd_buf, environment_descriptor_sets[2], 2);
       // environment_pipeline_layout->bind_descriptor_set(
       //     cmd_buf, environment_descriptor_sets[3], 3);
-      cube->bind_draw(cmd_buf);
+      // cube->bind_draw(cmd_buf);
+
+      for (auto& mesh : entities.meshes) {
+        if (mesh) {  // TODO(conscat): Sort entities instead.
+          mesh->bind_draw(cmd_buf);
+        }
+      }
     };
+
     return true;
   };
 
-  app.add_run_end([&]() { cube->destroy();
-    for (auto& meshes : meshes) {
-      if (meshes) {
-        meshes->destroy();
-      }
-    }
+  app.add_run_end([&]() {
+    cube->destroy();
+    // for (auto& meshes : meshes) {
+    //   if (meshes) {
+    //     meshes->destroy();
+    //   }
+    // }
   });
 
   return app.run();

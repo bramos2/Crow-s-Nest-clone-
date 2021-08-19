@@ -26,7 +26,7 @@ auto create_rasterization_pipeline(
     -> lava::graphics_pipeline::ptr;
 
 void update_descriptor_writes(lava::app& app,
-                              crow::descriptor_writes_stack descriptors);
+                              crow::descriptor_writes_stack* descriptors);
 
 #include "../cpp/pipeline.tpp"
 

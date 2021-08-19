@@ -1,6 +1,6 @@
 #pragma once
 
-#include "component.hpp"
+//#include "component.hpp"
 
 namespace crow {
 
@@ -14,9 +14,12 @@ struct Component_Box_Collision : Component {
   float bottom() const { return position.y - (size.y / 2); }
   float right() const { return position.x + (size.x / 2); }
   float left() const { return position.x - (size.x / 2); }
-  float front() const { return position.z + (size.z / 2); }  // towards the camera
-  float back() const {  return position.z - (size.z / 2); }  // away from the camera
-
+  float front() const {
+    return position.z + (size.z / 2);
+  }  // towards the camera
+  float back() const {
+    return position.z - (size.z / 2);
+  }  // away from the camera
 
   // begin collision checking methods
 
@@ -28,8 +31,9 @@ struct Component_Box_Collision : Component {
 
   // end collision checking methods
 
-  
-  inline Component_Type get_type() const { return Component_Type::BOX_COLLISION; }
+  inline Component_Type get_type() const {
+    return Component_Type::BOX_COLLISION;
+  }
   // does nothing
   void update(const lava::app* const _app, std::vector<Object>* _objects) {}
 };

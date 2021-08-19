@@ -1,6 +1,6 @@
 #pragma once
 
-#include "component.hpp"
+//#include "component.hpp"
 
 namespace crow {
 struct Component_Player : Component {

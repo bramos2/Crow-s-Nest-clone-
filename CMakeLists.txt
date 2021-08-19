@@ -62,17 +62,16 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebIn
   add_compile_definitions(_DEBUG)
 endif()
 
-
 target_sources(
   ${PROJECT_NAME} PRIVATE
   src/main.cpp
   src/hpp/object.hpp
-  src/cpp/object.cpp
+  # src/cpp/object.cpp
   src/hpp/component.hpp
-  src/hpp/component_box_collision.hpp
-  src/hpp/component_player.hpp
-  src/cpp/component_player.cpp
-  src/hpp/component_sphere_collision.hpp
+  # src/hpp/component_box_collision.hpp
+  # src/hpp/component_player.hpp
+  # src/cpp/component_player.cpp
+  # src/hpp/component_sphere_collision.hpp
   src/hpp/geometry.hpp
   src/cpp/geometry.tpp
   src/hpp/pipeline.hpp
