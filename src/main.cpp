@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 
+#include "hpp/camera.hpp"
 #include "hpp/pipeline.hpp"
 #include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
@@ -18,6 +19,8 @@
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
 
+glm::vec3 temp_position = glm::vec3{0, 0, 0};
+
 auto main() -> int {
   lava::frame_config config;
   lava::app app(config);
@@ -27,7 +30,7 @@ auto main() -> int {
   app.camera.rotation_speed = 250;
   app.camera.movement_speed += 10;
   app.camera.position = lava::v3(0.0f, -4.036f, 8.304f);
-  app.camera.rotation = lava::v3(-15, 0, 0);
+  app.camera.rotation = lava::v3(0, 0, 0);
   app.camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
                                debug_key_right);
   // full minimap setup
@@ -224,6 +227,7 @@ auto main() -> int {
       fmt::print("game paused! just kidding...\n");
       /* gamepaused GUI code can go here */
     }
+
     ImGui::End();
 
     // set size parameters for the item window
@@ -370,6 +374,14 @@ auto main() -> int {
       ImGui::Text("dynamically loaded debug field here");
       ImGui::Text("yes it does fmt::print %f %f %i", debug_window_xy.x,
                   debug_window_xy.y, example_integer);
+    ImGui::Spacing();
+    ImGui::DragFloat3("position##camera", (lava::r32*)&app.camera.position,
+                      0.01f);
+    ImGui::DragFloat3("rotation##camera", (lava::r32*)&app.camera.rotation,
+                      0.1f);
+    ImGui::DragFloat3("position##mouse-point", (lava::r32*)&temp_position,
+                      0.1f);
+    ImGui::Spacing();
       ImGui::End();
     }
 #endif
@@ -411,6 +423,7 @@ auto main() -> int {
       }
     };
 
+    temp_position = crow::get_floor_point(app.camera);
     return true;
   };
 

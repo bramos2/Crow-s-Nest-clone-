@@ -59,7 +59,10 @@ endif()
 
 add_compile_definitions(ROOT_PATH="${CMAKE_SOURCE_DIR}")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  message("DEBUGGING!")
   add_compile_definitions(_DEBUG)
+else()
+  message("NOT DEBUGGING!")
 endif()
 
 target_sources(
@@ -79,6 +82,8 @@ target_sources(
   src/cpp/pipeline.tpp
   src/hpp/tile.hpp
   src/cpp/tile.cpp
+  src/hpp/camera.hpp
+  src/cpp/camera.cpp
   src/hpp/search_theta.hpp
   src/cpp/search_theta.cpp
   src/hpp/minimap.hpp
