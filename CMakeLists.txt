@@ -81,4 +81,5 @@ target_sources(
   src/cpp/tile.cpp
   src/hpp/search_theta.hpp
   src/cpp/search_theta.cpp
+  src/hpp/minimap.hpp
 )
