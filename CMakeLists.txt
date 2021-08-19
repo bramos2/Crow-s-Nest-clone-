@@ -78,5 +78,7 @@ target_sources(
   src/cpp/pipeline.cpp
   src/cpp/pipeline.tpp
   src/hpp/tile.hpp
+  src/cpp/tile.cpp
   src/hpp/search_theta.hpp
+  src/cpp/search_theta.cpp
 )
