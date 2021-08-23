@@ -357,7 +357,7 @@ auto main() -> int {
     // end of minimap processing
 
     // debug window
-#ifdef _DEBUG
+#ifdef DEBUG_IMGUI
     // change to if (false) if the debug window keeps slapping you in the face
     // and that bothers you
     if (true) {
