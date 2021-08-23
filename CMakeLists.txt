@@ -20,6 +20,10 @@ target_link_libraries(
   lava-extras::fbx
 )
 
+if(WIN32)
+  add_compile_definitions(WIN32)
+endif()
+
 # Feature flags.
 option(DEBUG_IMGUI "Present a Dear ImGUI window with extra information." OFF)
 
@@ -35,8 +39,6 @@ set(DEBUG_CONTROLS "-u w -d s -l a -r d" CACHE STRING "List of controls for the 
 execute_process(COMMAND ${VHEADER_EXE} ${DEBUG_CONTROLS})
 message("Generated the debug camera controls at ${CAMERA_HPP_FILE} with command:")
 message("${VHEADER_EXE} ${DEBUG_CONTROLS}")
-
-add_compile_definitions(ROOT_PATH="${CMAKE_SOURCE_DIR}")
 
 target_sources(
   ${PROJECT_NAME} PRIVATE

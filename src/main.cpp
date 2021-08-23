@@ -19,6 +19,26 @@
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
 
+// http://www.cplusplus.com/forum/general/11104/
+#ifdef WIN32
+#include <windows.h>
+auto get_exe_path() -> std::string {
+  std::array<char, MAX_PATH> result{};
+  std::string full_path = std::string(result.data(),
+                     GetModuleFileName(NULL, result.data(), MAX_PATH));
+  return std::string(full_path.substr(0, full_path.find_last_of('\\\\'))) + "/";
+}
+#else
+#include <unistd.h>
+auto get_exe_path() -> std::string {
+  std::array<char, PATH_MAX - NAME_MAX> result{};
+  ssize_t count =
+      readlink("/proc/self/exe", result.data(), PATH_MAX - NAME_MAX);
+  std::string full_path = std::string(result.data());
+  return std::string(full_path.substr(0, full_path.find_last_of('/'))) + "/";
+}
+#endif
+
 glm::vec3 temp_position = glm::vec3{0, 0, 0};
 
 auto main() -> int {
@@ -57,8 +77,9 @@ auto main() -> int {
                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
   lava::mesh::ptr cube = lava::make_mesh();
-  std::string fbx_path = ROOT_PATH;
-  fbx_path.append("/ext/lava-fbx/ext/OpenFBX/runtime/a.FBX");  // Deer model
+  std::string fbx_path =
+      get_exe_path() +
+      "../../ext/lava-fbx/ext/OpenFBX/runtime/a.FBX";  // Deer model
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
@@ -96,11 +117,11 @@ auto main() -> int {
 
     std::vector<crow::shader_module> environment_shaders = {{
         crow::shader_module{
-            .file_name = "../res/simple.vert.spv",
+            .file_name = get_exe_path() + "../../res/simple.vert.spv",
             .flags = VK_SHADER_STAGE_VERTEX_BIT,
         },
         crow::shader_module{
-            .file_name = "../res/simple.frag.spv",
+            .file_name = get_exe_path() + "../../res/simple.frag.spv",
             .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         },
     }};
@@ -307,9 +328,12 @@ auto main() -> int {
         // minimap around
         minimap.dragging = true;
 
-        // this makes sure that the minimap doesnt get dragged way out of bounds or anything like that
-        minimap.cpos.x = std::clamp(minimap.cpos.x, minimap.mpos.x, minimap.mpos.z);
-        minimap.cpos.y = std::clamp(minimap.cpos.y, minimap.mpos.y, minimap.mpos.w);
+        // this makes sure that the minimap doesnt get dragged way out of bounds
+        // or anything like that
+        minimap.cpos.x =
+            std::clamp(minimap.cpos.x, minimap.mpos.x, minimap.mpos.z);
+        minimap.cpos.y =
+            std::clamp(minimap.cpos.y, minimap.mpos.y, minimap.mpos.w);
       }
     }
 
@@ -374,14 +398,14 @@ auto main() -> int {
       ImGui::Text("dynamically loaded debug field here");
       ImGui::Text("yes it does fmt::print %f %f %i", debug_window_xy.x,
                   debug_window_xy.y, example_integer);
-    ImGui::Spacing();
-    ImGui::DragFloat3("position##camera", (lava::r32*)&app.camera.position,
-                      0.01f);
-    ImGui::DragFloat3("rotation##camera", (lava::r32*)&app.camera.rotation,
-                      0.1f);
-    ImGui::DragFloat3("position##mouse-point", (lava::r32*)&temp_position,
-                      0.1f);
-    ImGui::Spacing();
+      ImGui::Spacing();
+      ImGui::DragFloat3("position##camera", (lava::r32*)&app.camera.position,
+                        0.01f);
+      ImGui::DragFloat3("rotation##camera", (lava::r32*)&app.camera.rotation,
+                        0.1f);
+      ImGui::DragFloat3("position##mouse-point", (lava::r32*)&temp_position,
+                        0.1f);
+      ImGui::Spacing();
       ImGui::End();
     }
 #endif
