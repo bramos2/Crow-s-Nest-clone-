@@ -1,4 +1,5 @@
 #pragma once
+#include <liblava/app.hpp>
 #include <liblava/block.hpp>
 #include <liblava/resource.hpp>
 
@@ -7,6 +8,22 @@
 
 namespace crow {
 // TODO(conscat): Could these go somewhere better?
+
+struct raytracing_uniform_data {
+  glm::mat4 inv_view;
+  glm::mat4 inv_proj;
+  glm::uvec4 viewport;
+  glm::vec4 background_color;
+  uint32_t max_depth;
+};
+
+struct instance_data {
+  uint32_t vertex_base;
+  uint32_t vertex_count;
+  uint32_t index_base;
+  uint32_t index_count;
+};
+
 struct shader_module {
   std::string file_name;
   VkShaderStageFlagBits flags;
@@ -61,6 +78,11 @@ using descriptor_layouts = std::array<lava::descriptor::ptr, 4>;
 // [2] Per-material buffers
 // [3] Per-object buffers
 using descriptor_sets = std::array<VkDescriptorSet, 4>;
+
+auto create_swapchain_callback(::lava::app& app, lava::image::ptr& output_image,
+                               VkDescriptorSet shared_descriptor_set,
+                               VkCommandPool pool, lava::queue::ref queue)
+    -> lava::target_callback;
 
 template <typename T = lava::vertex>
 auto make_floor(float x, float y, float w = 1, float h = 1)

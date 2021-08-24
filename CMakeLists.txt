@@ -48,6 +48,7 @@ target_sources(
   src/hpp/object.hpp
   src/hpp/component.hpp
   src/hpp/geometry.hpp
+  src/cpp/geometry.cpp
   src/cpp/geometry.tpp
   src/hpp/pipeline.hpp
   src/cpp/pipeline.cpp

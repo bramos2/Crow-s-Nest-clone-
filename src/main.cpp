@@ -48,6 +48,18 @@ auto main(int argc, char* argv[]) -> int {
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
   crow::initialize_debug_camera(app.camera);
+  // std::vector<crow::instance_data> instances;
+
+  // The command buffer used for vkCmdBuildAccelerationStructureKHR and
+  // vkCmdTraceRaysKHR must support compute. liblava's default queue has
+  // graphics, compute, and transfer support, and the Vulkan spec guarantees
+  // that this combination exists if the device supports graphics queues.
+  lava::queue::ref graphics_queue = app.device->graphics_queue();
+  crow::raytracing_uniform_data uniform_data{};
+  const size_t uniform_stride = lava::align_up(
+      sizeof(uniform_data), app.device->get_physical_device()
+                                ->get_properties()
+                                .limits.minUniformBufferOffsetAlignment);
 
   // full minimap setup
   crow::minimap minimap;
@@ -83,6 +95,7 @@ auto main(int argc, char* argv[]) -> int {
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
+  VkCommandPool command_pool = VK_NULL_HANDLE;
   lava::descriptor::pool::ptr descriptor_pool = lava::make_descriptor_pool();
   descriptor_pool->create(app.device,
                           {
@@ -92,13 +105,29 @@ auto main(int argc, char* argv[]) -> int {
                           },
                           90);
 
-  lava::graphics_pipeline::ptr environment_pipeline;
-  lava::pipeline_layout::ptr environment_pipeline_layout;
-  crow::descriptor_layouts environment_descriptor_layouts;
+  lava::extras::raytracing::raytracing_pipeline::ptr raytracing_pipeline;
+  lava::pipeline_layout::ptr raytracing_pipeline_layout;
+  lava::pipeline_layout::ptr blit_pipeline_layout;
+  lava::graphics_pipeline::ptr blit_pipeline;
+  crow::descriptor_layouts raytracing_descriptor_layouts;
   // TODO(conscat): Streamline descriptor sets.
-  crow::descriptor_sets environment_descriptor_sets;
-  VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
+  crow::descriptor_sets raytracing_descriptor_sets;
+  VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
   crow::descriptor_writes_stack descriptor_writes;
+  lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
+  lava::extras::raytracing::bottom_level_acceleration_structure::list
+      bottom_as_list;
+
+  lava::buffer::ptr scratch_buffer;
+  VkDeviceAddress scratch_buffer_address = 0;
+  lava::buffer::ptr raytracing_uniform_buffer;
+  lava::image::ptr raytracing_output_image;
+
+  // catch swapchain recreation
+  // recreate raytracing image and update its descriptors
+  lava::target_callback swapchain_callback = crow::create_swapchain_callback(
+      app, raytracing_output_image, raytracing_descriptor_set, command_pool,
+      graphics_queue);
 
   crow::entities entities;
 
@@ -123,16 +152,16 @@ auto main(int argc, char* argv[]) -> int {
     }};
 
     // Global buffers:
-    environment_descriptor_layouts[0] =
+    raytracing_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
     // Render-pass buffers:
-    environment_descriptor_layouts[1] =
+    raytracing_descriptor_layouts[1] =
         crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
     // Material buffers:
-    environment_descriptor_layouts[2] =
+    raytracing_descriptor_layouts[2] =
         crow::create_descriptor_layout(app, crow::simple_material_bindings);
     // Object buffers:
-    environment_descriptor_layouts[3] = crow::create_descriptor_layout(
+    raytracing_descriptor_layouts[3] = crow::create_descriptor_layout(
         app,
         {
             crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -141,13 +170,13 @@ auto main(int argc, char* argv[]) -> int {
                                      .descriptors_count = 1},
         });
 
-    environment_descriptor_sets = crow::create_descriptor_sets(
-        environment_descriptor_layouts, descriptor_pool);
+    raytracing_descriptor_sets = crow::create_descriptor_sets(
+        raytracing_descriptor_layouts, descriptor_pool);
 
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[0],
+        .dstSet = raytracing_descriptor_sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -155,7 +184,7 @@ auto main(int argc, char* argv[]) -> int {
     };
     VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[1],
+        .dstSet = raytracing_descriptor_sets[1],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -163,7 +192,7 @@ auto main(int argc, char* argv[]) -> int {
     };
     VkWriteDescriptorSet const write_ubo_material{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[2],
+        .dstSet = raytracing_descriptor_sets[2],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -171,7 +200,7 @@ auto main(int argc, char* argv[]) -> int {
     };
     VkWriteDescriptorSet const write_ubo_object{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[3],
+        .dstSet = raytracing_descriptor_sets[3],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -188,25 +217,25 @@ auto main(int argc, char* argv[]) -> int {
     player_mesh->create(app.device);
     entities.meshes[crow::entity::WORKER] = player_mesh;
     entities.initialize_transforms(app, crow::entity::WORKER,
-                                   &environment_descriptor_sets,
+                                   &raytracing_descriptor_sets,
                                    &descriptor_writes);
     entities.velocities[crow::entity::WORKER] = glm::vec3{0.1f, 0, 0};
     crow::update_descriptor_writes(app, &descriptor_writes);
 
     // Create pipelines.
-    environment_pipeline = crow::create_rasterization_pipeline(
-        app, environment_pipeline_layout, environment_shaders,
-        environment_descriptor_layouts, vertex_attributes);
+    // raytracing_pipeline = crow::create_rasterization_pipeline(
+    //     app, raytracing_pipeline_layout, environment_shaders,
+    //     raytracing_descriptor_layouts, vertex_attributes);
     return true;
   };
 
   app.on_destroy = [&]() {
     // TODO(conscat): Free all arrays of lava objects.
-    environment_descriptor_layouts[0]->destroy();
-    environment_descriptor_layouts[3]->destroy();
+    raytracing_descriptor_layouts[0]->destroy();
+    raytracing_descriptor_layouts[3]->destroy();
     descriptor_pool->destroy();
-    environment_pipeline->destroy();
-    environment_pipeline_layout->destroy();
+    raytracing_pipeline->destroy();
+    raytracing_pipeline_layout->destroy();
   };
 
   app.input.mouse_button.listeners.add(
@@ -420,11 +449,11 @@ auto main(int argc, char* argv[]) -> int {
     entities.update_transform_data(crow::entity::WORKER, dt);
     entities.update_transform_buffer(crow::entity::WORKER);
 
-    environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+    raytracing_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4,
-          environment_descriptor_sets.data(), 0, nullptr);
+          raytracing_pipeline_layout->get(), 0, 4,
+          raytracing_descriptor_sets.data(), 0, nullptr);
       // TODO(conscat): Write a bind_descriptor_sets() method.
       // environment_pipeline_layout->bind_descriptor_set(
       //     cmd_buf, environment_descriptor_sets[0], 0);
