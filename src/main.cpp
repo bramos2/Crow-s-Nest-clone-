@@ -5,13 +5,13 @@
 #include <imgui.h>
 
 #include "hpp/camera.hpp"
+#include "hpp/device.hpp"
 #include "hpp/pipeline.hpp"
 #include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stb_image.h>
 
-#include "../debug_camera_control/debug_camera_control.hpp"
 #include "hpp/component.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/minimap.hpp"
@@ -44,13 +44,8 @@ auto main() -> int {
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
+  crow::initialize_debug_camera(app.camera);
 
-  app.camera.rotation_speed = 250;
-  app.camera.movement_speed += 10;
-  app.camera.position = lava::v3(0.0f, -4.036f, 8.304f);
-  app.camera.rotation = lava::v3(0, 0, 0);
-  app.camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
-                               debug_key_right);
   // full minimap setup
   crow::minimap minimap;
   crow::initialize_minimap(minimap);

@@ -2,6 +2,8 @@
 
 #include <glm/gtx/vector_angle.hpp>
 
+#include "../../debug_camera_control/debug_camera_control.hpp"
+
 // #include <fmt/core.h>
 #include <liblava/lava.hpp>
 
@@ -32,6 +34,16 @@ auto get_floor_point(lava::camera& camera) -> glm::vec3 {
 
   auto result = front * forward_magnitude + translation;
   return result;
+}
+
+void initialize_debug_camera(lava::camera& camera) {
+  camera.rotation_speed = 250;
+  camera.movement_speed += 10;
+  camera.position = lava::v3(0.0f, -4.036f, 8.304f);
+  camera.rotation = lava::v3(0, 0, 0);
+  // These globals are defined in debug_camera_control.hpp
+  camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
+                           debug_key_right);
 }
 
 }  // namespace crow
