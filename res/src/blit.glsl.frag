@@ -1,7 +1,7 @@
 #version 460 core
 #extension GL_GOOGLE_include_directive : require
 
-#include "include.glsl.inc"
+#include "include.glsl"
 
 layout (std140, set = 0, binding = 0) uniform ubo_uniforms {
     uniform_data uniforms;

@@ -176,13 +176,13 @@ auto main(int argc, char* argv[]) -> int {
     blit_pipeline = make_graphics_pipeline(app.device);
 
     if (!blit_pipeline->add_shader(
-            lava::file_data(crow::find_shader_path("blit.vert.spv")),
+            lava::file_data(crow::find_spv_path("blit.vert.spv")),
             VK_SHADER_STAGE_VERTEX_BIT)) {
       return false;
     }
 
     if (!blit_pipeline->add_shader(
-            lava::file_data(crow::find_shader_path("blit.frag.spv")),
+            lava::file_data(crow::find_spv_path("blit.frag.spv")),
             VK_SHADER_STAGE_FRAGMENT_BIT)) {
       return false;
     }
@@ -200,7 +200,7 @@ auto main(int argc, char* argv[]) -> int {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
           0, 1, &shared_descriptor_set, 1, &uniform_offset);
-      // fullscreen triangle
+      // Blit through a hard-coded fullscreen triangle.
       app.device->call().vkCmdDraw(cmd_buf, 3, 1, 0, 0);
     };
 
@@ -234,6 +234,48 @@ auto main(int argc, char* argv[]) -> int {
 
     raytracing_descriptor_set =
         raytracing_descriptor_set_layout->allocate(descriptor_pool->get());
+
+    // Raytracing pipeline with raygen, miss, and closest-hit shader.
+    raytracing_pipeline =
+        lava::extras::raytracing::make_raytracing_pipeline(app.device);
+
+    if (!raytracing_pipeline->add_shader(crow::get_spirv_data("ray.gen.spv"),
+                                         VK_SHADER_STAGE_RAYGEN_BIT_KHR)) {
+      return false;
+    }
+    if (!raytracing_pipeline->add_shader(crow::get_spirv_data("ray.miss.spv"),
+                                         VK_SHADER_STAGE_MISS_BIT_KHR)) {
+      return false;
+    }
+    if (!raytracing_pipeline->add_shader(crow::get_spirv_data("ray.chit.spv"),
+                                         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
+      return false;
+    }
+    if (!raytracing_pipeline->add_shader(crow::get_spirv_data("ray.call.spv"),
+                                         VK_SHADER_STAGE_CALLABLE_BIT_KHR)) {
+      return false;
+    }
+
+    enum rt_stage : uint32_t {
+      // this reflects the order they're added in above
+      raygen = 0,
+      miss,
+      closest_hit,
+      callable
+    };
+
+    // shader_binding_table expects the groups to be in this order
+    raytracing_pipeline->add_shader_general_group(raygen);
+    raytracing_pipeline->add_shader_general_group(miss);
+    raytracing_pipeline->add_shader_hit_group(closest_hit);
+    raytracing_pipeline->add_shader_general_group(callable);
+
+    raytracing_pipeline->set_max_recursion_depth(1);
+    raytracing_pipeline->set_layout(raytracing_pipeline_layout);
+
+    if (!raytracing_pipeline->create()) {
+      return false;
+    }
 
     lava::VkVertexInputAttributeDescriptions vertex_attributes = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},

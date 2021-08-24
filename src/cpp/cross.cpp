@@ -24,9 +24,13 @@ auto find_exe_path() -> std::string {
 }
 #endif
 
-// NOLINTNEXTLINE I usually want to pass this value directly.
-auto find_shader_path(std::string spv_name) -> string {
+auto find_spv_path(std::string& spv_name) -> string {
   return crow::find_exe_path() + "/../../res/spv/" + spv_name;
+}
+
+// NOLINTNEXTLINE I usually want to pass this value directly.
+auto get_spirv_data(std::string file_name) -> lava::file_data {
+  return lava::file_data(crow::find_spv_path(file_name));
 }
 
 }  // namespace crow
