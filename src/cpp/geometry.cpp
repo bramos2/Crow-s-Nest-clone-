@@ -34,6 +34,7 @@ auto create_swapchain_callback(::lava::app& app, lava::image::ptr& output_image,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         .pImageInfo = &image_info};
+    // TODO(conscat): Instead, push to descriptor update write stack.
     app.device->vkUpdateDescriptorSets({write_info});
 
     // transition image to general layout

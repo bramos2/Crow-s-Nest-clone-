@@ -55,11 +55,12 @@ auto main(int argc, char* argv[]) -> int {
   // graphics, compute, and transfer support, and the Vulkan spec guarantees
   // that this combination exists if the device supports graphics queues.
   lava::queue::ref graphics_queue = app.device->graphics_queue();
-  crow::raytracing_uniform_data uniform_data{};
-  const size_t uniform_stride = lava::align_up(
-      sizeof(uniform_data), app.device->get_physical_device()
-                                ->get_properties()
-                                .limits.minUniformBufferOffsetAlignment);
+  crow::raytracing_uniform_data raytracing_uniform_data{};
+  const size_t raytracing_uniform_stride =
+      lava::align_up(sizeof(raytracing_uniform_data),
+                     app.device->get_physical_device()
+                         ->get_properties()
+                         .limits.minUniformBufferOffsetAlignment);
 
   // full minimap setup
   crow::minimap minimap;
@@ -97,21 +98,29 @@ auto main(int argc, char* argv[]) -> int {
 
   VkCommandPool command_pool = VK_NULL_HANDLE;
   lava::descriptor::pool::ptr descriptor_pool = lava::make_descriptor_pool();
-  descriptor_pool->create(app.device,
-                          {
-                              {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 50},
-                              {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
-                              {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
-                          },
-                          90);
+  descriptor_pool->create(
+      app.device,
+      {
+          {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
+          {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3},
+          {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+          {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+          // TODO(conscat): More efficient sizes.
+          {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 50},
+          {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
+          {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
+      },
+      90);
 
   lava::extras::raytracing::raytracing_pipeline::ptr raytracing_pipeline;
   lava::pipeline_layout::ptr raytracing_pipeline_layout;
   lava::pipeline_layout::ptr blit_pipeline_layout;
   lava::graphics_pipeline::ptr blit_pipeline;
-  crow::descriptor_layouts raytracing_descriptor_layouts;
   // TODO(conscat): Streamline descriptor sets.
-  crow::descriptor_sets raytracing_descriptor_sets;
+  lava::descriptor::ptr shared_descriptor_set_layout;
+  VkDescriptorSet shared_descriptor_set = VK_NULL_HANDLE;
+  crow::descriptor_layouts raytracing_descriptor_layouts;
+  // crow::descriptor_sets raytracing_descriptor_sets;
   VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
   crow::descriptor_writes_stack descriptor_writes;
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
@@ -123,16 +132,117 @@ auto main(int argc, char* argv[]) -> int {
   lava::buffer::ptr raytracing_uniform_buffer;
   lava::image::ptr raytracing_output_image;
 
-  // catch swapchain recreation
-  // recreate raytracing image and update its descriptors
+  // Recreate raytracing image and update its descriptors.
   lava::target_callback swapchain_callback = crow::create_swapchain_callback(
-      app, raytracing_output_image, raytracing_descriptor_set, command_pool,
+      app, raytracing_output_image, shared_descriptor_set, command_pool,
       graphics_queue);
+  app.target->add_callback(&swapchain_callback);
 
   crow::entities entities;
 
   app.on_create = [&]() {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
+
+    // command pool for one-time command buffers
+    const VkCommandPoolCreateInfo create_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+        .queueFamilyIndex = uint32_t(graphics_queue.family)};
+    if (!app.device->vkCreateCommandPool(&create_info, &command_pool)) {
+      return false;
+    }
+
+    // uniform buffer for camera parameters and background color
+    raytracing_uniform_buffer = lava::make_buffer();
+    if (!raytracing_uniform_buffer->create_mapped(
+            app.device, nullptr,
+            app.target->get_frame_count() * raytracing_uniform_stride,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+      return false;
+    }
+
+    // Output image for the raytracing shader.
+    // RGBA16F is guaranteed to support these usage flags.
+    VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    raytracing_output_image = lava::make_image(format);
+    raytracing_output_image->set_usage(
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    raytracing_output_image->set_layout(VK_IMAGE_LAYOUT_UNDEFINED);
+    raytracing_output_image->set_aspect_mask(lava::format_aspect_mask(format));
+
+    // descriptor set used by both the raytracing shaders and the blit shader
+    shared_descriptor_set_layout = lava::make_descriptor();
+    shared_descriptor_set_layout->add_binding(
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR |
+            VK_SHADER_STAGE_MISS_BIT_KHR);
+    shared_descriptor_set_layout->add_binding(
+        1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    if (!shared_descriptor_set_layout->create(app.device)) {
+      return false;
+    }
+
+    // blit pipeline that draws the raytraced output image to the swapchain
+    blit_pipeline_layout = lava::make_pipeline_layout();
+    blit_pipeline_layout->add(shared_descriptor_set_layout);
+    if (!blit_pipeline_layout->create(app.device)) {
+      return false;
+    }
+
+    blit_pipeline = make_graphics_pipeline(app.device);
+
+    if (!blit_pipeline->add_shader(lava::file_data("cubes/vert.spv"),
+                                   VK_SHADER_STAGE_VERTEX_BIT))
+      return false;
+    if (!blit_pipeline->add_shader(file_data("cubes/frag.spv"),
+                                   VK_SHADER_STAGE_FRAGMENT_BIT))
+      return false;
+
+    blit_pipeline->add_color_blend_attachment();
+    blit_pipeline->set_layout(blit_pipeline_layout);
+
+    auto render_pass = app.shading.get_pass();
+    if (!blit_pipeline->create(render_pass->get())) return false;
+
+    blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+      const uint32_t uniform_offset =
+          app.block.get_current_frame() * uniform_stride;
+      app.device->call().vkCmdBindDescriptorSets(
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+          0, 1, &shared_descriptor_set, 1, &uniform_offset);
+      // fullscreen triangle
+      // no vertex buffer, attributes are generated in the vertex shader
+      app.device->call().vkCmdDraw(cmd_buf, 3, 1, 0, 0);
+    };
+
+    // add blit before lava's gui rendering
+    render_pass->add_front(blit_pipeline);
+
+    // descriptor used by the raytracing shader
+    raytracing_descriptor_set_layout = make_descriptor();
+    raytracing_descriptor_set_layout->add_binding(
+        0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    raytracing_descriptor_set_layout->add_binding(
+        1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    raytracing_descriptor_set_layout->add_binding(
+        2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    raytracing_descriptor_set_layout->add_binding(
+        3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    if (!raytracing_descriptor_set_layout->create(app.device)) return false;
+
+    raytracing_pipeline_layout = make_pipeline_layout();
+    raytracing_pipeline_layout->add(shared_descriptor_set_layout);
+    raytracing_pipeline_layout->add(raytracing_descriptor_set_layout);
+    if (!raytracing_pipeline_layout->create(app.device)) return false;
+
+    raytracing_descriptor_set =
+        raytracing_descriptor_set_layout->allocate(descriptor_pool->get());
 
     lava::VkVertexInputAttributeDescriptions vertex_attributes = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},
@@ -140,16 +250,16 @@ auto main(int argc, char* argv[]) -> int {
         {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
     };
 
-    std::vector<crow::shader_module> environment_shaders = {{
-        crow::shader_module{
-            .file_name = get_exe_path() + "../../res/simple.vert.spv",
-            .flags = VK_SHADER_STAGE_VERTEX_BIT,
-        },
-        crow::shader_module{
-            .file_name = get_exe_path() + "../../res/simple.frag.spv",
-            .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        },
-    }};
+    // std::vector<crow::shader_module> environment_shaders = {{
+    //     crow::shader_module{
+    //         .file_name = get_exe_path() + "../../res/simple.vert.spv",
+    //         .flags = VK_SHADER_STAGE_VERTEX_BIT,
+    //     },
+    //     crow::shader_module{
+    //         .file_name = get_exe_path() + "../../res/simple.frag.spv",
+    //         .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+    //     },
+    // }};
 
     // Global buffers:
     raytracing_descriptor_layouts[0] =
