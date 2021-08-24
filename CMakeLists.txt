@@ -27,6 +27,7 @@ endif()
 
 # Feature flags.
 option(DEBUG_IMGUI "Present a Dear ImGUI window with extra information." OFF)
+option(DEBUG_RAYTRACING "Provide runtime sanatization for raytracing." OFF)
 
 # Control the debug camera flight controls.
 option(BUILD_CONTROLS "Populate the controls for a debug camera." ON)
@@ -61,4 +62,6 @@ target_sources(
   src/hpp/search_theta.hpp
   src/cpp/search_theta.cpp
   src/hpp/minimap.hpp
+  src/hpp/device.hpp
+  src/cpp/device.cpp
 )
