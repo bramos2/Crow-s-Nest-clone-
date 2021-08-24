@@ -11,8 +11,8 @@
 #include <iostream>
 #include <stb_image.h>
 
-#include "hpp/cross.hpp"
 #include "hpp/component.hpp"
+#include "hpp/cross.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
@@ -175,13 +175,15 @@ auto main(int argc, char* argv[]) -> int {
 
     blit_pipeline = make_graphics_pipeline(app.device);
 
-    if (!blit_pipeline->add_shader(lava::file_data("cubes/vert.spv"),
-                                   VK_SHADER_STAGE_VERTEX_BIT)) {
+    if (!blit_pipeline->add_shader(
+            lava::file_data(crow::find_shader_path("blit.vert.spv")),
+            VK_SHADER_STAGE_VERTEX_BIT)) {
       return false;
     }
 
-    if (!blit_pipeline->add_shader(lava::file_data("cubes/frag.spv"),
-                                   VK_SHADER_STAGE_FRAGMENT_BIT)) {
+    if (!blit_pipeline->add_shader(
+            lava::file_data(crow::find_shader_path("blit.frag.spv")),
+            VK_SHADER_STAGE_FRAGMENT_BIT)) {
       return false;
     }
 
