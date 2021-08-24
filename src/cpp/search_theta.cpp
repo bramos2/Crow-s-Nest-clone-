@@ -3,7 +3,7 @@
 
 namespace path {
 
-path::theta_star::~theta_star() {
+theta_star::~theta_star() {
   for (size_t c = 0; c < nodes.size(); ++c) {
     for (size_t r = 0; r < nodes[c].size(); ++r) {
       node* curr = nodes[c][r];

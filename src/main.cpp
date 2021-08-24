@@ -14,6 +14,7 @@
 
 #include "hpp/component.hpp"
 #include "hpp/geometry.hpp"
+#include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
 
@@ -46,21 +47,11 @@ auto main() -> int {
   app.setup();
   crow::initialize_debug_camera(app.camera);
 
-  // full minimap setup
-  crow::minimap minimap;
-  crow::initialize_minimap(minimap);
-  // minimap.mpos should be calculated, not hardcoded, and based on the rooms
-  // that are added to the map by the map generation function.
-  minimap.mpos = {-200, -200, 500, 200};
-  // the rooms that currently are being added to the map are for testing
-  // purposes only.
-  minimap.rooms.push_back({220, 120, 100, 20});
-  minimap.rooms.push_back({50, 20, 200, 100});
-  minimap.rooms.push_back({330, 150, 35, 80});
-  minimap.rooms.push_back({2, 2, 44, 300});
-  minimap.rooms.push_back({550, 250, 200, 70});
-  minimap.rooms.push_back({20, 20, 20, 10});
-  // end minimap setup
+  crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
+  crow::item_window item_w;
+  item_w.screen_minr = {0.025f, 0.5f};
+  item_w.screen_maxr = {0.0833333333f, 0.148148148148f};
+
 
   // Temporary geometry.
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
@@ -88,6 +79,31 @@ auto main() -> int {
                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
                           },
                           90);
+
+  //-----map  generation testing----
+  world_map temp_map_var(5, 5, 6);
+  temp_map_var.set_block_size(200, 150, 20);
+  temp_map_var.set_block_space(4, 3, 5);
+
+  // minimap logic
+  minimap.map_minc = {-300, -300};
+  minimap.map_maxc = {300, 300};
+  minimap.screen_minr = {0.0f, 0.65f};
+  minimap.screen_maxr = {0.4f, 0.35f};
+  minimap.resolution = {1920, 1080};
+  minimap.set_window_size(app.window.get_size());
+  temp_map_var.generate_map_blockout(
+      {minimap.window_ext.x / 2, minimap.window_ext.y / 2});
+  {
+    /*glm::vec2 temp1;
+    glm::vec2 temp2;
+    temp_map_var.get_dimensions(temp1, temp2);
+    int holdup = 0;
+    minimap.mpos = {-temp2.x, -temp2.y, 0, 0};*/
+  }
+  temp_map_var.generate_block_rooms(4, 8);
+
+  minimap.populate_map_data(temp_map_var);
 
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;
@@ -194,6 +210,7 @@ auto main() -> int {
     environment_pipeline = crow::create_rasterization_pipeline(
         app, environment_pipeline_layout, environment_shaders,
         environment_descriptor_layouts, vertex_attributes);
+
     return true;
   };
 
@@ -216,6 +233,9 @@ auto main() -> int {
       });
 
   app.imgui.on_draw = [&]() {
+    minimap.app = &app;
+    item_w.app = &app;
+
     // need this for having the GUI items scale with the window size
     glm::vec2 wh = app.window.get_size();
     // pass this flag into ImGui::Begin when you need to spawn a window that
@@ -255,122 +275,8 @@ auto main() -> int {
     ImGui::End();
     // all texture-only GUI items should be before this line as it resets the
     // GUI window styling back to default
-    ImGui::PopStyleVar(3);
-
-    // set size parameters for the minimap window
-    ImVec2 minimap_window_xy = {wh.x * 0.025f, wh.y * 0.666f};
-    ImVec2 minimap_window_wh = {wh.x * 0.4f, wh.y * 0.3f};
-    ImVec2 minimap_size = {wh.x / 1920, wh.y / 1080};
-    ImGui::SetNextWindowPos(minimap_window_xy, ImGuiCond_Always);
-    ImGui::SetNextWindowSize(minimap_window_wh, ImGuiCond_Always);
-    // finally create the window
-    ImGui::Begin("Facility Map", 0,
-                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoTitleBar);
-
-    lava::mouse_position_ref _mouse_pos = app.input.get_mouse_position();
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-      // first, check to see if the mouse click began inside of the minimap
-      // window
-      if (_mouse_pos.x < minimap_window_xy.x + minimap_window_wh.x &&
-          _mouse_pos.y < minimap_window_xy.y + minimap_window_wh.y &&
-          _mouse_pos.x > minimap_window_xy.x &&
-          _mouse_pos.y > minimap_window_xy.y) {
-        // set all necessary flags and variables for potential mouse dragging
-
-        // set the mouse position to the minimap, used for when we start
-        // dragging the map or whatever
-        minimap.mouse_position = {
-            (float)((_mouse_pos.x - minimap_window_xy.x) / minimap_window_wh.x),
-            (float)((_mouse_pos.y - minimap_window_xy.y) /
-                    minimap_window_wh.y)};
-        printf("i have confirmed the click \n");
-      }
-    }
-    // processing for dragging the minimap around all goes in here
-    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-      // first check to see that we have "grabbed" the minimap with the mouse.
-      // if it has been grabbed, then minimap.mouse_position.x should have been
-      // set to a float between 0:1
-      if (minimap.mouse_position.x != -1) {
-        // position of the mouse on this tick.
-        ImVec2 current_frame__mouse_position = {
-            (float)((_mouse_pos.x - minimap_window_xy.x) / minimap_window_wh.x),
-            (float)((_mouse_pos.y - minimap_window_xy.y) /
-                    minimap_window_wh.y)};
-        // difference of the position of the mouse on this tick and the last
-        // tick
-        ImVec2 mouse_position_difference = {
-            current_frame__mouse_position.x - minimap.mouse_position.x,
-            current_frame__mouse_position.y - minimap.mouse_position.y};
-        // the mouse position is stored in a range of 0:1 rather than absolute
-        // position to have compatibility with the window randomly being resized
-        // for no reason at all, so we need to convert it to a range that the
-        // minimap understands
-        mouse_position_difference.x *= 1920 * 0.4f;
-        mouse_position_difference.y *= 1080 * 0.3f;
-        // add this difference to the position of the minimap
-        minimap.cpos.x += mouse_position_difference.x;
-        minimap.cpos.y += mouse_position_difference.y;
-        // set last frame's position to this frame's position since we are done
-        // processing for it
-        minimap.mouse_position = current_frame__mouse_position;
-        // drag boolean predominantly used to ensure that room click processing
-        // is not called when releasing the mouse button after dragging the
-        // minimap around
-        minimap.dragging = true;
-
-        // this makes sure that the minimap doesnt get dragged way out of bounds
-        // or anything like that
-        minimap.cpos.x =
-            std::clamp(minimap.cpos.x, minimap.mpos.x, minimap.mpos.z);
-        minimap.cpos.y =
-            std::clamp(minimap.cpos.y, minimap.mpos.y, minimap.mpos.w);
-      }
-    }
-
-    // begin drawing the rooms to imgui, one by one
-    for (int i = 0; i < minimap.rooms.size(); ++i) {
-      // check for out of bounds rooms to skip adding them to draw calls
-      // in order, the checks are:
-      // 1) check to see if the room is wholly left of the map
-      // 2) check to see if the room is wholly above the map
-      // 3) check to see if the room is wholly right of the map
-      // 4) check to see if the room is wholly under the map
-      if (minimap.rooms[i].x + minimap.rooms[i].z + minimap.cpos.x < 0 ||
-          minimap.rooms[i].y + minimap.rooms[i].w + minimap.cpos.y < 0 ||
-          minimap.rooms[i].x + minimap.cpos.x > 1920 * 0.4f ||
-          minimap.rooms[i].y + minimap.cpos.y > 1080 * 0.3f)
-        // (768, 324)
-        continue;
-      // the room has passed cull checks, draw them
-
-      // sets the x, y position of the room
-      ImGui::SetCursorPos(
-          {(minimap.rooms[i].x + minimap.cpos.x) * minimap_size.x,
-           (minimap.rooms[i].y + minimap.cpos.y) * minimap_size.y});
-      // debug stuff
-      char room[] = {"##roomX"};
-      sprintf(room, "##room%i", i);
-      if (ImGui::Button(room, {minimap.rooms[i].z * minimap_size.x,
-                               minimap.rooms[i].w * minimap_size.y})) {
-        if (minimap.dragging == false) {
-          // printf for testing
-          printf("clicked on room %i\n", i);
-          /* processing for room switch goes here */
-        }
-      }
-    }
-
-    // this must be called after all processing for the minimap because it
-    // resets variables that may be used while processing the minimap
-    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-      minimap.mouse_position = {-1, -1};
-      minimap.dragging = false;
-    }
-    // paranoia check: using !ismousedown instead of mousereleased
-    ImGui::End();
+    
+    minimap.draw_minimap();
     // end of minimap processing
 
     // debug window
@@ -402,8 +308,7 @@ auto main() -> int {
       ImGui::End();
     }
 #endif
-  };
-
+  };  // end imguiondraw
   app.on_update = [&](lava::delta dt) {
     if (app.camera.activated()) {
       app.camera.update_view(lava::to_dt(app.run_time.delta),
