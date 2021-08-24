@@ -1,4 +1,5 @@
 #include <liblava-extras/fbx.hpp>
+#include <liblava-extras/raytracing.hpp>
 #include <liblava/lava.hpp>
 
 #include <imgui.h>
@@ -12,9 +13,6 @@
 
 #include "../debug_camera_control/debug_camera_control.hpp"
 #include "hpp/component.hpp"
-//#include "hpp/component_box_collision.hpp"
-//#include "hpp/component_player.hpp"
-//#include "hpp/component_sphere_collision.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"

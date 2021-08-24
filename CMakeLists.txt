@@ -18,6 +18,7 @@ target_link_libraries(
   ${PROJECT_NAME} PRIVATE
   lava::app
   lava-extras::fbx
+  lava-extras::raytracing
 )
 
 if(WIN32)
