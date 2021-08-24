@@ -7,7 +7,6 @@
 #include "hpp/camera.hpp"
 #include "hpp/device.hpp"
 #include "hpp/pipeline.hpp"
-#include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stb_image.h>
@@ -22,8 +21,8 @@
 #include <windows.h>
 auto get_exe_path() -> std::string {
   std::array<char, MAX_PATH> result{};
-  std::string full_path = std::string(result.data(),
-                     GetModuleFileName(NULL, result.data(), MAX_PATH));
+  std::string full_path = std::string(
+      result.data(), GetModuleFileName(NULL, result.data(), MAX_PATH));
   return std::string(full_path.substr(0, full_path.find_last_of('\\\\'))) + "/";
 }
 #else
@@ -39,9 +38,13 @@ auto get_exe_path() -> std::string {
 
 glm::vec3 temp_position = glm::vec3{0, 0, 0};
 
-auto main() -> int {
+auto main(int argc, char* argv[]) -> int {
   lava::frame_config config;
+  config.info.app_name = "Crow's Nest";
+  config.cmd_line = {argc, argv};
+  config.info.req_api_version = lava::api_version::v1_2;
   lava::app app(config);
+  lava::device::ptr logical_device = crow::create_logical_device(app.manager);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
   crow::initialize_debug_camera(app.camera);
