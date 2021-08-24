@@ -11,30 +11,11 @@
 #include <iostream>
 #include <stb_image.h>
 
+#include "hpp/cross.hpp"
 #include "hpp/component.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
-
-// http://www.cplusplus.com/forum/general/11104/
-#ifdef WIN32
-#include <windows.h>
-auto get_exe_path() -> std::string {
-  std::array<char, MAX_PATH> result{};
-  std::string full_path = std::string(
-      result.data(), GetModuleFileName(NULL, result.data(), MAX_PATH));
-  return std::string(full_path.substr(0, full_path.find_last_of('\\\\'))) + "/";
-}
-#else
-#include <unistd.h>
-auto get_exe_path() -> std::string {
-  std::array<char, PATH_MAX - NAME_MAX> result{};
-  ssize_t count =
-      readlink("/proc/self/exe", result.data(), PATH_MAX - NAME_MAX);
-  std::string full_path = std::string(result.data());
-  return std::string(full_path.substr(0, full_path.find_last_of('/'))) + "/";
-}
-#endif
 
 glm::vec3 temp_position = glm::vec3{0, 0, 0};
 
@@ -87,7 +68,7 @@ auto main(int argc, char* argv[]) -> int {
 
   lava::mesh::ptr cube = lava::make_mesh();
   std::string fbx_path =
-      get_exe_path() +
+      crow::get_exe_path() +
       "../../ext/lava-fbx/ext/OpenFBX/runtime/a.FBX";  // Deer model
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
@@ -119,8 +100,9 @@ auto main(int argc, char* argv[]) -> int {
   // TODO(conscat): Streamline descriptor sets.
   lava::descriptor::ptr shared_descriptor_set_layout;
   VkDescriptorSet shared_descriptor_set = VK_NULL_HANDLE;
-  crow::descriptor_layouts raytracing_descriptor_layouts;
+  // crow::descriptor_layouts raytracing_descriptor_layouts;
   // crow::descriptor_sets raytracing_descriptor_sets;
+  lava::descriptor::ptr raytracing_descriptor_set_layout;
   VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
   crow::descriptor_writes_stack descriptor_writes;
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
@@ -194,26 +176,29 @@ auto main(int argc, char* argv[]) -> int {
     blit_pipeline = make_graphics_pipeline(app.device);
 
     if (!blit_pipeline->add_shader(lava::file_data("cubes/vert.spv"),
-                                   VK_SHADER_STAGE_VERTEX_BIT))
+                                   VK_SHADER_STAGE_VERTEX_BIT)) {
       return false;
-    if (!blit_pipeline->add_shader(file_data("cubes/frag.spv"),
-                                   VK_SHADER_STAGE_FRAGMENT_BIT))
+    }
+
+    if (!blit_pipeline->add_shader(lava::file_data("cubes/frag.spv"),
+                                   VK_SHADER_STAGE_FRAGMENT_BIT)) {
       return false;
+    }
 
     blit_pipeline->add_color_blend_attachment();
     blit_pipeline->set_layout(blit_pipeline_layout);
 
-    auto render_pass = app.shading.get_pass();
-    if (!blit_pipeline->create(render_pass->get())) return false;
+    if (!blit_pipeline->create(render_pass->get())) {
+      return false;
+    }
 
     blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       const uint32_t uniform_offset =
-          app.block.get_current_frame() * uniform_stride;
+          app.block.get_current_frame() * raytracing_uniform_stride;
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
           0, 1, &shared_descriptor_set, 1, &uniform_offset);
       // fullscreen triangle
-      // no vertex buffer, attributes are generated in the vertex shader
       app.device->call().vkCmdDraw(cmd_buf, 3, 1, 0, 0);
     };
 
@@ -221,7 +206,7 @@ auto main(int argc, char* argv[]) -> int {
     render_pass->add_front(blit_pipeline);
 
     // descriptor used by the raytracing shader
-    raytracing_descriptor_set_layout = make_descriptor();
+    raytracing_descriptor_set_layout = lava::make_descriptor();
     raytracing_descriptor_set_layout->add_binding(
         0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
         VK_SHADER_STAGE_RAYGEN_BIT_KHR);
@@ -234,12 +219,16 @@ auto main(int argc, char* argv[]) -> int {
     raytracing_descriptor_set_layout->add_binding(
         3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    if (!raytracing_descriptor_set_layout->create(app.device)) return false;
+    if (!raytracing_descriptor_set_layout->create(app.device)) {
+      return false;
+    }
 
-    raytracing_pipeline_layout = make_pipeline_layout();
+    raytracing_pipeline_layout = lava::make_pipeline_layout();
     raytracing_pipeline_layout->add(shared_descriptor_set_layout);
     raytracing_pipeline_layout->add(raytracing_descriptor_set_layout);
-    if (!raytracing_pipeline_layout->create(app.device)) return false;
+    if (!raytracing_pipeline_layout->create(app.device)) {
+      return false;
+    }
 
     raytracing_descriptor_set =
         raytracing_descriptor_set_layout->allocate(descriptor_pool->get());
@@ -250,18 +239,19 @@ auto main(int argc, char* argv[]) -> int {
         {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
     };
 
-    // std::vector<crow::shader_module> environment_shaders = {{
-    //     crow::shader_module{
-    //         .file_name = get_exe_path() + "../../res/simple.vert.spv",
-    //         .flags = VK_SHADER_STAGE_VERTEX_BIT,
-    //     },
-    //     crow::shader_module{
-    //         .file_name = get_exe_path() + "../../res/simple.frag.spv",
-    //         .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-    //     },
-    // }};
+    /*
+    std::vector<crow::shader_module> environment_shaders = {{
+        crow::shader_module{
+            .file_name = crow::get_exe_path() + "../../res/simple.vert.spv",
+            .flags = VK_SHADER_STAGE_VERTEX_BIT,
+        },
+        crow::shader_module{
+            .file_name = get_exe_path() + "../../res/simple.frag.spv",
+            .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        },
+    }};
 
-    // Global buffers:
+      // Global buffers:
     raytracing_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
     // Render-pass buffers:
@@ -318,6 +308,7 @@ auto main(int argc, char* argv[]) -> int {
     };
     app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
                                         write_ubo_material, write_ubo_object});
+    */
 
     // Create entities.
     lava::mesh::ptr player_mesh = lava::make_mesh();
@@ -341,8 +332,8 @@ auto main(int argc, char* argv[]) -> int {
 
   app.on_destroy = [&]() {
     // TODO(conscat): Free all arrays of lava objects.
-    raytracing_descriptor_layouts[0]->destroy();
-    raytracing_descriptor_layouts[3]->destroy();
+    // raytracing_descriptor_layouts[0]->destroy();
+    // raytracing_descriptor_layouts[3]->destroy();
     descriptor_pool->destroy();
     raytracing_pipeline->destroy();
     raytracing_pipeline_layout->destroy();

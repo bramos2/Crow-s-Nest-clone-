@@ -45,6 +45,8 @@ message("${VHEADER_EXE} ${DEBUG_CONTROLS}")
 target_sources(
   ${PROJECT_NAME} PRIVATE
   src/main.cpp
+  src/hpp/cross.hpp
+  src/cpp/cross.cpp
   src/hpp/object.hpp
   src/hpp/component.hpp
   src/hpp/geometry.hpp
