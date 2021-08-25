@@ -17,6 +17,7 @@
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
+#include "hpp/audio.hpp"
 
 // http://www.cplusplus.com/forum/general/11104/
 #ifdef WIN32
@@ -41,6 +42,10 @@ auto get_exe_path() -> std::string {
 glm::vec3 temp_position = glm::vec3{0, 0, 0};
 
 auto main() -> int {
+  // soloud sound initialization
+  crow::audio::sound_loaded = false;
+  crow::audio::initialize();
+
   lava::frame_config config;
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
@@ -51,7 +56,6 @@ auto main() -> int {
   crow::item_window item_w;
   item_w.screen_minr = {0.025f, 0.5f};
   item_w.screen_maxr = {0.0833333333f, 0.148148148148f};
-
 
   // Temporary geometry.
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
@@ -227,6 +231,7 @@ auto main() -> int {
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
           fmt::print("left mouse clicked ");
+          crow::audio::play_sfx(0);
           return true;
         }
         return false;
@@ -351,6 +356,7 @@ auto main() -> int {
 
   app.add_run_end([&]() {
     cube->destroy();
+  crow::audio::cleanup();
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();
