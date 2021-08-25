@@ -11,16 +11,12 @@
 namespace crow {
 
 struct entities {
-  // NOLINT
-  std::vector<lava::mesh::ptr> meshes;
-  // NOLINT
-  std::vector<glm::mat4> transforms_data;
-  // NOLINT
-  std::vector<lava::buffer::ptr> transforms_pbuffer;
-  // NOLINT
-  std::vector<glm::vec3> velocities;
-  // NOLINT
-  std::vector<std::unique_ptr<crow::component_interface>> pcomponents;
+  std::vector<lava::mesh::ptr> meshes;                // NOLINT
+  std::vector<glm::mat4> transforms_data;             // NOLINT
+  std::vector<lava::buffer::ptr> transforms_pbuffer;  // NOLINT
+  std::vector<glm::vec3> velocities;                  // NOLINT
+  std::vector<std::unique_ptr<crow::component_interface>>
+      pcomponents;  // NOLINT
 
   entities() {
     // Reserve space for the worker and sphynx.
@@ -56,10 +52,8 @@ struct entities {
   }
 
   void update_transform_buffer(size_t index) {
-    // memcpy(lava::as_ptr(ptransforms_buffer[index]->get_mapped_data()),
-    //        &transforms_data[index], sizeof(transforms_data[index]));
-    memcpy(transforms_pbuffer[index]->get_mapped_data(),
-           &transforms_data[index], sizeof(glm::mat4));
+    memcpy(lava::as_ptr(transforms_pbuffer[index]->get_mapped_data()),
+           &transforms_data[index], sizeof(transforms_data[index]));
   }
 
   void free(size_t index) {}

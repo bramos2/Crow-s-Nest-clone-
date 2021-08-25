@@ -108,6 +108,7 @@ auto main(int argc, char* argv[]) -> int {
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
   lava::extras::raytracing::bottom_level_acceleration_structure::list
       bottom_as_list;
+  lava::extras::raytracing::shader_binding_table::ptr shader_binding;
 
   lava::buffer::ptr scratch_buffer;
   VkDeviceAddress scratch_buffer_address = 0;
@@ -176,13 +177,13 @@ auto main(int argc, char* argv[]) -> int {
     blit_pipeline = make_graphics_pipeline(app.device);
 
     if (!blit_pipeline->add_shader(
-            lava::file_data(crow::find_spv_path("blit.vert.spv")),
+            lava::file_data(crow::get_spirv_data("blit.vert.spv")),
             VK_SHADER_STAGE_VERTEX_BIT)) {
       return false;
     }
 
     if (!blit_pipeline->add_shader(
-            lava::file_data(crow::find_spv_path("blit.frag.spv")),
+            lava::file_data(crow::get_spirv_data("blit.frag.spv")),
             VK_SHADER_STAGE_FRAGMENT_BIT)) {
       return false;
     }
@@ -276,6 +277,42 @@ auto main(int argc, char* argv[]) -> int {
     if (!raytracing_pipeline->create()) {
       return false;
     }
+
+    // shader binding table
+
+    // shaderRecordEXT buffer data for the callable shader
+    // directional light vector for diffuse lighting
+    struct callable_record_data {
+      glm::vec3 direction = {0.0f, 0.0f, 1.0f};
+    } callable_record;
+
+    std::vector records(raytracing_pipeline->get_shader_groups().size(),
+                        lava::cdata(nullptr, 0));
+    records[callable] = lava::cdata(&callable_record, sizeof(callable_record));
+
+    shader_binding = lava::extras::raytracing::make_shader_binding_table();
+    if (!shader_binding->create(raytracing_pipeline, records)) return false;
+
+    // create acceleration structures
+    // - a BLAS (bottom level) for each mesh
+    // - one TLAS (top level) referencing all the BLAS
+
+    constexpr bool COMPACT_BLAS = true;
+
+    top_as = make_top_level_acceleration_structure();
+
+    // buffer data, common to all BLAS
+    const VkAccelerationStructureGeometryTrianglesDataKHR triangles = {
+        .sType =
+            VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
+        .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
+        .vertexData = {vertex_buffer->get_address()},
+        .vertexStride = sizeof(vertex),
+        .maxVertex = uint32_t(vertices.size()),
+        .indexType = VK_INDEX_TYPE_UINT32,
+        .indexData = {index_buffer->get_address()}};
+
+    VkDeviceSize scratch_buffer_size = 0;
 
     lava::VkVertexInputAttributeDescriptions vertex_attributes = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},
