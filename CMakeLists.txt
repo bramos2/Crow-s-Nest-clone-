@@ -12,6 +12,8 @@ add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 # These should never be needed.
 set(LIBLAVA_TESTS OFF CACHE BOOL "" FORCE)
 set(LIBLAVA_DEMO OFF CACHE BOOL "" FORCE)
+# trying to implement SDL2 causes building to fail as SDL2 doesn't exist
+set(SOLOUD_BACKEND_SDL2 OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
 target_link_libraries(
@@ -19,6 +21,7 @@ target_link_libraries(
   lava::app
   lava-extras::fbx
   lava-extras::raytracing
+  soloud
 )
 
 if(WIN32)
@@ -45,6 +48,8 @@ message("${VHEADER_EXE} ${DEBUG_CONTROLS}")
 target_sources(
   ${PROJECT_NAME} PRIVATE
   src/main.cpp
+  src/hpp/audio.hpp
+  src/cpp/audio.cpp
   src/hpp/object.hpp
   src/hpp/component.hpp
   src/hpp/geometry.hpp

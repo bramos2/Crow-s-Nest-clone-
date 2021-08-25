@@ -8,3 +8,6 @@
 [submodule "ext/lava-rt"]
 	path = ext/lava-rt
 	url = https://github.com/cons-cat/lava-rt.git
+[submodule "ext/soloud"]
+	path = ext/soloud
+	url = https://github.com/jarikomppa/soloud.git
