@@ -24,8 +24,8 @@
 #include <windows.h>
 auto get_exe_path() -> std::string {
   std::array<char, MAX_PATH> result{};
-  std::string full_path = std::string(result.data(),
-                     GetModuleFileName(NULL, result.data(), MAX_PATH));
+  std::string full_path = std::string(
+      result.data(), GetModuleFileName(NULL, result.data(), MAX_PATH));
   return std::string(full_path.substr(0, full_path.find_last_of('\\\\'))) + "/";
 }
 #else
@@ -50,7 +50,15 @@ auto main() -> int {
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
+
   crow::initialize_debug_camera(app.camera);
+  crow::camera_device_data camera_buffer_data = {
+      app.camera.get_view_projection(),
+  };
+  lava::buffer camera_buffer;
+  camera_buffer.create_mapped(
+      app.device, &camera_buffer_data, sizeof(camera_buffer_data),
+      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
   crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
   crow::item_window item_w;
@@ -168,7 +176,7 @@ auto main() -> int {
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = app.camera.get_descriptor_info(),
+        .pBufferInfo = camera_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -280,7 +288,7 @@ auto main() -> int {
     ImGui::End();
     // all texture-only GUI items should be before this line as it resets the
     // GUI window styling back to default
-    
+
     minimap.draw_minimap();
     // end of minimap processing
 
@@ -314,11 +322,12 @@ auto main() -> int {
     }
 #endif
   };  // end imguiondraw
+
   app.on_update = [&](lava::delta dt) {
-    if (app.camera.activated()) {
-      app.camera.update_view(lava::to_dt(app.run_time.delta),
-                             app.input.get_mouse_position());
-    }
+    app.camera.update_view(dt, app.input.get_mouse_position());
+    camera_buffer_data.projection_view = app.camera.get_view_projection();
+    memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
+           sizeof(camera_buffer_data));
 
     // actual game loop; execute the entire game by simply cycling through
     // the array of objects
