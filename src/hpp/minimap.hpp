@@ -1,11 +1,11 @@
 #pragma once
 #include <liblava/lava.hpp>
 
-#include "../hpp/map.hpp"
+#include "map.hpp"
 
 namespace crow {
 
-// TODO REMOVE app*
+// TODO: REMOVE app*
 struct item_window {
   lava::app* app;
   // the ratio for the x,y coordinates of the min point of the gui on the screen
@@ -39,43 +39,38 @@ struct minimap {
   glm::vec2 window_pos;
   glm::vec2 window_ext;
 
-  // x, y, w, h
-  // right now, rooms are stored as mere vec4s, but we can make our own struct
-  // datatype later on if we need to add more data to it such as connections to
-  // other rooms
-  std::vector<glm::vec4> rooms;
-  std::vector<glm::vec4> blocks;
-  // std::vector<map_room*> rooms2;
-  // mpos = minimum/maximum position of the minimap space
-  // x, y = minimum x, y positions
-  // z, w = maximum x, y positions
-  // glm::vec4 mpos;
+  std::vector<std::shared_ptr<map_room>> room_ptr_list;
+  // TODO: Control the block sizes elsewhere.
+  std::vector<crow::map_block<5, 5>>* pblocks_list;
+
   // cpos = current position of the minimap. this gets added to the position of
   // the rooms in the map when drawing the map
-  glm::vec2 cpos;
+  glm::vec2 minimap_center_position;
   // position of the mouse when you click
   // if the mouse hasn't been clicked, this should always be {-1, -1}
   // if the mouse has been clicked, it will be in a range of {0:1, 0:1}
   glm::vec2 mouse_position;
-  // returns true if the mouse is dragging rn
-  bool dragging;
+
+  bool is_dragging = false;
+
+  void load_room();
 
   void reset_state();
 
   // checks if the room at index is outside current draw space for minimap
-  bool room_off_view(uint_fast16_t i);
+  auto room_off_view(std::shared_ptr<crow::map_room>& proom) const -> bool;
 
   // set size parameters for the minimap window
   void set_window_size(glm::vec2 window_size);
 
   // checks whether the given mouse position is inside the minimap
-  bool inside_minimap(lava::mouse_position_ref mouse_pos);
+  auto inside_minimap(lava::mouse_position_ref mouse_pos) -> bool;
 
   void calculate_mouse_position(lava::mouse_position_ref mouse_pos);
 
   void calculate_mouse_drag(lava::mouse_position_ref mouse_pos);
 
-  void populate_map_data(world_map map);
+  void populate_map_data(crow::world_map<5, 5>* map);
 
   minimap();
 

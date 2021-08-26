@@ -59,7 +59,7 @@ auto main() -> int {
       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
   crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
-  crow::item_window item_w;
+  crow::item_window item_w{};
   item_w.screen_minr = {0.025f, 0.5f};
   item_w.screen_maxr = {0.0833333333f, 0.148148148148f};
 
@@ -91,9 +91,7 @@ auto main() -> int {
                           90);
 
   //-----map  generation testing----
-  world_map temp_map_var(5, 5, 6);
-  temp_map_var.set_block_size(200, 150, 20);
-  temp_map_var.set_block_space(4, 3, 5);
+  crow::world_map<5, 5> temp_map_var;
 
   // minimap logic
   minimap.map_minc = {-300, -300};
@@ -102,18 +100,10 @@ auto main() -> int {
   minimap.screen_maxr = {0.4f, 0.35f};
   minimap.resolution = {1920, 1080};
   minimap.set_window_size(app.window.get_size());
-  temp_map_var.generate_map_blockout(
-      {minimap.window_ext.x / 2, minimap.window_ext.y / 2});
-  {
-    /*glm::vec2 temp1;
-    glm::vec2 temp2;
-    temp_map_var.get_dimensions(temp1, temp2);
-    int holdup = 0;
-    minimap.mpos = {-temp2.x, -temp2.y, 0, 0};*/
-  }
-  temp_map_var.generate_block_rooms(4, 8);
-
-  minimap.populate_map_data(temp_map_var);
+  temp_map_var.generate_blocks(4);
+  temp_map_var.generate_rooms(6, 3);
+  temp_map_var.generate_adjacencies();
+  minimap.populate_map_data(&temp_map_var);
 
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;

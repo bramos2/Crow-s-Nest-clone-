@@ -40,4 +40,6 @@ struct axis_aligned_bounding_box {
   }
 };
 
+using collision_universe = std::vector<crow::axis_aligned_bounding_box>;
+
 }  // namespace crow

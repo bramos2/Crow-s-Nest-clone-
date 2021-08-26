@@ -69,5 +69,6 @@ target_sources(
   src/cpp/device.cpp
   src/hpp/map.hpp
   src/cpp/map.cpp
+  src/cpp/map.tpp
   src/hpp/collision.hpp
 )
