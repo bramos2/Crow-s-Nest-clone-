@@ -162,7 +162,7 @@ void map_block<br_width, br_height>::generate_rooms(int min_rooms,
 
   // Generate either the minimum number of possible rooms or some random index
   // that is higher.
-  int random_rooms_count = std::max(rand() % max_rooms, min_rooms);
+  int random_rooms_count = std::max<int>(rand() % max_rooms, min_rooms);
   for (int i = 0; i < random_rooms_count; i++) {
     // TODO: These should be read from a room prefab pool.
     int room_width = rand() % 10 + 10;
