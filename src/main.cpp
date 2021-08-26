@@ -12,12 +12,12 @@
 #include <iostream>
 #include <stb_image.h>
 
+#include "hpp/audio.hpp"
 #include "hpp/component.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
-#include "hpp/audio.hpp"
 
 // http://www.cplusplus.com/forum/general/11104/
 #ifdef WIN32
@@ -38,8 +38,6 @@ auto get_exe_path() -> std::string {
   return std::string(full_path.substr(0, full_path.find_last_of('/'))) + "/";
 }
 #endif
-
-glm::vec3 temp_position = glm::vec3{0, 0, 0};
 
 auto main() -> int {
   // soloud sound initialization
@@ -268,8 +266,8 @@ auto main() -> int {
     ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
     ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
     // finally create the pause button
-    ImGui::Begin("Pause", 0, texture_flag);
-    if (ImGui::ImageButton(0 /* INSERT TEXTURE POINTER HERE */,
+    ImGui::Begin("Pause", nullptr, texture_flag);
+    if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
       fmt::print("game paused! just kidding...\n");
       /* gamepaused GUI code can go here */
@@ -283,8 +281,8 @@ auto main() -> int {
     ImGui::SetNextWindowPos(item_window_xy, ImGuiCond_Always);
     ImGui::SetNextWindowSize(item_window_wh, ImGuiCond_Always);
     // finally create the window
-    ImGui::Begin("Item", 0, texture_flag);
-    ImGui::Image(0 /* INSERT TEXTURE POINTER HERE */, item_window_wh);
+    ImGui::Begin("Item", nullptr, texture_flag);
+    ImGui::Image(nullptr /* INSERT TEXTURE POINTER HERE */, item_window_wh);
     ImGui::End();
     // all texture-only GUI items should be before this line as it resets the
     // GUI window styling back to default
@@ -359,13 +357,13 @@ auto main() -> int {
       }
     };
 
-    temp_position = crow::get_floor_point(app.camera);
+    // temp_position = crow::get_floor_point(app.camera);
     return true;
   };
 
   app.add_run_end([&]() {
     cube->destroy();
-  crow::audio::cleanup();
+    crow::audio::cleanup();
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();
