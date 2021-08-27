@@ -32,22 +32,22 @@ struct entities {
     pcomponents.resize(2);
   }
 
-  void initialize_transforms(lava::app& app, size_t index,
+  void initialize_transforms(lava::app& app, size_t entity_index,
                              crow::descriptor_sets* descriptor_sets,
                              crow::descriptor_writes_stack* writes_stack) {
-    velocities[index] = glm::vec3{0, 0, 0};
-    transforms_data[index] = glm::mat4(1);  // Identity matrix.
-    transforms_pbuffer[index] = lava::make_buffer();
-    transforms_pbuffer[index]->create_mapped(
-        app.device, &transforms_data[index], sizeof(transforms_data[index]),
+    velocities[entity_index] = glm::vec3{0, 0, 0};
+    transforms_data[entity_index] = glm::mat4(1);  // Identity matrix.
+    transforms_pbuffer[entity_index] = lava::make_buffer();
+    transforms_pbuffer[entity_index]->create_mapped(
+        app.device, &transforms_data[entity_index], sizeof(transforms_data[entity_index]),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     writes_stack->push(VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = (*descriptor_sets)[3],
+        .dstSet = (*descriptor_sets)[3], // [3] is the per-object buffer.
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = transforms_pbuffer[index]->get_descriptor_info(),
+        .pBufferInfo = transforms_pbuffer[entity_index]->get_descriptor_info(),
     });
   }
 
@@ -56,10 +56,8 @@ struct entities {
   }
 
   void update_transform_buffer(size_t index) {
-    // memcpy(lava::as_ptr(ptransforms_buffer[index]->get_mapped_data()),
-    //        &transforms_data[index], sizeof(transforms_data[index]));
-    memcpy(transforms_pbuffer[index]->get_mapped_data(),
-           &transforms_data[index], sizeof(glm::mat4));
+    memcpy(lava::as_ptr(transforms_pbuffer[index]->get_mapped_data()),
+           &transforms_data[index], sizeof(transforms_data[index]));
   }
 
   void free(size_t index) {}

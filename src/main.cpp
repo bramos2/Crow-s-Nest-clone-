@@ -40,8 +40,6 @@ auto get_exe_path() -> std::string {
 }
 #endif
 
-glm::vec3 temp_position = glm::vec3{0, 0, 0};
-
 auto main() -> int {
   // soloud sound initialization
   crow::audio::sound_loaded = false;
@@ -51,10 +49,18 @@ auto main() -> int {
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
+
   crow::initialize_debug_camera(app.camera);
+  crow::camera_device_data camera_buffer_data = {
+      app.camera.get_view_projection(),
+  };
+  lava::buffer camera_buffer;
+  camera_buffer.create_mapped(
+      app.device, &camera_buffer_data, sizeof(camera_buffer_data),
+      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
   crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
-  crow::item_window item_w;
+  crow::item_window item_w{};
   item_w.screen_minr = {0.025f, 0.5f};
   item_w.screen_maxr = {0.0833333333f, 0.148148148148f};
 
@@ -84,6 +90,21 @@ auto main() -> int {
                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
                           },
                           90);
+
+  //-----map  generation testing----
+  crow::world_map<5, 5> temp_map_var;
+
+  // minimap logic
+  minimap.map_minc = {-300, -300};
+  minimap.map_maxc = {300, 300};
+  minimap.screen_minr = {0.0f, 0.65f};
+  minimap.screen_maxr = {0.4f, 0.35f};
+  minimap.resolution = {1920, 1080};
+  minimap.set_window_size(app.window.get_size());
+  temp_map_var.generate_blocks(4);
+  temp_map_var.generate_rooms(6, 3);
+  temp_map_var.generate_adjacencies();
+  minimap.populate_map_data(&temp_map_var);
 
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;
@@ -154,7 +175,7 @@ auto main() -> int {
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = app.camera.get_descriptor_info(),
+        .pBufferInfo = camera_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -243,8 +264,8 @@ auto main() -> int {
     ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
     ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
     // finally create the pause button
-    ImGui::Begin("Pause", 0, texture_flag);
-    if (ImGui::ImageButton(0 /* INSERT TEXTURE POINTER HERE */,
+    ImGui::Begin("Pause", nullptr, texture_flag);
+    if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
       game_state.current_state = game_state.PAUSED;
     }
@@ -257,8 +278,8 @@ auto main() -> int {
     ImGui::SetNextWindowPos(item_window_xy, ImGuiCond_Always);
     ImGui::SetNextWindowSize(item_window_wh, ImGuiCond_Always);
     // finally create the window
-    ImGui::Begin("Item", 0, texture_flag);
-    ImGui::Image(0 /* INSERT TEXTURE POINTER HERE */, item_window_wh);
+    ImGui::Begin("Item", nullptr, texture_flag);
+    ImGui::Image(nullptr /* INSERT TEXTURE POINTER HERE */, item_window_wh);
     ImGui::End();
     // all texture-only GUI items should be before this line as it resets the
     // GUI window styling back to default
@@ -301,12 +322,13 @@ auto main() -> int {
     }
 #endif
   };  // end imguiondraw
+
   app.on_update = [&](lava::delta dt) {
-    if (game_state.current_state == game_state.PLAYING) {
-      if (app.camera.activated()) {
-        app.camera.update_view(lava::to_dt(app.run_time.delta),
-                               app.input.get_mouse_position());
-      }
+        if (game_state.current_state == game_state.PLAYING) {
+      app.camera.update_view(dt, app.input.get_mouse_position());
+    camera_buffer_data.projection_view = app.camera.get_view_projection();
+    memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
+           sizeof(camera_buffer_data));
 
       // actual game loop; execute the entire game by simply cycling through
       // the array of objects
@@ -339,7 +361,7 @@ auto main() -> int {
       };
     }
 
-    temp_position = crow::get_floor_point(app.camera);
+    // temp_position = crow::get_floor_point(app.camera);
     return true;
   };
 

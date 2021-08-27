@@ -11,6 +11,28 @@
 
 namespace crow {
 
+auto mouse_in_world(lava::app& app, lava::camera& camera, lava::input& input)
+    -> glm::vec3 {
+  auto [mouse_x, mouse_y] = input.get_mouse_position();
+  unsigned window_width = app.window.get_framebuffer_size().x;
+  unsigned window_height = app.window.get_framebuffer_size().y;
+  // Bring mouse from viewport into normalized device coordinates.
+  float ndc_x = (2.f * mouse_x) / window_width - 1.f;
+  float ndc_y = 1.f - (2.f * mouse_y) / window_height;
+  // Make a ray in projection space from the NDC coordinates.
+  glm::vec4 clip =
+      glm::vec4(ndc_x, ndc_y, -1.f,
+                1.f);  // z == -1.f because space is in left-hand coordinates.
+  // "Un-project" coordinates into eye space.
+  glm::vec4 eye = glm::inverse(camera.get_projection()) * clip;
+  eye = glm::vec4(eye.x, eye.y, -1.f, 0);
+  // Bring ray into world space.
+  glm::vec3 world = glm::vec3(glm::inverse(camera.get_view()) *
+                              eye);  // Truncate the W element.
+  world = glm::normalize(world);
+  return world;
+}
+
 auto get_floor_point(lava::camera& camera) -> glm::vec3 {
   glm::mat4 const view = camera.get_view();
   glm::vec3 const translation = camera.position;
