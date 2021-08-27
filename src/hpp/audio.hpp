@@ -18,9 +18,6 @@
 // maximum volume sounds will generally play at
 #define SOUND_MAX_VOLUME 1.5f
 
-// this gets used, so we need to know it exists
-auto get_exe_path() -> std::string;
-
 namespace crow::audio {
 // enums
 // each sound effect or bgm will have an id that's referenced by one of these

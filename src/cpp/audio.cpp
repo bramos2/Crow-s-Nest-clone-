@@ -1,6 +1,11 @@
 #include "../hpp/audio.hpp"
 
+#include "../hpp/cross.hpp"
+
+// TODO: There are so many clang-tidy warnings.
+
 namespace crow::audio {
+
 SoLoud::Soloud soloud;
 SoLoud::WavStream bgm[NUM_BGM];
 SoLoud::Wav sfx[NUM_SFX];
@@ -28,7 +33,8 @@ int play_sfx(int id) {
   return voice;
 }
 
-int play_sfx3d(int id, glm::mat4& sfx_pos, lava::camera& camera, float max_volume) {
+int play_sfx3d(int id, glm::mat4& sfx_pos, lava::camera& camera,
+               float max_volume) {
   // figure out the distance between the camera and object
   float dist_x = sfx_pos[3][0] - camera.position.x;
   float dist_y = sfx_pos[3][1] - camera.position.y;
@@ -38,7 +44,8 @@ int play_sfx3d(int id, glm::mat4& sfx_pos, lava::camera& camera, float max_volum
   float pan = std::clamp(dist_x / PAN_MAXDIST, -1.0f, 1.0f);
   // finally, play the sound
   int voice = soloud.play(sfx[id], volume, pan);
-  //int voice = soloud.play3d(sfx[id], dist_x, dist_y, dist_z, 0, 0, 0, volume);
+  // int voice = soloud.play3d(sfx[id], dist_x, dist_y, dist_z, 0, 0, 0,
+  // volume);
 
   return voice;
 }
@@ -48,11 +55,11 @@ void load_all_sounds() {
   std::string sound_path;
 
   // loading sounds one by one
-  sound_path = get_exe_path();
+  sound_path = crow::get_exe_path();
   sound_path.append("../../res/sfx/slap.wav");
   load_sfx(sound_path, 0);
 
-  sound_path = get_exe_path();
+  sound_path = crow::get_exe_path();
   sound_path.append("../../res/sfx/slap.wav");
   load_sfx(sound_path, 1);
 

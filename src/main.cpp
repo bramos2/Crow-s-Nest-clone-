@@ -14,31 +14,12 @@
 
 #include "hpp/audio.hpp"
 #include "hpp/component.hpp"
+#include "hpp/cross.hpp"
 #include "hpp/game_state.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
-
-// http://www.cplusplus.com/forum/general/11104/
-#ifdef WIN32
-#include <windows.h>
-auto get_exe_path() -> std::string {
-  std::array<char, MAX_PATH> result{};
-  std::string full_path = std::string(
-      result.data(), GetModuleFileName(NULL, result.data(), MAX_PATH));
-  return std::string(full_path.substr(0, full_path.find_last_of('\\\\'))) + "/";
-}
-#else
-#include <unistd.h>
-auto get_exe_path() -> std::string {
-  std::array<char, PATH_MAX - NAME_MAX> result{};
-  ssize_t count =
-      readlink("/proc/self/exe", result.data(), PATH_MAX - NAME_MAX);
-  std::string full_path = std::string(result.data());
-  return std::string(full_path.substr(0, full_path.find_last_of('/'))) + "/";
-}
-#endif
 
 auto main() -> int {
   // soloud sound initialization
@@ -73,8 +54,8 @@ auto main() -> int {
 
   lava::mesh::ptr cube = lava::make_mesh();
   std::string fbx_path =
-      get_exe_path() +
-      "../../ext/lava-fbx/ext/OpenFBX/runtime/a.FBX";  // Deer model
+      crow::get_exe_path() +
+      "../../res/fbx/deer.fbx";  // Deer model
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
@@ -122,11 +103,11 @@ auto main() -> int {
 
     std::vector<crow::shader_module> environment_shaders = {{
         crow::shader_module{
-            .file_name = get_exe_path() + "../../res/simple.vert.spv",
+            .file_name = crow::get_exe_path() + "../../res/spv/simple.vert.spv",
             .flags = VK_SHADER_STAGE_VERTEX_BIT,
         },
         crow::shader_module{
-            .file_name = get_exe_path() + "../../res/simple.frag.spv",
+            .file_name = crow::get_exe_path() + "../../res/spv/simple.frag.spv",
             .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         },
     }};
