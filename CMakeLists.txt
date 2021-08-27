@@ -69,4 +69,6 @@ target_sources(
   src/cpp/device.cpp
   src/hpp/map.hpp
   src/cpp/map.cpp
+  src/hpp/game_state.hpp
+  src/cpp/game_state.cpp
 )

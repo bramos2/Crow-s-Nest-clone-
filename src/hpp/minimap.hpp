@@ -75,7 +75,7 @@ struct minimap {
 
   void calculate_mouse_drag(lava::mouse_position_ref mouse_pos);
 
-  void populate_map_data(world_map map);
+  void populate_map_data(world_map& map);
 
   minimap();
 

@@ -1,6 +1,7 @@
 #pragma once
-#include <imgui.h>
 #include "../hpp/minimap.hpp"
+
+#include <imgui.h>
 
 namespace crow {
 
@@ -71,7 +72,7 @@ void minimap::calculate_mouse_drag(lava::mouse_position_ref mouse_pos) {
   cpos.y = std::clamp(cpos.y, map_minc.y, map_maxc.y);
 }
 
-void minimap::populate_map_data(world_map map) {
+void minimap::populate_map_data(world_map& map) {
   for (size_t i = 0; i < map.blocks.size(); i++) {
     for (size_t j = 0; j < map.blocks[i].size(); j++) {
       if (map.blocks[i][j]) {
@@ -113,14 +114,15 @@ minimap::minimap(glm::vec2 _min, glm::vec2 _max)
 void minimap::draw_call() { draw_minimap(); }
 
 void minimap::draw_minimap() {
-  ImGui::PopStyleVar(3);
+  // pop style var moved into main
   ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
   ImGui::SetNextWindowSize((ImVec2&)window_ext, ImGuiCond_Always);
   // finally create the window
   ImGui::Begin("Facility Map", 0,
                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                   ImGuiWindowFlags_NoTitleBar);
+                   ImGuiWindowFlags_NoTitleBar |
+                   ImGuiWindowFlags_NoBringToFrontOnFocus);
 
   lava::mouse_position_ref _mouse_pos = app->input.get_mouse_position();
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -150,15 +152,13 @@ void minimap::draw_minimap() {
     }
 
     // sets the x, y position of the room
-    ImGui::SetCursorPos({(rooms[i].x + cpos.x),
-                         (rooms[i].y + cpos.y)});
+    ImGui::SetCursorPos({(rooms[i].x + cpos.x), (rooms[i].y + cpos.y)});
 
     // debug stuff, corrupts during run time, wasted 3 hours because of this
     /*char room_number[] = {"##roomX"};
     sprintf(room_number, "##room%i", i);*/
 
-    if (ImGui::Button("r", {rooms[i].z * scale.x,
-                            rooms[i].w * scale.y})) {
+    if (ImGui::Button("r", {rooms[i].z * scale.x, rooms[i].w * scale.y})) {
       if (dragging == false) {
         // printf for testing
         printf("clicked on room %i\n", i);
