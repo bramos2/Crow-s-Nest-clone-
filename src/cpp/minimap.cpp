@@ -5,7 +5,7 @@
 namespace crow {
 
 void minimap::reset_state() {
-  mouse_position = {-1, -1};
+  mouse_position = {-1, -1} ;
   is_dragging = false;
 }
 
@@ -108,14 +108,15 @@ minimap::minimap(glm::vec2 _min, glm::vec2 _max)
 void minimap::draw_call() { draw_minimap(); }
 
 void minimap::draw_minimap() {
-  ImGui::PopStyleVar(3);
+  // pop style var moved into main
   ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
   ImGui::SetNextWindowSize((ImVec2&)window_ext, ImGuiCond_Always);
   // finally create the window
   ImGui::Begin("Facility Map", nullptr,
                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                   ImGuiWindowFlags_NoTitleBar);
+                   ImGuiWindowFlags_NoTitleBar |
+                   ImGuiWindowFlags_NoBringToFrontOnFocus);
 
   lava::mouse_position_ref _mouse_pos = app->input.get_mouse_position();
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {

@@ -71,4 +71,6 @@ target_sources(
   src/cpp/map.cpp
   src/cpp/map.tpp
   src/hpp/collision.hpp
+  src/hpp/game_state.hpp
+  src/cpp/game_state.cpp
 )

@@ -14,6 +14,7 @@
 
 #include "hpp/audio.hpp"
 #include "hpp/component.hpp"
+#include "hpp/game_state.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
@@ -90,21 +91,6 @@ auto main() -> int {
                           },
                           90);
 
-  //-----map  generation testing----
-  crow::world_map<5, 5> temp_map_var;
-
-  // minimap logic
-  minimap.map_minc = {-300, -300};
-  minimap.map_maxc = {300, 300};
-  minimap.screen_minr = {0.0f, 0.65f};
-  minimap.screen_maxr = {0.4f, 0.35f};
-  minimap.resolution = {1920, 1080};
-  minimap.set_window_size(app.window.get_size());
-  temp_map_var.generate_blocks(4);
-  temp_map_var.generate_rooms(6, 3);
-  temp_map_var.generate_adjacencies();
-  minimap.populate_map_data(&temp_map_var);
-
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;
   crow::descriptor_layouts environment_descriptor_layouts;
@@ -114,6 +100,16 @@ auto main() -> int {
   crow::descriptor_writes_stack descriptor_writes;
 
   crow::entities entities;
+
+  // setting up the gamestate
+  crow::game_state game_state;
+  game_state.current_state = game_state.PLAYING;
+  // points to important game data
+  game_state.environment_descriptor_sets = &environment_descriptor_sets;
+  game_state.descriptor_writes = &descriptor_writes;
+  game_state.minimap = &minimap;
+  game_state.entities = &entities;
+  game_state.app = &app;
 
   app.on_create = [&]() {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
@@ -193,6 +189,11 @@ auto main() -> int {
     app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
                                         write_ubo_material, write_ubo_object});
 
+    // Create pipelines.
+    environment_pipeline = crow::create_rasterization_pipeline(
+        app, environment_pipeline_layout, environment_shaders,
+        environment_descriptor_layouts, vertex_attributes);
+
     // Create entities.
     lava::mesh::ptr player_mesh = lava::make_mesh();
     lava::mesh_data player_mesh_data =
@@ -200,16 +201,8 @@ auto main() -> int {
     player_mesh->add_data(player_mesh_data);
     player_mesh->create(app.device);
     entities.meshes[crow::entity::WORKER] = player_mesh;
-    entities.initialize_transforms(app, crow::entity::WORKER,
-                                   &environment_descriptor_sets,
-                                   &descriptor_writes);
-    entities.velocities[crow::entity::WORKER] = glm::vec3{0.1f, 0, 0};
-    crow::update_descriptor_writes(app, &descriptor_writes);
-
-    // Create pipelines.
-    environment_pipeline = crow::create_rasterization_pipeline(
-        app, environment_pipeline_layout, environment_shaders,
-        environment_descriptor_layouts, vertex_attributes);
+    crow::new_game(game_state);
+    // game_state.current_state = game_state.MAIN_MENU;
 
     return true;
   };
@@ -244,7 +237,7 @@ auto main() -> int {
     const int texture_flag =
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoMove;
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     // remove formatting for GUI windows to draw plain textures as GUI
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -259,8 +252,7 @@ auto main() -> int {
     ImGui::Begin("Pause", nullptr, texture_flag);
     if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
-      fmt::print("game paused! just kidding...\n");
-      /* gamepaused GUI code can go here */
+      game_state.current_state = game_state.PAUSED;
     }
 
     ImGui::End();
@@ -276,7 +268,12 @@ auto main() -> int {
     ImGui::End();
     // all texture-only GUI items should be before this line as it resets the
     // GUI window styling back to default
+    ImGui::PopStyleVar(3);
 
+    // render ALL the menus
+    crow::draw_menus(game_state, {wh.x, wh.y});
+
+    // start of minimap processing
     minimap.draw_minimap();
     // end of minimap processing
 
@@ -312,40 +309,42 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-    app.camera.update_view(dt, app.input.get_mouse_position());
-    camera_buffer_data.projection_view = app.camera.get_view_projection();
-    memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
-           sizeof(camera_buffer_data));
+    if (game_state.current_state == game_state.PLAYING) {
+      app.camera.update_view(dt, app.input.get_mouse_position());
+      camera_buffer_data.projection_view = app.camera.get_view_projection();
+      memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
+             sizeof(camera_buffer_data));
 
-    // actual game loop; execute the entire game by simply cycling through
-    // the array of objects
-    for (size_t i = 0; i < entities.pcomponents.size(); i++) {
-    }
-    entities.update_transform_data(crow::entity::WORKER, dt);
-    entities.update_transform_buffer(crow::entity::WORKER);
-
-    environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-      app.device->call().vkCmdBindDescriptorSets(
-          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4,
-          environment_descriptor_sets.data(), 0, nullptr);
-      // TODO(conscat): Write a bind_descriptor_sets() method.
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[0], 0);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[1], 1);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[2], 2);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[3], 3);
-      // cube->bind_draw(cmd_buf);
-
-      for (auto& mesh : entities.meshes) {
-        if (mesh) {  // TODO(conscat): Sort entities instead.
-          mesh->bind_draw(cmd_buf);
-        }
+      // actual game loop; execute the entire game by simply cycling through
+      // the array of objects
+      for (size_t i = 0; i < entities.pcomponents.size(); i++) {
       }
-    };
+      entities.update_transform_data(crow::entity::WORKER, dt);
+      entities.update_transform_buffer(crow::entity::WORKER);
+
+      environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+        app.device->call().vkCmdBindDescriptorSets(
+            cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            environment_pipeline_layout->get(), 0, 4,
+            environment_descriptor_sets.data(), 0, nullptr);
+        // TODO(conscat): Write a bind_descriptor_sets() method.
+        // environment_pipeline_layout->bind_descriptor_set(
+        //     cmd_buf, environment_descriptor_sets[0], 0);
+        // environment_pipeline_layout->bind_descriptor_set(
+        //     cmd_buf, environment_descriptor_sets[1], 1);
+        // environment_pipeline_layout->bind_descriptor_set(
+        //     cmd_buf, environment_descriptor_sets[2], 2);
+        // environment_pipeline_layout->bind_descriptor_set(
+        //     cmd_buf, environment_descriptor_sets[3], 3);
+        // cube->bind_draw(cmd_buf);
+
+        for (auto& mesh : entities.meshes) {
+          if (mesh) {  // TODO(conscat): Sort entities instead.
+            mesh->bind_draw(cmd_buf);
+          }
+        }
+      };
+    }
 
     // temp_position = crow::get_floor_point(app.camera);
     return true;
@@ -354,6 +353,7 @@ auto main() -> int {
   app.add_run_end([&]() {
     cube->destroy();
     crow::audio::cleanup();
+    crow::end_game(game_state);
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();
