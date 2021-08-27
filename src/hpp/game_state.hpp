@@ -24,7 +24,7 @@ struct game_state {
   crow::descriptor_writes_stack* descriptor_writes;
   crow::minimap* minimap;
   crow::entities* entities;
-  world_map world_map;
+  crow::world_map<5, 5> world_map;
   lava::app* app;
 
   // TODO: remove this line

@@ -99,10 +99,10 @@ void draw_menus(game_state& state, ImVec2 wh) {
 }
 
 void new_game(crow::game_state& state) {
+    
+
   //-----map  generation testing----
-  state.world_map = world_map(5, 5, 6);
-  state.world_map.set_block_size(200, 150, 20);
-  state.world_map.set_block_space(4, 3, 5);
+  state.world_map = crow::world_map<5, 5>();
 
   // minimap logic
   state.minimap->map_minc = {-300, -300};
@@ -111,18 +111,10 @@ void new_game(crow::game_state& state) {
   state.minimap->screen_maxr = {0.4f, 0.35f};
   state.minimap->resolution = {1920, 1080};
   state.minimap->set_window_size(state.app->window.get_size());
-  state.world_map.generate_map_blockout(
-      {state.minimap->window_ext.x / 2, state.minimap->window_ext.y / 2});
-  {
-    /*glm::vec2 temp1;
-    glm::vec2 temp2;
-    temp_map_var.get_dimensions(temp1, temp2);
-    int holdup = 0;
-    minimap.mpos = {-temp2.x, -temp2.y, 0, 0};*/
-  }
-  state.world_map.generate_block_rooms(4, 8);
-
-  state.minimap->populate_map_data(state.world_map);
+ state.world_map.generate_blocks(4);
+ state.world_map.generate_rooms(6, 3);
+ state.world_map.generate_adjacencies();
+  state.minimap->populate_map_data(&state.world_map);
 
   // if (!state.map_created) {
   // Create entities.

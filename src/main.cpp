@@ -91,21 +91,6 @@ auto main() -> int {
                           },
                           90);
 
-  //-----map  generation testing----
-  crow::world_map<5, 5> temp_map_var;
-
-  // minimap logic
-  minimap.map_minc = {-300, -300};
-  minimap.map_maxc = {300, 300};
-  minimap.screen_minr = {0.0f, 0.65f};
-  minimap.screen_maxr = {0.4f, 0.35f};
-  minimap.resolution = {1920, 1080};
-  minimap.set_window_size(app.window.get_size());
-  temp_map_var.generate_blocks(4);
-  temp_map_var.generate_rooms(6, 3);
-  temp_map_var.generate_adjacencies();
-  minimap.populate_map_data(&temp_map_var);
-
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;
   crow::descriptor_layouts environment_descriptor_layouts;
@@ -324,11 +309,11 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-        if (game_state.current_state == game_state.PLAYING) {
+    if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
-    camera_buffer_data.projection_view = app.camera.get_view_projection();
-    memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
-           sizeof(camera_buffer_data));
+      camera_buffer_data.projection_view = app.camera.get_view_projection();
+      memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
+             sizeof(camera_buffer_data));
 
       // actual game loop; execute the entire game by simply cycling through
       // the array of objects
@@ -368,7 +353,7 @@ auto main() -> int {
   app.add_run_end([&]() {
     cube->destroy();
     crow::audio::cleanup();
-    crow::end_game();
+    crow::end_game(game_state);
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();
