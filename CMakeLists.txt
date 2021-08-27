@@ -7,7 +7,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS)
 set(CMAKE_ENABLE_EXPORTS ON)
 
 project(crows_nest C CXX)
-add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
+option(DEBUG_STACK_TRACE "Print a stack trace on error." OFF)
+
+if(DEBUG_STACK_TRACE)
+  add_executable(${CMAKE_PROJECT_NAME} src/main.cpp ${BACKWARD_ENABLE})
+else()
+  add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
+endif()
 
 # These should never be needed.
 set(LIBLAVA_TESTS OFF CACHE BOOL "" FORCE)
@@ -15,7 +21,12 @@ set(LIBLAVA_DEMO OFF CACHE BOOL "" FORCE)
 # trying to implement SDL2 causes building to fail as SDL2 doesn't exist
 set(SOLOUD_BACKEND_SDL2 OFF CACHE BOOL "" FORCE)
 
+# Dependencies
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
+if(DEBUG_STACK_TRACE)
+  add_backward(${CMAKE_PROJECT_NAME})
+endif()
+
 target_link_libraries(
   ${PROJECT_NAME} PRIVATE
   lava::app

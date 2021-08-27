@@ -11,3 +11,6 @@
 [submodule "ext/soloud"]
 	path = ext/soloud
 	url = https://github.com/jarikomppa/soloud.git
+[submodule "ext/backward-cpp"]
+	path = ext/backward-cpp
+	url = https://github.com/bombela/backward-cpp
