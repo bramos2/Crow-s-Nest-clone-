@@ -41,9 +41,7 @@ auto main() -> int {
       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
   crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
-  crow::item_window item_w{};
-  item_w.screen_minr = {0.025f, 0.5f};
-  item_w.screen_maxr = {0.0833333333f, 0.148148148148f};
+  lava::mesh::ptr current_room_mesh;
 
   // Temporary geometry.
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
@@ -52,10 +50,15 @@ auto main() -> int {
                                     sizeof(world_matrix_buffer_data),
                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
+  lava::mat4 room_matrix_buffer_data = glm::identity<lava::mat4>();
+  lava::buffer room_matrix_buffer;
+  room_matrix_buffer.create_mapped(app.device, &room_matrix_buffer_data,
+                                   sizeof(room_matrix_buffer_data),
+                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
   lava::mesh::ptr cube = lava::make_mesh();
   std::string fbx_path =
-      crow::get_exe_path() +
-      "../../res/fbx/deer.fbx";  // Deer model
+      crow::get_exe_path() + "../../res/fbx/deer.fbx";  // Deer model
   ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
   std::cout << "Loaded FBX scene.\n";
 
@@ -77,10 +80,15 @@ auto main() -> int {
   crow::descriptor_layouts environment_descriptor_layouts;
   // TODO(conscat): Streamline descriptor sets.
   crow::descriptor_sets environment_descriptor_sets;
-  VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
+  // VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
   crow::descriptor_writes_stack descriptor_writes;
 
   crow::entities entities;
+
+  // room buffer creation
+  crow::descriptor_sets room_descriptor_sets;
+  crow::descriptor_writes_stack room_descriptor_writes;
+  crow::descriptor_layouts room_descriptor_layouts;
 
   // setting up the gamestate
   crow::game_state game_state;
@@ -113,6 +121,25 @@ auto main() -> int {
     }};
 
     // Global buffers:
+    room_descriptor_layouts[0] =
+        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // Render-pass buffers:
+    room_descriptor_layouts[1] =
+        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // Material buffers:
+    room_descriptor_layouts[2] =
+        crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // Object buffers:
+    room_descriptor_layouts[3] = crow::create_descriptor_layout(
+        app,
+        {
+            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                                     .binding_slot = 0,
+                                     .descriptors_count = 1},
+        });
+
+    // Global buffers:
     environment_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
     // Render-pass buffers:
@@ -133,6 +160,9 @@ auto main() -> int {
 
     environment_descriptor_sets = crow::create_descriptor_sets(
         environment_descriptor_layouts, descriptor_pool);
+
+    room_descriptor_sets =
+        crow::create_descriptor_sets(room_descriptor_layouts, descriptor_pool);
 
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
@@ -169,6 +199,43 @@ auto main() -> int {
     };
     app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
                                         write_ubo_material, write_ubo_object});
+
+    VkWriteDescriptorSet const write_ubo_global_room{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = room_descriptor_sets[0],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = camera_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_pass_room{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = room_descriptor_sets[1],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_material_room{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = room_descriptor_sets[2],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_object_room{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = room_descriptor_sets[3],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+
+    app.device->vkUpdateDescriptorSets(
+        {write_ubo_global_room, write_ubo_pass_room, write_ubo_material_room,
+         write_ubo_object_room});
 
     // Create pipelines.
     environment_pipeline = crow::create_rasterization_pipeline(
@@ -208,9 +275,7 @@ auto main() -> int {
       });
 
   app.imgui.on_draw = [&]() {
-    minimap.app = &app;
-    item_w.app = &app;
-
+    minimap.camera = &app.camera;
     // need this for having the GUI items scale with the window size
     glm::vec2 wh = app.window.get_size();
     // pass this flag into ImGui::Begin when you need to spawn a window that
@@ -255,7 +320,7 @@ auto main() -> int {
     crow::draw_menus(game_state, {wh.x, wh.y});
 
     // start of minimap processing
-    minimap.draw_minimap();
+    minimap.draw_call(&app, current_room_mesh);
     // end of minimap processing
 
     // debug window
@@ -295,37 +360,44 @@ auto main() -> int {
       camera_buffer_data.projection_view = app.camera.get_view_projection();
       memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
              sizeof(camera_buffer_data));
-
-      // actual game loop; execute the entire game by simply cycling through
-      // the array of objects
-      for (size_t i = 0; i < entities.pcomponents.size(); i++) {
-      }
-      entities.update_transform_data(crow::entity::WORKER, dt);
-      entities.update_transform_buffer(crow::entity::WORKER);
-
-      environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-        app.device->call().vkCmdBindDescriptorSets(
-            cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            environment_pipeline_layout->get(), 0, 4,
-            environment_descriptor_sets.data(), 0, nullptr);
-        // TODO(conscat): Write a bind_descriptor_sets() method.
-        // environment_pipeline_layout->bind_descriptor_set(
-        //     cmd_buf, environment_descriptor_sets[0], 0);
-        // environment_pipeline_layout->bind_descriptor_set(
-        //     cmd_buf, environment_descriptor_sets[1], 1);
-        // environment_pipeline_layout->bind_descriptor_set(
-        //     cmd_buf, environment_descriptor_sets[2], 2);
-        // environment_pipeline_layout->bind_descriptor_set(
-        //     cmd_buf, environment_descriptor_sets[3], 3);
-        // cube->bind_draw(cmd_buf);
-
-        for (auto& mesh : entities.meshes) {
-          if (mesh) {  // TODO(conscat): Sort entities instead.
-            mesh->bind_draw(cmd_buf);
-          }
-        }
-      };
     }
+
+    // actual game loop; execute the entire game by simply cycling through
+    // the array of objects
+    for (size_t i = 0; i < entities.pcomponents.size(); i++) {
+    }
+    entities.update_transform_data(crow::entity::WORKER, dt);
+    entities.update_transform_buffer(crow::entity::WORKER);
+
+    environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+      app.device->call().vkCmdBindDescriptorSets(
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+          environment_pipeline_layout->get(), 0, 4,
+          room_descriptor_sets.data(), 0, nullptr);
+      if (current_room_mesh) {
+        current_room_mesh->bind_draw(cmd_buf);
+      }
+      app.device->call().vkCmdBindDescriptorSets(
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+          environment_pipeline_layout->get(), 0, 4,
+          environment_descriptor_sets.data(), 0, nullptr);
+      // TODO(conscat): Write a bind_descriptor_sets() method.
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[0], 0);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[1], 1);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[2], 2);
+      // environment_pipeline_layout->bind_descriptor_set(
+      //     cmd_buf, environment_descriptor_sets[3], 3);
+      // cube->bind_draw(cmd_buf);
+
+      for (auto& mesh : entities.meshes) {
+        if (mesh) {  // TODO(conscat): Sort entities instead.
+          mesh->bind_draw(cmd_buf);
+        }
+      }
+    };
 
     // temp_position = crow::get_floor_point(app.camera);
     return true;

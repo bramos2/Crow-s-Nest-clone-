@@ -2,10 +2,12 @@
 
 #include <imgui.h>
 
+#include "../hpp/camera.hpp"
+
 namespace crow {
 
 void minimap::reset_state() {
-  mouse_position = {-1, -1} ;
+  mouse_position = {-1, -1};
   is_dragging = false;
 }
 
@@ -67,7 +69,7 @@ void minimap::calculate_mouse_drag(lava::mouse_position_ref mouse_pos) {
   // drag boolean predominantly used to ensure that room click processing
   // is not called when releasing the mouse button after dragging the
   // minimap around
-  is_dragging = true;
+  //is_dragging = true;
 
   // this makes sure that the minimap doesnt get dragged way out of bounds
   // or anything like that
@@ -88,6 +90,7 @@ void minimap::populate_map_data(crow::world_map<5, 5>* map) {
       }
     }
   }
+  active_room = room_ptr_list[0];
 }
 
 minimap::minimap()
@@ -99,15 +102,18 @@ minimap::minimap()
       minimap_center_position({0, 0}) {}
 
 minimap::minimap(glm::vec2 _min, glm::vec2 _max)
-    : screen_minr(_min),
+    : is_dragging(false),
+      screen_minr(_min),
       screen_maxr(_max),
       mouse_position({-1, -1}),
       resolution({0, 0}),
       minimap_center_position({0, 0}) {}
 
-void minimap::draw_call() { draw_minimap(); }
+void minimap::draw_call(lava::app* app, lava::mesh::ptr& room_mesh_ptr) {
+  draw_minimap(app, room_mesh_ptr);
+}
 
-void minimap::draw_minimap() {
+void minimap::draw_minimap(lava::app* app, lava::mesh::ptr& room_mesh_ptr) {
   // pop style var moved into main
   ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
   ImGui::SetNextWindowSize((ImVec2&)window_ext, ImGuiCond_Always);
@@ -127,9 +133,10 @@ void minimap::draw_minimap() {
       fmt::print("i have confirmed the click \n");
     }
   }
-
+  is_dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
   // processing for dragging the minimap around all goes in here
-  if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+  if (is_dragging) {
+    int debug = 1;
     // first check to see that we have "grabbed" the minimap with the mouse.
     // if it has been grabbed, then minimap.mouse_position.x should have been
     // set to a float between 0:1
@@ -137,7 +144,7 @@ void minimap::draw_minimap() {
       calculate_mouse_drag(_mouse_pos);
     }
   }
-
+  int id = 0;
   for (auto& current_room : room_ptr_list) {
     // Check for out of bounds rooms to skip adding them to draw calls.
     if (room_off_view(current_room)) {
@@ -148,13 +155,17 @@ void minimap::draw_minimap() {
         static_cast<float>(current_room->world_x) + minimap_center_position.x,
         static_cast<float>(current_room->world_y) + minimap_center_position.y,
     });
-    if (ImGui::Button("r", {
+    if (ImGui::Button(std::to_string(id++).c_str(), {
                                // Set the width and height:
                                static_cast<float>(current_room->width),
                                static_cast<float>(current_room->height),
                            })) {
       if (!is_dragging) {
         /* processing for room switch goes here */
+        active_room = current_room;
+        // current_room->set_active();
+        crow::update_room_camera(active_room, *camera);
+        active_room->set_active(app, room_mesh_ptr);
       }
     }
   }

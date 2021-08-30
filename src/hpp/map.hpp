@@ -24,6 +24,11 @@ struct map_room {
   int const world_x, world_y, width, height;
   std::vector<std::shared_ptr<crow::map_room>> neighbors;
   crow::collision_universe collision_universe;
+  // the position and rotation of the camera
+  glm::vec3 cam_pos = {0, 0, 0};
+  glm::vec3 cam_rotation = {0, 0, 0};
+  lava::mesh_data room_mesh_data;
+  void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr);
 };
 
 template <int br_width, int br_height>
@@ -193,7 +198,19 @@ void map_block<br_width, br_height>::generate_rooms(int min_rooms,
         .width = room_width,
         .height = room_width,
     });
+    room_list.back().room_mesh_data =
+        lava::create_mesh_data(lava::mesh_type::cube);
+    room_list[i].room_mesh_data.move({0, 10.0f, 0});
+    room_list[i].room_mesh_data.scale_vector(
+        {static_cast<float>(room_width), 0.2f, static_cast<float>(room_height)});
   }
+
+  // temporary for mesh creation
+  /*for (size_t i = 0; i < room_list.size(); i++) {
+    room_list[i].room_mesh_data = lava::create_mesh_data(lava::mesh_type::cube);
+    room_list[i].room_mesh_data.move({0, 10.0f, 0});
+    room_list[i].room_mesh_data.scale_vector({10.0f, 0.2f, 10.0f});
+  }*/
 }
 
 template <int br_width, int br_height>

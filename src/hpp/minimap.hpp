@@ -7,7 +7,8 @@ namespace crow {
 
 // TODO: REMOVE app*
 struct item_window {
-  lava::app* app;
+  // lava::app* app;
+  lava::camera& camera;
   // the ratio for the x,y coordinates of the min point of the gui on the screen
   // (top left)
   glm::vec2 screen_minr;
@@ -20,8 +21,8 @@ struct item_window {
 };
 
 struct minimap {
-  lava::app* app;
-
+  // lava::app* app;
+  lava::camera* camera;
   // the minimun coordinates of the map
   glm::vec2 map_minc;
   // the maximun coordinates of the map
@@ -40,6 +41,7 @@ struct minimap {
   glm::vec2 window_ext;
 
   std::vector<std::shared_ptr<map_room>> room_ptr_list;
+  std::shared_ptr<map_room> active_room;
   // TODO: Control the block sizes elsewhere.
   std::vector<crow::map_block<5, 5>>* pblocks_list;
 
@@ -76,9 +78,9 @@ struct minimap {
 
   minimap(glm::vec2 _min, glm::vec2 _max);
 
-  void draw_minimap();
+  void draw_minimap(lava::app* app, lava::mesh::ptr& room_mesh_ptr);
 
-  void draw_call();
+  void draw_call(lava::app* app, lava::mesh::ptr& room_mesh_ptr);
 };
 
 struct gui_container {};

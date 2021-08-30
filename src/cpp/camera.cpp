@@ -68,4 +68,10 @@ void initialize_debug_camera(lava::camera& camera) {
                            debug_key_right);
 }
 
+void crow::update_room_camera(std::shared_ptr<map_room> active_room,
+                              lava::camera& camera) {
+  camera.position = active_room->cam_pos;
+  camera.rotation = active_room->cam_rotation;
+}
+
 }  // namespace crow
