@@ -61,13 +61,16 @@ target_sources(
   src/main.cpp
   src/hpp/audio.hpp
   src/cpp/audio.cpp
-  src/hpp/object.hpp
+  src/hpp/entities.hpp
+  src/hpp/entities.cpp
   src/hpp/component.hpp
   src/hpp/geometry.hpp
   src/cpp/geometry.tpp
   src/hpp/pipeline.hpp
   src/cpp/pipeline.cpp
   src/cpp/pipeline.tpp
+  src/hpp/raytracing.hpp
+  src/hpp/raytracing.cpp
   src/hpp/tile.hpp
   src/cpp/tile.cpp
   src/hpp/search_theta.hpp

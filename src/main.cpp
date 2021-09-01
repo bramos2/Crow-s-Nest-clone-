@@ -28,6 +28,10 @@ auto main() -> int {
 
   lava::frame_config config;
   lava::app app(config);
+  app.config.surface.formats = {VK_FORMAT_B8G8R8A8_SRGB,
+                                VK_FORMAT_R8G8B8A8_SRGB};
+  lava::device::ptr device = crow::create_logical_device(app.manager);
+  app.device = device.get();
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
 
@@ -372,8 +376,8 @@ auto main() -> int {
     environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4,
-          room_descriptor_sets.data(), 0, nullptr);
+          environment_pipeline_layout->get(), 0, 4, room_descriptor_sets.data(),
+          0, nullptr);
       if (current_room_mesh) {
         current_room_mesh->bind_draw(cmd_buf);
       }

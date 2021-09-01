@@ -1,3 +1,4 @@
+#include <liblava-extras/raytracing.hpp>
 #include <liblava/app.hpp>
 
 #include "../hpp/geometry.hpp"
@@ -33,4 +34,18 @@ auto create_rasterization_pipeline(
   pipeline->create(render_pass->get());
   render_pass->add_front(pipeline);
   return pipeline;
+}
+
+template <typename VertexType>
+auto create_raytracing_pipeline(
+    lava::app& app, lava::pipeline_layout::ptr& pipeline_layout,
+    std::vector<crow::shader_module>& shader_modules,
+    crow::descriptor_layouts& descriptor_layouts)
+    -> lava::extras::raytracing::raytracing_pipeline::ptr {
+  lava::extras::raytracing::raytracing_pipeline::ptr pipeline =
+      lava::extras::raytracing::make_raytracing_pipeline(app.device);
+  for (auto& shader : shader_modules) {
+    pipeline->add_shader(lava::file_data(shader.file_name), shader.flags);
+  }
+  return nullptr;
 }
