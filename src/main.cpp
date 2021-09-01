@@ -73,10 +73,17 @@ auto main() -> int {
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
+  lava::queue::ref queue = app.device->graphics_queue();
+  const size_t uniform_stride =
+      lava::align_up(sizeof(crow::raytracing_uniform_data),
+                     app.device->get_physical_device()
+                         ->get_properties()
+                         .limits.minUniformBufferOffsetAlignment);
+
   lava::pipeline_layout::ptr blit_pipeline_layout;
   lava::graphics_pipeline::ptr blit_pipeline;
   crow::descriptor_layouts shared_descriptor_layouts;
-  crow::descriptor_sets shared_descriptor_sets;
+  VkDescriptorSet shared_descriptor_set = VK_NULL_HANDLE;
 
   lava::pipeline_layout::ptr raytracing_pipeline_layout;
   lava::extras::raytracing::raytracing_pipeline::ptr raytracing_pipeline;
@@ -105,20 +112,24 @@ auto main() -> int {
   crow::raytracing_uniform_data uniform_data{};
   lava::image::ptr output_image;
 
-  // room buffer creation
-  crow::descriptor_sets room_descriptor_sets;
-  crow::descriptor_writes_stack room_descriptor_writes;
-  crow::descriptor_layouts room_descriptor_layouts;
+  auto swapchain_callback =
+      crow::create_swapchain_callback(app, shared_descriptor_set, uniform_data,
+                                      output_image, command_pool, queue);
+  app.target->add_callback(&swapchain_callback);
 
-  // setting up the gamestate
-  crow::game_state game_state;
-  game_state.current_state = game_state.PLAYING;
-  // points to important game data
-  game_state.environment_descriptor_sets = &shared_descriptor_sets;
-  game_state.descriptor_writes = &descriptor_writes;
-  game_state.minimap = &minimap;
-  game_state.entities = &entities;
-  game_state.app = &app;
+  // // room buffer creation
+  // crow::descriptor_sets room_descriptor_sets;
+  // crow::descriptor_layouts room_descriptor_layouts;
+
+  // // setting up the gamestate
+  // crow::game_state game_state;
+  // game_state.current_state = game_state.PLAYING;
+  // // points to important game data
+  // game_state.environment_descriptor_sets = &shared_descriptor_sets;
+  // game_state.descriptor_writes = &descriptor_writes;
+  // game_state.minimap = &minimap;
+  // game_state.entities = &entities;
+  // game_state.app = &app;
 
   app.on_create = [&]() {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
@@ -140,122 +151,122 @@ auto main() -> int {
         },
     }};
 
-    // Global buffers:
-    room_descriptor_layouts[0] =
-        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
-    // Render-pass buffers:
-    room_descriptor_layouts[1] =
-        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
-    // Material buffers:
-    room_descriptor_layouts[2] =
-        crow::create_descriptor_layout(app, crow::simple_material_bindings);
-    // Object buffers:
-    room_descriptor_layouts[3] = crow::create_descriptor_layout(
-        app,
-        {
-            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
-                                     .binding_slot = 0,
-                                     .descriptors_count = 1},
-        });
+    // // Global buffers:
+    // room_descriptor_layouts[0] =
+    //     crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // // Render-pass buffers:
+    // room_descriptor_layouts[1] =
+    //     crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // // Material buffers:
+    // room_descriptor_layouts[2] =
+    //     crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // // Object buffers:
+    // room_descriptor_layouts[3] = crow::create_descriptor_layout(
+    //     app,
+    //     {
+    //         crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //                                  .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+    //                                  .binding_slot = 0,
+    //                                  .descriptors_count = 1},
+    //     });
 
-    // Global buffers:
-    shared_descriptor_layouts[0] =
-        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
-    // Render-pass buffers:
-    shared_descriptor_layouts[1] =
-        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
-    // Material buffers:
-    shared_descriptor_layouts[2] =
-        crow::create_descriptor_layout(app, crow::simple_material_bindings);
-    // Object buffers:
-    shared_descriptor_layouts[3] = crow::create_descriptor_layout(
-        app,
-        {
-            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
-                                     .binding_slot = 0,
-                                     .descriptors_count = 1},
-        });
+    // // Global buffers:
+    // shared_descriptor_layouts[0] =
+    //     crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // // Render-pass buffers:
+    // shared_descriptor_layouts[1] =
+    //     crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // // Material buffers:
+    // shared_descriptor_layouts[2] =
+    //     crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // // Object buffers:
+    // shared_descriptor_layouts[3] = crow::create_descriptor_layout(
+    //     app,
+    //     {
+    //         crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //                                  .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+    //                                  .binding_slot = 0,
+    //                                  .descriptors_count = 1},
+    //     });
 
-    shared_descriptor_sets = crow::create_descriptor_sets(
-        shared_descriptor_layouts, descriptor_pool);
+    // shared_descriptor_sets = crow::create_descriptor_sets(
+    //     shared_descriptor_layouts, descriptor_pool);
 
-    room_descriptor_sets =
-        crow::create_descriptor_sets(room_descriptor_layouts, descriptor_pool);
+    // room_descriptor_sets =
+    //     crow::create_descriptor_sets(room_descriptor_layouts, descriptor_pool);
 
-    // TODO(conscat): Push to stack.
-    VkWriteDescriptorSet const write_ubo_global{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = shared_descriptor_sets[0],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = camera_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_pass{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = shared_descriptor_sets[1],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_material{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = shared_descriptor_sets[2],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_object{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = shared_descriptor_sets[3],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
-    };
-    app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
-                                        write_ubo_material, write_ubo_object});
+    // // TODO(conscat): Push to stack.
+    // VkWriteDescriptorSet const write_ubo_global{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = shared_descriptor_sets[0],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = camera_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_pass{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = shared_descriptor_sets[1],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_material{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = shared_descriptor_sets[2],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_object{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = shared_descriptor_sets[3],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = world_matrix_buffer.get_descriptor_info(),
+    // };
+    // app.device->vkUpdateDescriptorSets({write_ubo_global, write_ubo_pass,
+    //                                     write_ubo_material, write_ubo_object});
 
-    VkWriteDescriptorSet const write_ubo_global_room{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = room_descriptor_sets[0],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = camera_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_pass_room{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = room_descriptor_sets[1],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_material_room{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = room_descriptor_sets[2],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
-    };
-    VkWriteDescriptorSet const write_ubo_object_room{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = room_descriptor_sets[3],
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
-    };
+    // VkWriteDescriptorSet const write_ubo_global_room{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = room_descriptor_sets[0],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = camera_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_pass_room{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = room_descriptor_sets[1],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_material_room{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = room_descriptor_sets[2],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    // };
+    // VkWriteDescriptorSet const write_ubo_object_room{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .dstSet = room_descriptor_sets[3],
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    //     .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    // };
 
-    app.device->vkUpdateDescriptorSets(
-        {write_ubo_global_room, write_ubo_pass_room, write_ubo_material_room,
-         write_ubo_object_room});
+    // app.device->vkUpdateDescriptorSets(
+    //     {write_ubo_global_room, write_ubo_pass_room, write_ubo_material_room,
+    //      write_ubo_object_room});
 
     // Create pipelines.
     blit_pipeline = crow::create_rasterization_pipeline(
@@ -269,7 +280,7 @@ auto main() -> int {
     player_mesh->add_data(player_mesh_data);
     player_mesh->create(app.device);
     entities.meshes[crow::entity::WORKER] = player_mesh;
-    crow::new_game(game_state);
+    // crow::new_game(game_state);
     // game_state.current_state = game_state.MAIN_MENU;
 
     return true;
@@ -318,7 +329,7 @@ auto main() -> int {
     ImGui::Begin("Pause", nullptr, texture_flag);
     if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
-      game_state.current_state = game_state.PAUSED;
+      // game_state.current_state = game_state.PAUSED;
     }
 
     ImGui::End();
@@ -337,7 +348,7 @@ auto main() -> int {
     ImGui::PopStyleVar(3);
 
     // render ALL the menus
-    crow::draw_menus(game_state, {wh.x, wh.y});
+    // crow::draw_menus(game_state, {wh.x, wh.y});
 
     // start of minimap processing
     minimap.draw_call(&app, current_room_mesh);
@@ -375,12 +386,12 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-    if (game_state.current_state == game_state.PLAYING) {
+    // if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
       camera_buffer_data.projection_view = app.camera.get_view_projection();
       memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
              sizeof(camera_buffer_data));
-    }
+    // }
 
     // actual game loop; execute the entire game by simply cycling through
     // the array of objects
@@ -390,31 +401,31 @@ auto main() -> int {
     entities.update_transform_buffer(crow::entity::WORKER);
 
     blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-      app.device->call().vkCmdBindDescriptorSets(
-          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
-          0, 4, room_descriptor_sets.data(), 0, nullptr);
-      if (current_room_mesh) {
-        current_room_mesh->bind_draw(cmd_buf);
-      }
-      app.device->call().vkCmdBindDescriptorSets(
-          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
-          0, 4, shared_descriptor_sets.data(), 0, nullptr);
-      // TODO(conscat): Write a bind_descriptor_sets() method.
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[0], 0);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[1], 1);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[2], 2);
-      // environment_pipeline_layout->bind_descriptor_set(
-      //     cmd_buf, environment_descriptor_sets[3], 3);
-      // cube->bind_draw(cmd_buf);
+      // app.device->call().vkCmdBindDescriptorSets(
+      //     cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+      //     0, 4, room_descriptor_sets.data(), 0, nullptr);
+      // if (current_room_mesh) {
+      //   current_room_mesh->bind_draw(cmd_buf);
+      // }
+      // app.device->call().vkCmdBindDescriptorSets(
+      //     cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+      //     0, 4, shared_descriptor_sets.data(), 0, nullptr);
+      // // TODO(conscat): Write a bind_descriptor_sets() method.
+      // // environment_pipeline_layout->bind_descriptor_set(
+      // //     cmd_buf, environment_descriptor_sets[0], 0);
+      // // environment_pipeline_layout->bind_descriptor_set(
+      // //     cmd_buf, environment_descriptor_sets[1], 1);
+      // // environment_pipeline_layout->bind_descriptor_set(
+      // //     cmd_buf, environment_descriptor_sets[2], 2);
+      // // environment_pipeline_layout->bind_descriptor_set(
+      // //     cmd_buf, environment_descriptor_sets[3], 3);
+      // // cube->bind_draw(cmd_buf);
 
-      for (auto& mesh : entities.meshes) {
-        if (mesh) {  // TODO(conscat): Sort entities instead.
-          mesh->bind_draw(cmd_buf);
-        }
-      }
+      // for (auto& mesh : entities.meshes) {
+      //   if (mesh) {  // TODO(conscat): Sort entities instead.
+      //     mesh->bind_draw(cmd_buf);
+      //   }
+      // }
     };
 
     // temp_position = crow::get_floor_point(app.camera);
@@ -424,7 +435,7 @@ auto main() -> int {
   app.add_run_end([&]() {
     cube->destroy();
     crow::audio::cleanup();
-    crow::end_game(game_state);
+    // crow::end_game(game_state);
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();
