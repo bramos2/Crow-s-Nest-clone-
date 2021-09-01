@@ -20,6 +20,7 @@
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
+#include "hpp/raytracing.hpp"
 
 auto main() -> int {
   // soloud sound initialization
@@ -72,16 +73,37 @@ auto main() -> int {
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
-  auto descriptor_pool = crow::create_descriptor_pool(app);
-  lava::graphics_pipeline::ptr environment_pipeline;
-  lava::pipeline_layout::ptr environment_pipeline_layout;
-  crow::descriptor_layouts environment_descriptor_layouts;
-  // TODO(conscat): Streamline descriptor sets.
-  crow::descriptor_sets environment_descriptor_sets;
-  // VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
-  crow::descriptor_writes_stack descriptor_writes;
+  lava::pipeline_layout::ptr blit_pipeline_layout;
+  lava::graphics_pipeline::ptr blit_pipeline;
+  crow::descriptor_layouts shared_descriptor_layouts;
+  crow::descriptor_sets shared_descriptor_sets;
 
+  lava::pipeline_layout::ptr raytracing_pipeline_layout;
+  lava::extras::raytracing::raytracing_pipeline::ptr raytracing_pipeline;
+
+  lava::extras::raytracing::shader_binding_table::ptr shader_binding;
+
+  lava::descriptor::ptr raytracing_descriptor_set_layout;
+  VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
+
+  lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
+  lava::extras::raytracing::bottom_level_acceleration_structure::list
+      bottom_as_list;
+
+  lava::buffer::ptr scratch_buffer;
+  VkDeviceAddress scratch_buffer_address = 0;
+
+  VkCommandPool command_pool = VK_NULL_HANDLE;
+  auto descriptor_pool = crow::create_descriptor_pool(app);
+  crow::descriptor_writes_stack descriptor_writes;
   crow::entities entities;
+
+  lava::buffer::ptr instance_buffer;
+  lava::buffer::ptr vertex_buffer;
+  lava::buffer::ptr index_buffer;
+  lava::buffer::ptr uniform_buffer;
+  crow::raytracing_uniform_data uniform_data{};
+  lava::image::ptr output_image;
 
   // room buffer creation
   crow::descriptor_sets room_descriptor_sets;
@@ -92,7 +114,7 @@ auto main() -> int {
   crow::game_state game_state;
   game_state.current_state = game_state.PLAYING;
   // points to important game data
-  game_state.environment_descriptor_sets = &environment_descriptor_sets;
+  game_state.environment_descriptor_sets = &shared_descriptor_sets;
   game_state.descriptor_writes = &descriptor_writes;
   game_state.minimap = &minimap;
   game_state.entities = &entities;
@@ -138,16 +160,16 @@ auto main() -> int {
         });
 
     // Global buffers:
-    environment_descriptor_layouts[0] =
+    shared_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
     // Render-pass buffers:
-    environment_descriptor_layouts[1] =
+    shared_descriptor_layouts[1] =
         crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
     // Material buffers:
-    environment_descriptor_layouts[2] =
+    shared_descriptor_layouts[2] =
         crow::create_descriptor_layout(app, crow::simple_material_bindings);
     // Object buffers:
-    environment_descriptor_layouts[3] = crow::create_descriptor_layout(
+    shared_descriptor_layouts[3] = crow::create_descriptor_layout(
         app,
         {
             crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -156,8 +178,8 @@ auto main() -> int {
                                      .descriptors_count = 1},
         });
 
-    environment_descriptor_sets = crow::create_descriptor_sets(
-        environment_descriptor_layouts, descriptor_pool);
+    shared_descriptor_sets = crow::create_descriptor_sets(
+        shared_descriptor_layouts, descriptor_pool);
 
     room_descriptor_sets =
         crow::create_descriptor_sets(room_descriptor_layouts, descriptor_pool);
@@ -165,7 +187,7 @@ auto main() -> int {
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[0],
+        .dstSet = shared_descriptor_sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -173,7 +195,7 @@ auto main() -> int {
     };
     VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[1],
+        .dstSet = shared_descriptor_sets[1],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -181,7 +203,7 @@ auto main() -> int {
     };
     VkWriteDescriptorSet const write_ubo_material{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[2],
+        .dstSet = shared_descriptor_sets[2],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -189,7 +211,7 @@ auto main() -> int {
     };
     VkWriteDescriptorSet const write_ubo_object{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = environment_descriptor_sets[3],
+        .dstSet = shared_descriptor_sets[3],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -236,9 +258,9 @@ auto main() -> int {
          write_ubo_object_room});
 
     // Create pipelines.
-    environment_pipeline = crow::create_rasterization_pipeline(
-        app, environment_pipeline_layout, environment_shaders,
-        environment_descriptor_layouts, vertex_attributes);
+    blit_pipeline = crow::create_rasterization_pipeline(
+        app, blit_pipeline_layout, environment_shaders,
+        shared_descriptor_layouts, vertex_attributes);
 
     // Create entities.
     lava::mesh::ptr player_mesh = lava::make_mesh();
@@ -255,11 +277,11 @@ auto main() -> int {
 
   app.on_destroy = [&]() {
     // TODO(conscat): Free all arrays of lava objects.
-    environment_descriptor_layouts[0]->destroy();
-    environment_descriptor_layouts[3]->destroy();
+    shared_descriptor_layouts[0]->destroy();
+    shared_descriptor_layouts[3]->destroy();
     descriptor_pool->destroy();
-    environment_pipeline->destroy();
-    environment_pipeline_layout->destroy();
+    blit_pipeline->destroy();
+    blit_pipeline_layout->destroy();
   };
 
   app.input.mouse_button.listeners.add(
@@ -367,18 +389,16 @@ auto main() -> int {
     entities.update_transform_data(crow::entity::WORKER, dt);
     entities.update_transform_buffer(crow::entity::WORKER);
 
-    environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+    blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
-          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4, room_descriptor_sets.data(),
-          0, nullptr);
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+          0, 4, room_descriptor_sets.data(), 0, nullptr);
       if (current_room_mesh) {
         current_room_mesh->bind_draw(cmd_buf);
       }
       app.device->call().vkCmdBindDescriptorSets(
-          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4,
-          environment_descriptor_sets.data(), 0, nullptr);
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+          0, 4, shared_descriptor_sets.data(), 0, nullptr);
       // TODO(conscat): Write a bind_descriptor_sets() method.
       // environment_pipeline_layout->bind_descriptor_set(
       //     cmd_buf, environment_descriptor_sets[0], 0);
