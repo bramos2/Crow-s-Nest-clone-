@@ -28,8 +28,10 @@ auto main() -> int {
 
   lava::frame_config config;
   lava::app app(config);
-  app.config.surface.formats = {VK_FORMAT_B8G8R8A8_SRGB,
-                                VK_FORMAT_R8G8B8A8_SRGB};
+  app.config.surface.formats = {
+      VK_FORMAT_B8G8R8A8_SRGB,
+      // VK_FORMAT_R8G8B8A8_SRGB
+  };
   lava::device::ptr device = crow::create_logical_device(app.manager);
   app.device = device.get();
   app.manager.on_create_param = [](lava::device::create_param& param) {};
