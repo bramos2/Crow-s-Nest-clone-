@@ -33,6 +33,8 @@ auto create_raytracing_pipeline(
 
 #include "../cpp/pipeline.tpp"
 
+auto create_descriptor_pool(lava::app& app) -> lava::descriptor::pool::ptr;
+
 auto create_descriptor_layout(lava::app& app,
                               std::vector<crow::descriptor_binding> bindings)
     -> lava::descriptor::ptr;

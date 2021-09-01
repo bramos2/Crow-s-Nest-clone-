@@ -15,11 +15,11 @@
 #include "hpp/audio.hpp"
 #include "hpp/component.hpp"
 #include "hpp/cross.hpp"
+#include "hpp/entities.hpp"
 #include "hpp/game_state.hpp"
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
-#include "hpp/entities.hpp"
 
 auto main() -> int {
   // soloud sound initialization
@@ -72,15 +72,7 @@ auto main() -> int {
   cube->add_data(fbx_data.mesh_data);
   cube->create(app.device);
 
-  lava::descriptor::pool::ptr descriptor_pool = lava::make_descriptor_pool();
-  descriptor_pool->create(app.device,
-                          {
-                              {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 50},
-                              {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
-                              {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
-                          },
-                          90);
-
+  auto descriptor_pool = crow::create_descriptor_pool(app);
   lava::graphics_pipeline::ptr environment_pipeline;
   lava::pipeline_layout::ptr environment_pipeline_layout;
   crow::descriptor_layouts environment_descriptor_layouts;

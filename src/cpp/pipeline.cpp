@@ -4,6 +4,21 @@
 
 namespace crow {
 
+auto create_descriptor_pool(lava::app& app) -> lava::descriptor::pool::ptr {
+  auto descriptor_pool = lava::make_descriptor_pool();
+  descriptor_pool->create(
+      app.device,
+      {
+          {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
+          {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},  // UV textures.
+          {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},           // Raytracing output.
+          {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3},
+          {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+          {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+      });
+  return descriptor_pool;
+}
+
 auto create_descriptor_layout(
     lava::app& app,
     std::vector<crow::descriptor_binding>

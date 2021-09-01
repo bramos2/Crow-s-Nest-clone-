@@ -14,7 +14,7 @@ struct instance_data {
   std::uint32_t index_base;
   std::uint32_t index_count;
 
-  auto add_data(crow::raytracing_data&, std::vector<lava::mesh_data>& meshes);
+  void add_data(crow::raytracing_data&, std::vector<lava::mesh_data>& meshes);
 };
 
 struct raytracing_data {

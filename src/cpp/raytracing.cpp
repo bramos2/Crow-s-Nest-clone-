@@ -2,7 +2,7 @@
 
 namespace crow {
 
-auto instance_data::add_data(crow::raytracing_data& arrays,
+void instance_data::add_data(crow::raytracing_data& arrays,
                              std::vector<lava::mesh_data>& meshes) {
   // We probably want to have the `i` index for something at somepoint.
   for (size_t i = 0; i < meshes.size(); i++) {  // NOLINT
