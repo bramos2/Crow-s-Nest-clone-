@@ -26,10 +26,10 @@ auto create_descriptor_layout(
 }
 
 void update_descriptor_writes(lava::app& app,
-                              crow::descriptor_writes_stack* descriptors) {
-  while (!descriptors->empty()) {
-    app.device->vkUpdateDescriptorSets({descriptors->top()});
-    descriptors->pop();
+                              crow::descriptor_writes_stack& descriptors) {
+  while (!descriptors.empty()) {
+    app.device->vkUpdateDescriptorSets({descriptors.top()});
+    descriptors.pop();
   }
 }
 
@@ -47,17 +47,17 @@ auto create_descriptor_sets(crow::descriptor_layouts& layouts,
 }
 
 auto create_shader_binding_table(
-    const lava::extras::raytracing::raytracing_pipeline::ptr& pipeline)
+    lava::extras::raytracing::raytracing_pipeline::ptr const& pipeline)
     -> lava::extras::raytracing::shader_binding_table::ptr {
-  lava::extras::raytracing::shader_binding_table::ptr shader_binding;
-  shader_binding = lava::extras::raytracing::make_shader_binding_table();
+  auto shader_binding = lava::extras::raytracing::make_shader_binding_table();
   struct callable_record_data {
     glm::vec3 direction = {0.0f, 0.0f, 1.0f};
   } callable_record;
-  std::vector records(pipeline->get_shader_groups().size(),
-                      lava::cdata(nullptr, 0));
-  records[callable] = lava::cdata(&callable_record, sizeof(callable_record));
-  shader_binding->create(pipeline, records);
+  std::vector hit_records(pipeline->get_shader_groups().size(),
+                          lava::cdata(nullptr, 0));
+  hit_records[callable] =
+      lava::cdata(&callable_record, sizeof(callable_record));
+  shader_binding->create(pipeline, hit_records);
   return shader_binding;
 }
 

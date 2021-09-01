@@ -42,10 +42,10 @@ auto create_descriptor_sets(crow::descriptor_layouts& layouts,
     -> crow::descriptor_sets;
 
 void update_descriptor_writes(lava::app& app,
-                              crow::descriptor_writes_stack* descriptors);
+                              crow::descriptor_writes_stack& descriptors);
 
 auto create_shader_binding_table(
-    const lava::extras::raytracing::raytracing_pipeline::ptr& pipeline)
+    lava::extras::raytracing::raytracing_pipeline::ptr const& pipeline)
     -> lava::extras::raytracing::shader_binding_table::ptr;
 
 }  // namespace crow

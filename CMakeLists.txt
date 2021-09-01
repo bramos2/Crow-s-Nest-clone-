@@ -62,7 +62,7 @@ target_sources(
   src/hpp/audio.hpp
   src/cpp/audio.cpp
   src/hpp/entities.hpp
-  src/hpp/entities.cpp
+  src/cpp/entities.cpp
   src/hpp/component.hpp
   src/hpp/geometry.hpp
   src/cpp/geometry.tpp
@@ -70,7 +70,7 @@ target_sources(
   src/cpp/pipeline.cpp
   src/cpp/pipeline.tpp
   src/hpp/raytracing.hpp
-  src/hpp/raytracing.cpp
+  src/cpp/raytracing.cpp
   src/hpp/tile.hpp
   src/cpp/tile.cpp
   src/hpp/search_theta.hpp

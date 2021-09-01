@@ -6,7 +6,7 @@
 #include "geometry.hpp"
 #include "map.hpp"
 #include "minimap.hpp"
-#include "object.hpp"
+#include "entities.hpp"
 #include "pipeline.hpp"
 
 namespace crow {

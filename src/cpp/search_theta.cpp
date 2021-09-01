@@ -1,4 +1,3 @@
-#pragma once
 #include "../hpp/search_theta.hpp"
 
 namespace path {

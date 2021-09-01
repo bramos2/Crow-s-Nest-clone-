@@ -19,7 +19,7 @@
 #include "hpp/geometry.hpp"
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
-#include "hpp/object.hpp"
+#include "hpp/entities.hpp"
 
 auto main() -> int {
   // soloud sound initialization
