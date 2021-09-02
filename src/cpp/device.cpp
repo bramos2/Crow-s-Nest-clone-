@@ -30,7 +30,8 @@ auto create_logical_device(lava::device_manager& manager) -> lava::device::ptr {
       // required for GPU-assisted validation
       // this needs to be enabled with vk_layer_settings.txt in the working
       // directory
-      // can't check lava::config.debug.validation, because that gets overwritten
+      // can't check lava::config.debug.validation, because that gets
+      // overwritten
       // in lava::app.setup() during debug builds,
       // but we need it earlier to create the device
       .vertexPipelineStoresAndAtomics = VK_TRUE,

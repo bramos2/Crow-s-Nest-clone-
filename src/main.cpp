@@ -3,6 +3,7 @@
 #include <liblava/lava.hpp>
 
 #include <imgui.h>
+#include <iostream>
 
 #include "hpp/camera.hpp"
 #include "hpp/device.hpp"
@@ -20,6 +21,7 @@
 #include "hpp/map.hpp"
 #include "hpp/minimap.hpp"
 #include "hpp/object.hpp"
+#include "hpp/player_behavior.hpp"
 
 auto main() -> int {
   // soloud sound initialization
@@ -250,6 +252,7 @@ auto main() -> int {
     player_mesh->create(app.device);
     entities.meshes[crow::entity::WORKER] = player_mesh;
     crow::new_game(game_state);
+    minimap.active_room->set_active(&app, current_room_mesh, app.camera);
     // game_state.current_state = game_state.MAIN_MENU;
 
     return true;
@@ -267,8 +270,18 @@ auto main() -> int {
   app.input.mouse_button.listeners.add(
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
-          fmt::print("left mouse clicked ");
-          crow::audio::play_sfx(0);
+          // fmt::print("left mouse clicked ");
+          // crow::audio::play_sfx(0);
+          glm::vec3 mouse_point = crow::mouse_to_floor(&app);
+          if (mouse_point.y != -1) {
+            std::vector<glm::vec2> temporary_results =
+                minimap.active_room->get_path(
+                    glm::vec2(
+                        entities.transforms_data[crow::entity::WORKER][3][0],
+                        entities.transforms_data[crow::entity::WORKER][3][2]),
+                    glm::vec2(mouse_point.x, mouse_point.z));
+            crow::path_result = temporary_results;
+          }
           return true;
         }
         return false;
@@ -355,6 +368,8 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
+    crow::path_through(entities, crow::entity::WORKER, 2.0f);
+
     if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
       camera_buffer_data.projection_view = app.camera.get_view_projection();
@@ -372,8 +387,8 @@ auto main() -> int {
     environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
-          environment_pipeline_layout->get(), 0, 4,
-          room_descriptor_sets.data(), 0, nullptr);
+          environment_pipeline_layout->get(), 0, 4, room_descriptor_sets.data(),
+          0, nullptr);
       if (current_room_mesh) {
         current_room_mesh->bind_draw(cmd_buf);
       }

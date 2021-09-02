@@ -1,7 +1,7 @@
 #pragma once
 #include "../hpp/search_theta.hpp"
 
-namespace path {
+namespace crow {
 
 theta_star::~theta_star() {
   for (size_t c = 0; c < nodes.size(); ++c) {
@@ -18,28 +18,31 @@ float theta_star::get_weight() { return weight; }
 
 std::vector<tile*> theta_star::get_path() { return path; }
 
-void theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
+bool theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
+  if (!_start || !_goal) {
+    return false;
+  }
   finished = false;
   tilemap = _map;
-  nodes.resize(tilemap->get_width());
-  for (auto& col : nodes) {
-    col.resize(tilemap->get_height());
+  nodes.resize(tilemap->get_height());
+  for (auto& row : nodes) {
+    row.resize(tilemap->get_width());
   }
   std::unordered_map<tile*, node*>
       nodemap;  // temporary map to assign correct start and goal node pointers
   // making all nodes
-  for (size_t col = 0; col < tilemap->map.size(); ++col) {
-    for (size_t row = 0; row < tilemap->map[col].size(); ++row) {
-      node* curr = new node(tilemap->map[col][row], nullptr);
-      nodes[col][row] = curr;
+  for (size_t row = 0; row < tilemap->map.size(); ++row) {
+    for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
+      node* curr = new node(tilemap->map[row][col], nullptr);
+      nodes[row][col] = curr;
       nodemap[curr->tileptr] = curr;
     }
   }
 
   // connecting all neighbor nodes
-  for (size_t col = 0; col < tilemap->get_width(); ++col) {
-    for (size_t row = 0; row < tilemap->get_height(); row++) {
-      tile* curr = tilemap->map[col][row];
+  for (size_t row = 0; row < tilemap->map.size(); ++row) {
+    for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
+      tile* curr = tilemap->map[row][col];
 
       nodemap[curr]->neighbors.reserve(curr->neighbors.size());
       for (auto neighbor : curr->neighbors) {
@@ -49,8 +52,6 @@ void theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
       }
     }
   }
-
-  assert(_start != NULL && _goal != NULL);
 
   // initialize our start and goal pointers
   goal = nodemap[_goal];
@@ -64,6 +65,8 @@ void theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
   // adding start to our open list
   open.push_back(start);
   std::push_heap(open.begin(), open.end(), compare_cost());
+
+  return true;
 }
 
 void theta_star::search_theta_star() {
@@ -85,8 +88,8 @@ void theta_star::search_theta_star() {
         cpath = cpath->parent;
       }
 
-      //TODO: REMOVE AFTER TEST
-      path.push_back(start->tileptr);
+      // TODO: REMOVE AFTER TEST
+      // path.push_back(start->tileptr);
 
       return;
     }
@@ -134,5 +137,4 @@ void theta_star::update_vertex(node* s, node* neighbor) {
   }
 }
 
-}  // namespace path
-
+}  // namespace crow

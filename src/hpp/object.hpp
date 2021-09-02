@@ -39,11 +39,12 @@ struct entities {
     transforms_data[entity_index] = glm::mat4(1);  // Identity matrix.
     transforms_pbuffer[entity_index] = lava::make_buffer();
     transforms_pbuffer[entity_index]->create_mapped(
-        app.device, &transforms_data[entity_index], sizeof(transforms_data[entity_index]),
+        app.device, &transforms_data[entity_index],
+        sizeof(transforms_data[entity_index]),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     writes_stack->push(VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = (*descriptor_sets)[3], // [3] is the per-object buffer.
+        .dstSet = (*descriptor_sets)[3],  // [3] is the per-object buffer.
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,

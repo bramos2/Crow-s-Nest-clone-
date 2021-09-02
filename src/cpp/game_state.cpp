@@ -99,8 +99,6 @@ void draw_menus(game_state& state, ImVec2 wh) {
 }
 
 void new_game(crow::game_state& state) {
-    
-
   //-----map  generation testing----
   state.world_map = crow::world_map<5, 5>();
 
@@ -111,9 +109,9 @@ void new_game(crow::game_state& state) {
   state.minimap->screen_maxr = {0.4f, 0.35f};
   state.minimap->resolution = {1920, 1080};
   state.minimap->set_window_size(state.app->window.get_size());
- state.world_map.generate_blocks(4);
- state.world_map.generate_rooms(6, 3);
- state.world_map.generate_adjacencies();
+  state.world_map.generate_blocks(4);
+  state.world_map.generate_rooms(6, 3);
+  state.world_map.generate_adjacencies();
   state.minimap->populate_map_data(&state.world_map);
 
   // if (!state.map_created) {
@@ -127,7 +125,7 @@ void new_game(crow::game_state& state) {
   state.entities->initialize_transforms(*state.app, crow::entity::WORKER,
                                         state.environment_descriptor_sets,
                                         state.descriptor_writes);
-  state.entities->velocities[crow::entity::WORKER] = glm::vec3{0.1f, 0, 0};
+  state.entities->velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
   crow::update_descriptor_writes(*state.app, state.descriptor_writes);
   //}
   state.map_created = true;

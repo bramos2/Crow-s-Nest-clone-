@@ -10,6 +10,8 @@
 #include <optional>
 #include <vector>
 
+#include "../hpp/search_theta.hpp"
+#include "../hpp/tile.hpp"
 #include "collision.hpp"
 
 namespace crow {
@@ -25,10 +27,16 @@ struct map_room {
   std::vector<std::shared_ptr<crow::map_room>> neighbors;
   crow::collision_universe collision_universe;
   // the position and rotation of the camera
-  glm::vec3 cam_pos = {0, 0, 0};
-  glm::vec3 cam_rotation = {0, 0, 0};
+  glm::vec3 cam_pos = {0, -7, 3};
+  glm::vec3 cam_rotation = {-75.0f, 0, 0.0f};
   lava::mesh_data room_mesh_data;
-  void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr);
+  crow::tile_map floor_tiles;
+  void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
+                  lava::camera& camera);
+  glm::vec2 get_tile_wpos(std::int_fast32_t const x, std::int_fast32_t const y);
+  glm::vec2 get_tile_wpos(tile* const tile);
+  tile* get_tile_at(glm::vec2 const pos);
+  std::vector<glm::vec2> get_path(glm::vec2 start, glm::vec2 goal);
 };
 
 template <int br_width, int br_height>
@@ -198,11 +206,20 @@ void map_block<br_width, br_height>::generate_rooms(int min_rooms,
         .width = room_width,
         .height = room_width,
     });
-    room_list.back().room_mesh_data =
-        lava::create_mesh_data(lava::mesh_type::cube);
-    room_list[i].room_mesh_data.move({0, 10.0f, 0});
-    room_list[i].room_mesh_data.scale_vector(
-        {static_cast<float>(room_width), 0.2f, static_cast<float>(room_height)});
+    // default room mesh data being loaded
+    map_room* curr_room = &room_list.back();
+    curr_room->cam_pos;
+    curr_room->room_mesh_data = lava::create_mesh_data(lava::mesh_type::cube);
+    // room_list.back().room_mesh_data.move({0, 0.0f, 0});
+    curr_room->room_mesh_data.scale_vector(
+        {static_cast<float>(room_width * 2), 0.2f,
+         static_cast<float>(room_height * 2)});
+    curr_room->floor_tiles = crow::tile_map(room_width, room_height);
+    curr_room->floor_tiles.min_room_pos =
+        glm::vec2(-room_width / 2.0f, -room_height / 2.0f);
+    curr_room->floor_tiles.max_room_pos =
+        glm::vec2(room_width / 2.0f, room_height / 2.0f);
+    curr_room->floor_tiles.create_map();
   }
 
   // temporary for mesh creation

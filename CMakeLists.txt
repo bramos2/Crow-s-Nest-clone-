@@ -84,4 +84,5 @@ target_sources(
   src/hpp/collision.hpp
   src/hpp/game_state.hpp
   src/cpp/game_state.cpp
+  src/hpp/player_behavior.hpp
 )

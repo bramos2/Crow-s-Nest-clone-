@@ -6,7 +6,7 @@
 
 #include "../hpp/tile.hpp"
 
-namespace path {
+namespace crow {
 
 class theta_star {
   bool finished;  // unused at the moment
@@ -60,7 +60,7 @@ class theta_star {
   float get_weight();
 
   // initializes data for search
-  void set_theta_star(tile* _start, tile* _goal, tile_map* _map);
+  bool set_theta_star(tile* _start, tile* _goal, tile_map* _map);
 
   // searches for a path between the initialized start and goal nodes
   void search_theta_star();
@@ -72,5 +72,5 @@ class theta_star {
   // theta* part of the algorithm
   void update_vertex(node* s, node* neighbor);
 };
-  
-}  // namespace path
+
+}  // namespace crow

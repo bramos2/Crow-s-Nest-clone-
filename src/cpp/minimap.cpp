@@ -69,7 +69,8 @@ void minimap::calculate_mouse_drag(lava::mouse_position_ref mouse_pos) {
   // drag boolean predominantly used to ensure that room click processing
   // is not called when releasing the mouse button after dragging the
   // minimap around
-  //is_dragging = true;
+  // is_dragging = true;
+
 
   // this makes sure that the minimap doesnt get dragged way out of bounds
   // or anything like that
@@ -155,17 +156,16 @@ void minimap::draw_minimap(lava::app* app, lava::mesh::ptr& room_mesh_ptr) {
         static_cast<float>(current_room->world_x) + minimap_center_position.x,
         static_cast<float>(current_room->world_y) + minimap_center_position.y,
     });
-    if (ImGui::Button(std::to_string(id++).c_str(), {
-                               // Set the width and height:
-                               static_cast<float>(current_room->width),
-                               static_cast<float>(current_room->height),
-                           })) {
+    if (ImGui::Button(std::to_string(id++).c_str(),
+                      {
+                          // Set the width and height:
+                          static_cast<float>(current_room->width),
+                          static_cast<float>(current_room->height),
+                      })) {
       if (!is_dragging) {
         /* processing for room switch goes here */
         active_room = current_room;
-        // current_room->set_active();
-        crow::update_room_camera(active_room, *camera);
-        active_room->set_active(app, room_mesh_ptr);
+        active_room->set_active(app, room_mesh_ptr, *camera);
       }
     }
   }
