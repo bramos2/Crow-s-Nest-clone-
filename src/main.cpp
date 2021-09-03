@@ -270,9 +270,9 @@ auto main() -> int {
   app.input.mouse_button.listeners.add(
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
-          // fmt::print("left mouse clicked ");
           // crow::audio::play_sfx(0);
           glm::vec3 mouse_point = crow::mouse_to_floor(&app);
+          // if mouse_point.y == -1 then the mouse is not pointing at the floor
           if (mouse_point.y != -1) {
             std::vector<glm::vec2> temporary_results =
                 minimap.active_room->get_path(
@@ -281,6 +281,17 @@ auto main() -> int {
                         entities.transforms_data[crow::entity::WORKER][3][2]),
                     glm::vec2(mouse_point.x, mouse_point.z));
             crow::path_result = temporary_results;
+
+            // plays footstep sound when worker moves
+            // 2nd if check ensures this sound isnt duplicated
+            if (crow::path_result.size() &&
+                !crow::audio::audio_timers_includes(
+                    crow::audio::worker_isnt_moving)) {
+              crow::audio::audio_timers.push_back(crow::audio::timed_audio(
+                  crow::audio::worker_isnt_moving,
+                  &entities.transforms_data[crow::WORKER],
+                  crow::audio::FOOTSTEP_WORKER, 0.5f, -1));
+            }
           }
           return true;
         }
@@ -311,7 +322,12 @@ auto main() -> int {
     ImGui::Begin("Pause", nullptr, texture_flag);
     if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                            pause_button_wh)) {
-      game_state.current_state = game_state.PAUSED;
+      crow::audio::play_sfx(crow::audio::MENU_OK);
+      if (game_state.current_state == game_state.PLAYING) {
+        game_state.current_state = game_state.PAUSED;
+      } else {
+        game_state.current_state = game_state.PLAYING;
+      }
     }
 
     ImGui::End();
@@ -368,13 +384,16 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-    crow::path_through(entities, crow::entity::WORKER, 2.0f);
+    crow::path_through(entities, crow::entity::WORKER, 2.0f, dt);
 
     if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
       camera_buffer_data.projection_view = app.camera.get_view_projection();
       memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
              sizeof(camera_buffer_data));
+
+      // updates sound timer objects
+      crow::audio::update_audio_timers(&game_state, dt);
     }
 
     // actual game loop; execute the entire game by simply cycling through
