@@ -30,11 +30,13 @@ void draw_menus(game_state& state, ImVec2 wh) {
     ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.19f});
     if (ImGui::Button("Resume", pause_menu_button_wh)) {
       state.current_state = state.PLAYING;
+      crow::audio::play_sfx(crow::audio::MENU_OK);
     }
 
     ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.27f});
     if (ImGui::Button("Main Menu", pause_menu_button_wh)) {
       state.current_state = state.MAIN_MENU;
+      crow::audio::play_sfx(crow::audio::MENU_OK);
     }
 
     ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.35f});
@@ -42,6 +44,7 @@ void draw_menus(game_state& state, ImVec2 wh) {
       // no, that button doesn't quit the menu, it quits the game, and it
       // doesn't even go "are you sure?", it's just like x_x
       state.app->shut_down();
+      crow::audio::play_sfx(crow::audio::MENU_OK);
     }
 
     ImGui::End();
@@ -80,15 +83,18 @@ void draw_menus(game_state& state, ImVec2 wh) {
     if (ImGui::Button("New Game", mm_button_wh)) {
       end_game(state);
       new_game(state);
+      crow::audio::play_sfx(crow::audio::MENU_OK);
     }
 
     ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.75f});
     if (ImGui::Button("Options", mm_button_wh)) {
       /* currently does nothing. TODO: this */
+      crow::audio::play_sfx(crow::audio::MENU_OK);
     }
 
     ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.85f});
     if (ImGui::Button("Quit", mm_button_wh)) {
+      crow::audio::play_sfx(crow::audio::MENU_OK);
       state.app->shut_down();
     }
     ImGui::End();

@@ -1,3 +1,5 @@
+#pragma once // kek
+
 #include <liblava/lava.hpp>
 
 #include <imgui.h>

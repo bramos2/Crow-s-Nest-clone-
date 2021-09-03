@@ -31,18 +31,20 @@ void set_velocity(glm::vec2 destination, crow::entities& entity,
   entity.velocities[ent] = glm::vec3{vel_x, 0, vel_y};
 }
 
-void path_through(crow::entities& entity, crow::entity ent, float speed) {
+void path_through(crow::entities& entity, crow::entity ent, float speed, float dt) {
   if (is_pathing()) {
     set_velocity(path_result.back(), entity, ent, speed);
     glm::vec2 curr_pos = glm::vec2(entity.transforms_data[ent][3][0],
                                    entity.transforms_data[ent][3][2]);
+    glm::vec2 curr_vel = glm::vec2(entity.velocities[ent].x * dt,
+                                   entity.velocities[ent].z * dt);
     if (entity.velocities[ent].x > 0) {
-      if (curr_pos.x >= path_result.back().x) {
+      if (curr_pos.x + curr_vel.x >= path_result.back().x) {
         path_result.pop_back();
       }
     }
     if (entity.velocities[ent].x < 0) {
-      if (curr_pos.x <= path_result.back().x) {
+      if (curr_pos.x + curr_vel.x <= path_result.back().x) {
         path_result.pop_back();
       }
     }
