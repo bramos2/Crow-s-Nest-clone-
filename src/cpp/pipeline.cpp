@@ -15,7 +15,8 @@ auto create_descriptor_pool(lava::app& app) -> lava::descriptor::pool::ptr {
           {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3},
           {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
           {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
-      });
+      },
+      4);
   return descriptor_pool;
 }
 
