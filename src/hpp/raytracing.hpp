@@ -6,6 +6,14 @@
 
 namespace crow {
 
+enum raytracing_stage : std::uint32_t {
+  // this reflects the order they're added in above
+  RAYGEN = 0,
+  MISS,
+  CLOSEST_HIT,
+  CALLABLE
+};
+
 struct raytracing_uniform_data {
   glm::mat4 inv_view;
   glm::mat4 inv_proj;

@@ -49,23 +49,24 @@ auto main() -> int {
 
   // TODO: Move raytracing initialization out of main.
   lava::queue::ref queue = app.device->graphics_queue();
-  const size_t uniform_stride =
+  size_t const uniform_stride =
       lava::align_up(sizeof(crow::raytracing_uniform_data),
                      app.device->get_physical_device()
                          ->get_properties()
                          .limits.minUniformBufferOffsetAlignment);
 
+  std::vector<lava::descriptor::ptr> shared_descriptor_layouts;
+  VkDescriptorSet shared_descriptor_set = VK_NULL_HANDLE;
+
   lava::pipeline_layout::ptr blit_pipeline_layout;
   lava::graphics_pipeline::ptr blit_pipeline;
-  crow::descriptor_layouts shared_descriptor_layouts;
-  VkDescriptorSet shared_descriptor_set = VK_NULL_HANDLE;
 
   lava::pipeline_layout::ptr raytracing_pipeline_layout;
   lava::extras::raytracing::raytracing_pipeline::ptr raytracing_pipeline;
 
   lava::extras::raytracing::shader_binding_table::ptr shader_binding;
 
-  lava::descriptor::ptr raytracing_descriptor_set_layout;
+  lava::descriptor::ptr raytracing_descriptor_layout = lava::make_descriptor();
   VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
 
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
@@ -79,12 +80,23 @@ auto main() -> int {
   auto descriptor_pool = crow::create_descriptor_pool(app);
   crow::descriptor_writes_stack descriptor_writes;
 
-  lava::buffer::ptr instance_buffer;
-  lava::buffer::ptr vertex_buffer;
-  lava::buffer::ptr index_buffer;
-  lava::buffer::ptr uniform_buffer;
+  auto instance_buffer = lava::make_buffer();
+  auto vertex_buffer = lava::make_buffer();
+  auto index_buffer = lava::make_buffer();
+  auto uniform_buffer = lava::make_buffer();
   crow::raytracing_uniform_data uniform_data{};
   lava::image::ptr output_image;
+  {
+    // Output image for the raytracing shader.
+    // RGBA 16 is guaranteed to support these usage flags.
+    VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    output_image->set_usage(
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    output_image->set_layout(VK_IMAGE_LAYOUT_UNDEFINED);
+    output_image->set_aspect_mask(lava::format_aspect_mask(format));
+    output_image = lava::make_image(format);
+  }
 
   auto swapchain_callback =
       crow::create_swapchain_callback(app, shared_descriptor_set, uniform_data,
@@ -107,6 +119,27 @@ auto main() -> int {
         {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
     };
 
+    // uniform buffer for camera parameters and background color
+    if (!uniform_buffer->create_mapped(
+            app.device, nullptr, app.target->get_frame_count() * uniform_stride,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)) {
+      return false;
+    }
+
+    shared_descriptor_layouts.resize(1);
+    shared_descriptor_layouts[0] = lava::make_descriptor();
+    shared_descriptor_layouts[0]->add_binding(
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR |
+            VK_SHADER_STAGE_MISS_BIT_KHR);
+    shared_descriptor_layouts[0]->add_binding(
+        1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    shared_descriptor_layouts[0]->create(app.device);
+    shared_descriptor_set =
+        shared_descriptor_layouts[0]->allocate(descriptor_pool->get());
+
+    // Blitting pipeline
     std::vector<crow::shader_module> simple_shaders = {{
         crow::shader_module{
             .file_name = crow::get_exe_path() + "../../res/spv/simple.vert.spv",
@@ -118,10 +151,57 @@ auto main() -> int {
         },
     }};
 
-    // Create pipelines.
     blit_pipeline = crow::create_rasterization_pipeline(
         app, blit_pipeline_layout, simple_shaders, shared_descriptor_layouts,
         vertex_attributes);
+    // Blit the raytracing result to swapchain buffer.
+    blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
+      std::uint32_t const uniform_offset =
+          app.block.get_current_frame() * uniform_stride;
+      app.device->call().vkCmdBindDescriptorSets(
+          cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, blit_pipeline_layout->get(),
+          0, 1, &shared_descriptor_set, 1, &uniform_offset);
+      // No vertex buffer. The verts are hard-coded in the shader.
+      app.device->call().vkCmdDraw(cmd_buf, 3, 1, 0, 0);
+    };
+
+    // Raytracing
+    raytracing_descriptor_layout->add_binding(
+        0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    raytracing_descriptor_layout->add_binding(
+        1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    raytracing_descriptor_layout->add_binding(
+        2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    raytracing_descriptor_layout->add_binding(
+        3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    raytracing_descriptor_layout->create(app.device);
+
+    std::vector<crow::shader_module> raytracing_shader_modules = {{
+        crow::shader_module{
+            .file_name = crow::get_exe_path() + "../../res/spv/gen.ray.spv",
+            .flags = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+        },
+        crow::shader_module{
+            .file_name = crow::get_exe_path() + "../../res/spv/miss.ray.spv",
+            .flags = VK_SHADER_STAGE_MISS_BIT_KHR,
+        },
+        crow::shader_module{
+            .file_name = crow::get_exe_path() + "../../res/spv/hit.ray.spv",
+            .flags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+        },
+        crow::shader_module{
+            .file_name = crow::get_exe_path() + "../../res/spv/call.ray.spv",
+            .flags = VK_SHADER_STAGE_CALLABLE_BIT_KHR,
+        },
+    }};
+
+    raytracing_pipeline = crow::create_raytracing_pipeline(
+        app, raytracing_pipeline_layout, raytracing_shader_modules,
+        raytracing_descriptor_layout, shared_descriptor_layouts);
 
     // Create entities.
     lava::mesh_data player_mesh_data =
@@ -242,8 +322,6 @@ auto main() -> int {
     entities.update_transform_data(crow::entity::WORKER, dt);
     entities.update_transform_buffer(crow::entity::WORKER);
 
-    // Blit the raytracing result to swapchain buffer.
-    blit_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {};
     return true;
   };
 
