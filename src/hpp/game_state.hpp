@@ -1,4 +1,4 @@
-#pragma once // kek
+#pragma once  // kek
 
 #include <liblava/lava.hpp>
 
@@ -28,6 +28,9 @@ struct game_state {
   crow::entities* entities;
   crow::world_map<5, 5> world_map;
   lava::app* app;
+
+  // time the left click was last pressed
+  float left_click_time;
 
   // TODO: remove this line
   bool map_created = false;

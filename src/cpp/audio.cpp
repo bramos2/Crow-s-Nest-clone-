@@ -90,12 +90,30 @@ bool load_bgm(std::string& path, int i) {
   return false;
 }
 
-bool audio_timers_includes(bool(*_escape_clause)(crow::game_state* state)) {
-    
+void add_footstep_sound(glm::mat4* worker_position, float interval) {
+  int index = crow::audio::audio_timers_index(crow::audio::worker_isnt_moving);
+
+  if (index != -1) {
+    crow::audio::audio_timers.erase(crow::audio::audio_timers.begin() + index);
+  }
+
+  crow::audio::audio_timers.push_back(crow::audio::timed_audio(
+      crow::audio::worker_isnt_moving, worker_position,
+      crow::audio::FOOTSTEP_WORKER, interval, -1));
+}
+
+bool audio_timers_includes(bool (*_escape_clause)(crow::game_state* state)) {
   for (int i = 0; i < audio_timers.size(); i++) {
     if (audio_timers[i].escape_clause == _escape_clause) return true;
   }
   return false;
+}
+
+int audio_timers_index(bool (*_escape_clause)(crow::game_state* state)) {
+  for (int i = 0; i < audio_timers.size(); i++) {
+    if (audio_timers[i].escape_clause == _escape_clause) return i;
+  }
+  return -1;
 }
 
 void update_audio_timers(crow::game_state* state, lava::delta dt) {

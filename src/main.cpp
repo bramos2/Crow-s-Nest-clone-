@@ -270,29 +270,54 @@ auto main() -> int {
   app.input.mouse_button.listeners.add(
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
-          // crow::audio::play_sfx(0);
-          glm::vec3 mouse_point = crow::mouse_to_floor(&app);
-          // if mouse_point.y == -1 then the mouse is not pointing at the floor
-          if (mouse_point.y != -1) {
-            std::vector<glm::vec2> temporary_results =
-                minimap.active_room->get_path(
-                    glm::vec2(
-                        entities.transforms_data[crow::entity::WORKER][3][0],
-                        entities.transforms_data[crow::entity::WORKER][3][2]),
-                    glm::vec2(mouse_point.x, mouse_point.z));
-            crow::path_result = temporary_results;
+          // processing for left clicks while you are currently playing the game
+          if (game_state.current_state == game_state.PLAYING) {
+            // crow::audio::play_sfx(0);
+            glm::vec3 mouse_point = crow::mouse_to_floor(&app);
+            // if mouse_point.y == -1 then the mouse is not pointing at the
+            // floor
+            if (mouse_point.y != -1) {
+              std::vector<glm::vec2> temporary_results =
+                  minimap.active_room->get_path(
+                      glm::vec2(
+                          entities.transforms_data[crow::entity::WORKER][3][0],
+                          entities.transforms_data[crow::entity::WORKER][3][2]),
+                      glm::vec2(mouse_point.x, mouse_point.z));
 
-            // plays footstep sound when worker moves
-            // 2nd if check ensures this sound isnt duplicated
-            if (crow::path_result.size() &&
-                !crow::audio::audio_timers_includes(
-                    crow::audio::worker_isnt_moving)) {
-              crow::audio::audio_timers.push_back(crow::audio::timed_audio(
-                  crow::audio::worker_isnt_moving,
-                  &entities.transforms_data[crow::WORKER],
-                  crow::audio::FOOTSTEP_WORKER, 0.5f, -1));
+              if (temporary_results.size()) {
+                // if the clicked position is the same as the previous position,
+                // then we can assume that you've double clicked. thus, the
+                // worker should run instead of walk
+                if (crow::path_result.size() &&
+                    crow::path_result[0] == temporary_results[0]) {
+                  // check to ensure that the clicks were close enough to each
+                  // other to count as a double click. if not, then nothing
+                  // should happen since the worker is always walking towards
+                  // the clicked destination
+                  if (game_state.left_click_time < 0.5f) {
+                    // worker starts running to destination
+                    crow::worker_speed = crow::worker_run_speed;
+
+                    // plays footstep sound when worker moves
+                    crow::audio::add_footstep_sound(
+                        &entities.transforms_data[crow::WORKER], 0.285f);
+                  }
+                } else {
+                  // worker starts walking to destination
+                  crow::worker_speed = crow::worker_walk_speed;
+
+                  // plays footstep sound when worker moves
+                  crow::audio::add_footstep_sound(
+                      &entities.transforms_data[crow::WORKER], 0.5f);
+                }
+              }
+
+              // set the worker's path
+              crow::path_result = temporary_results;
             }
           }
+          game_state.left_click_time = 0;
+
           return true;
         }
         return false;
@@ -384,7 +409,7 @@ auto main() -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-    crow::path_through(entities, crow::entity::WORKER, 2.0f, dt);
+    crow::path_through(entities, crow::entity::WORKER, crow::worker_speed, dt);
 
     if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
@@ -392,6 +417,8 @@ auto main() -> int {
       memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
              sizeof(camera_buffer_data));
 
+      // time elapsed since last left click
+      game_state.left_click_time += dt;
       // updates sound timer objects
       crow::audio::update_audio_timers(&game_state, dt);
     }

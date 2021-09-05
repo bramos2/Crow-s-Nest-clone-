@@ -1,6 +1,7 @@
 #include "../hpp/game_state.hpp"
 
 namespace crow {
+
 void draw_menus(game_state& state, ImVec2 wh) {
   // the game is paused, so draw a pause menu
   if (state.current_state == state.PAUSED) {
@@ -136,6 +137,7 @@ void new_game(crow::game_state& state) {
   //}
   state.map_created = true;
 
+  state.left_click_time = 0;
   state.current_state = state.PLAYING;
 }
 

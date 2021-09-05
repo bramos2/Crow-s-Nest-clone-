@@ -116,10 +116,14 @@ int play_sfx(int id);
 int play_sfx3d(int id, glm::mat4& sfx_pos, lava::camera& camera,
                float max_volume = SOUND_MAX_VOLUME);
 
+void add_footstep_sound(glm::mat4* worker_position, float interval);
+
 // checks if an audio timer with the passed in escape clause exists
 // returns true if it exists
 // returns false otherwise
 bool audio_timers_includes(bool (*_escape_clause)(crow::game_state* state));
+// same as above, but returns the index of such
+int audio_timers_index(bool (*_escape_clause)(crow::game_state* state));
 
 // updates every single instance of an audio timer in the audio timer vector
 void update_audio_timers(crow::game_state* state, lava::delta dt);

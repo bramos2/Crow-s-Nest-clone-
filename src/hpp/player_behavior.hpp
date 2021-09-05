@@ -6,7 +6,11 @@
 #include "../hpp/object.hpp"
 
 namespace crow {
+constexpr float worker_walk_speed = 2.0f;
+constexpr float worker_run_speed = 3.5f;
+
 std::vector<glm::vec2> path_result;
+float worker_speed;
 
 float get_angle(glm::vec2 const pos_from, glm::vec2 const pos_to) {
   return std::atan2(pos_to.y - pos_from.y, pos_to.x - pos_from.x);
