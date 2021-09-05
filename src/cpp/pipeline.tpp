@@ -41,7 +41,7 @@ template <typename VertexType>
 auto create_raytracing_pipeline(
     lava::app& app, lava::pipeline_layout::ptr& pipeline_layout,
     std::vector<crow::shader_module>& shader_modules,
-    lava::descriptor::pool& descriptor_pool,
+    lava::descriptor::pool::ptr& descriptor_pool,
     std::vector<VkDescriptorSet>& raytracing_descriptor_sets,
     std::vector<lava::descriptor::ptr>& raytracing_descriptor_layouts,
     std::vector<lava::descriptor::ptr>& shared_descriptor_layouts)
@@ -56,18 +56,22 @@ auto create_raytracing_pipeline(
   pipeline->add_shader_general_group(crow::raytracing_stage::MISS);
   pipeline->add_shader_hit_group(crow::raytracing_stage::CLOSEST_HIT);
   pipeline->add_shader_general_group(crow::raytracing_stage::CALLABLE);
-
-  pipeline_layout = lava::make_pipeline_layout();
-  for (auto& descriptor_layout : shared_descriptor_layouts) {
-    pipeline_layout->add_descriptor(descriptor_layout);
-  }
   for (auto& shader : shader_modules) {
     pipeline->add_shader(lava::file_data(shader.file_name), shader.flags);
   }
+
+  for (auto& descriptor_layout : shared_descriptor_layouts) {
+    pipeline_layout->add_descriptor(descriptor_layout);
+  }
+  for (auto& raytracing_layout : raytracing_descriptor_layouts) {
+    pipeline_layout->add_descriptor(raytracing_layout);
+  }
+
   for (size_t i = 0; i < raytracing_descriptor_sets.size(); i++) {
     raytracing_descriptor_sets[i] =
-        raytracing_descriptor_layouts[i]->allocate(descriptor_pool.get());
+        raytracing_descriptor_layouts[i]->allocate(descriptor_pool->get());
   }
+  // Shared descriptor sets must have already been allocated.
 
   pipeline->set_max_recursion_depth(1);
   pipeline->set_layout(pipeline_layout);

@@ -3,6 +3,7 @@
 #include <liblava-extras/raytracing.hpp>
 #include <liblava/app.hpp>
 
+#include "../hpp/raytracing.hpp"
 #include "geometry.hpp"
 
 namespace crow {
@@ -28,6 +29,8 @@ template <typename VertexType = lava::vertex>
 auto create_raytracing_pipeline(
     lava::app& app, lava::pipeline_layout::ptr& pipeline_layout,
     std::vector<crow::shader_module>& shader_modules,
+    lava::descriptor::pool::ptr& descriptor_pool,
+    std::vector<VkDescriptorSet>& raytracing_descriptor_sets,
     std::vector<lava::descriptor::ptr>& raytracing_descriptor_layouts,
     std::vector<lava::descriptor::ptr>& shared_descriptor_layouts)
     -> lava::extras::raytracing::raytracing_pipeline::ptr;

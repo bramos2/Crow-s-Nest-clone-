@@ -32,7 +32,7 @@ auto main() -> int {
   app.config.surface.formats = {VK_FORMAT_B8G8R8A8_SRGB};
   lava::device::ptr device = crow::create_logical_device(app.manager);
   app.device = device.get();
-  app.manager.on_create_param = [](lava::device::create_param& param) {};
+  app.manager.on_create_param = [](lava::device::create_param &param) {};
   app.setup();
 
   crow::initialize_debug_camera(app.camera);
@@ -66,8 +66,8 @@ auto main() -> int {
 
   lava::extras::raytracing::shader_binding_table::ptr shader_binding;
 
-  lava::descriptor::ptr raytracing_descriptor_layout = lava::make_descriptor();
-  VkDescriptorSet raytracing_descriptor_set = VK_NULL_HANDLE;
+  std::vector<lava::descriptor::ptr> raytracing_descriptor_layouts;
+  std::vector<VkDescriptorSet> raytracing_descriptor_sets;
 
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
   lava::extras::raytracing::bottom_level_acceleration_structure::list
@@ -166,19 +166,19 @@ auto main() -> int {
     };
 
     // Raytracing
-    raytracing_descriptor_layout->add_binding(
+    raytracing_descriptor_layouts[0]->add_binding(
         0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
         VK_SHADER_STAGE_RAYGEN_BIT_KHR);
-    raytracing_descriptor_layout->add_binding(
+    raytracing_descriptor_layouts[0]->add_binding(
         1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    raytracing_descriptor_layout->add_binding(
+    raytracing_descriptor_layouts[0]->add_binding(
         2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    raytracing_descriptor_layout->add_binding(
+    raytracing_descriptor_layouts[0]->add_binding(
         3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    raytracing_descriptor_layout->create(app.device);
+    raytracing_descriptor_layouts[0]->create(app.device);
 
     std::vector<crow::shader_module> raytracing_shader_modules = {{
         crow::shader_module{
@@ -199,9 +199,11 @@ auto main() -> int {
         },
     }};
 
+    raytracing_pipeline_layout = lava::make_pipeline_layout();
     raytracing_pipeline = crow::create_raytracing_pipeline(
         app, raytracing_pipeline_layout, raytracing_shader_modules,
-        raytracing_descriptor_layout, shared_descriptor_layouts);
+        descriptor_pool, raytracing_descriptor_sets,
+        raytracing_descriptor_layouts, shared_descriptor_layouts);
 
     // Create entities.
     lava::mesh_data player_mesh_data =
@@ -297,11 +299,11 @@ auto main() -> int {
       ImGui::Text("yes it does fmt::print %f %f %i", debug_window_xy.x,
                   debug_window_xy.y, example_integer);
       ImGui::Spacing();
-      ImGui::DragFloat3("position##camera", (lava::r32*)&app.camera.position,
+      ImGui::DragFloat3("position##camera", (lava::r32 *)&app.camera.position,
                         0.01f);
-      ImGui::DragFloat3("rotation##camera", (lava::r32*)&app.camera.rotation,
+      ImGui::DragFloat3("rotation##camera", (lava::r32 *)&app.camera.rotation,
                         0.1f);
-      ImGui::DragFloat3("position##mouse-point", (lava::r32*)&temp_position,
+      ImGui::DragFloat3("position##mouse-point", (lava::r32 *)&temp_position,
                         0.1f);
       ImGui::Spacing();
       ImGui::End();
