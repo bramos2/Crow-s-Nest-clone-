@@ -1,5 +1,6 @@
 #pragma once
 
+#include <liblava-extras/raytracing.hpp>
 #include <liblava/app.hpp>
 
 #include "entities.hpp"
@@ -44,5 +45,19 @@ auto create_swapchain_callback(lava::app& app, VkDescriptorSet& descriptor_set,
                                lava::image::ptr output_image,
                                VkCommandPool& pool, lava::queue::ref& queue)
     -> lava::target_callback;
+
+auto create_acceleration_structure(lava::app& app, crow::raytracing_data& data,
+                                   lava::buffer::ptr& vertex_buffer,
+                                   lava::buffer::ptr& index_buffer,
+                                   VkCommandPool& pool, lava::queue::ref& queue)
+    -> lava::extras::raytracing::top_level_acceleration_structure::ptr;
+
+void push_raytracing_descriptor_writes(
+    crow::descriptor_writes_stack& writes_stack, size_t const& uniform_stride,
+    lava::buffer::ptr& uniform_buffer, lava::buffer::ptr& vertex_buffer,
+    lava::buffer::ptr& index_buffer, lava::buffer::ptr& instance_buffer,
+    VkDescriptorSet& shared_descriptor_set,
+    lava::extras::raytracing::top_level_acceleration_structure::ptr& top_as,
+    VkDescriptorSet& raytracing_descriptor_set);
 
 }  // namespace crow

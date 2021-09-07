@@ -9,6 +9,8 @@
 #include "hpp/pipeline.hpp"
 #include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
+#include <glm/gtc/color_space.hpp>
+
 #include <iostream>
 #include <stb_image.h>
 
@@ -66,24 +68,22 @@ auto main() -> int {
 
   lava::extras::raytracing::shader_binding_table::ptr shader_binding;
 
+  // These only hold a single index.
   std::vector<lava::descriptor::ptr> raytracing_descriptor_layouts;
   std::vector<VkDescriptorSet> raytracing_descriptor_sets;
 
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
-  lava::extras::raytracing::bottom_level_acceleration_structure::list
-      bottom_as_list;
-
-  lava::buffer::ptr scratch_buffer;
-  VkDeviceAddress scratch_buffer_address = 0;
 
   VkCommandPool command_pool = VK_NULL_HANDLE;
   auto descriptor_pool = crow::create_descriptor_pool(app);
   crow::descriptor_writes_stack descriptor_writes;
 
-  auto instance_buffer = lava::make_buffer();
-  auto vertex_buffer = lava::make_buffer();
-  auto index_buffer = lava::make_buffer();
-  auto uniform_buffer = lava::make_buffer();
+  lava::buffer::ptr scratch_buffer;
+  VkDeviceAddress scratch_buffer_address = 0;
+  lava::buffer::ptr instance_buffer;
+  lava::buffer::ptr vertex_buffer;
+  lava::buffer::ptr index_buffer;
+  lava::buffer::ptr uniform_buffer;
   crow::raytracing_uniform_data uniform_data{};
   lava::image::ptr output_image;
   {
@@ -97,6 +97,10 @@ auto main() -> int {
     output_image->set_aspect_mask(lava::format_aspect_mask(format));
     output_image = lava::make_image(format);
   }
+  crow::raytracing_data raytracing_data{};
+  struct callable_record_data {
+    glm::vec3 direction = {0.0f, 0.0f, 1.0f};
+  } callable_record;
 
   auto swapchain_callback =
       crow::create_swapchain_callback(app, shared_descriptor_set, uniform_data,
@@ -205,6 +209,30 @@ auto main() -> int {
         descriptor_pool, raytracing_descriptor_sets,
         raytracing_descriptor_layouts, shared_descriptor_layouts);
 
+    auto shader_binding_table =
+        crow::create_shader_binding_table(raytracing_pipeline);
+
+    crow::descriptor_writes_stack raytracing_writes_stack;
+    crow::push_raytracing_descriptor_writes(
+        raytracing_writes_stack, uniform_stride, uniform_buffer, vertex_buffer,
+        index_buffer, instance_buffer, shared_descriptor_set, top_as,
+        raytracing_descriptor_sets[0]);
+    crow::update_descriptor_writes(app, raytracing_writes_stack);
+
+    glm::uvec2 size = app.target->get_size();
+
+    uniform_data.inv_view = glm::inverse(glm::lookAtLH(
+        glm::vec3(0.75f, 0.25f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)));
+    uniform_data.inv_proj =
+        glm::inverse(lava::perspective_matrix(size, 90.0f, 5.0f));
+    uniform_data.viewport = {0, 0, size};
+    uniform_data.background_color = {
+        glm::convertSRGBToLinear(render_pass->get_clear_color()), 1.0f};
+    uniform_data.max_depth = 5;
+
+    swapchain_callback.on_created({}, {{0, 0}, size});
+
     // Create entities.
     lava::mesh_data player_mesh_data =
         lava::create_mesh_data(lava::mesh_type::cube);
@@ -312,6 +340,7 @@ auto main() -> int {
   };
 
   app.on_update = [&](lava::delta dt) {
+    // Game state:
     if (game_state.current_state == game_state.PLAYING) {
       app.camera.update_view(dt, app.input.get_mouse_position());
       camera_buffer_data.projection_view = app.camera.get_view_projection();
@@ -324,12 +353,121 @@ auto main() -> int {
     entities.update_transform_data(crow::entity::WORKER, dt);
     entities.update_transform_buffer(crow::entity::WORKER);
 
+    // Raytracing:
+    // TODO: VMA_MEMORY_USAGE_GPU_ONLY
+    // TODO: Extract out of this function.
+    instance_buffer = lava::make_buffer();
+    instance_buffer->create(
+        app.device, raytracing_data.instances.data(),
+        sizeof(crow::instance_data) * raytracing_data.instances.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    vertex_buffer = lava::make_buffer();
+    vertex_buffer->create(
+        app.device, raytracing_data.vertices.data(),
+        sizeof(lava::vertex) * raytracing_data.vertices.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    index_buffer = lava::make_buffer();
+    index_buffer->create(
+        app.device, raytracing_data.indices.data(),
+        sizeof(lava::index) * raytracing_data.indices.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    top_as = crow::create_acceleration_structure(
+        app, raytracing_data, vertex_buffer, index_buffer, command_pool, queue);
+
+    // TODO: Fix narrowing conversions.
+    for (size_t i = 0; i < raytracing_data.instances.size(); i++) {
+      glm::vec3 pos = {(2.0f * i - 1) * 0.5f, 0.0f, i * 0.5f};
+      float angle = glm::radians(15.0f) * float(lava::to_sec(lava::now())) * i;
+      glm::mat4 transform =
+          glm::translate(glm::mat4(1.0f), pos) *
+          glm::rotate(glm::mat4(1.0f), angle, {0.0f, 1.0f, 0.0});
+      top_as->set_instance_transform(i, transform);
+    }
+
     return true;
+  };
+
+  app.on_process = [&](VkCommandBuffer cmd_buf, lava::index frame) {
+    std::uint32_t const uniform_offset = frame * uniform_stride;
+    char *address =
+        static_cast<char *>(uniform_buffer->get_mapped_data()) + uniform_offset;
+    // NOLINTNEXTLINE Change when GCC supports std::bitcast<>()
+    *reinterpret_cast<crow::raytracing_uniform_data *>(address) = uniform_data;
+
+    // rebuild TLAS with new transformation matrices
+
+    const VkPipelineStageFlags build =
+        VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    const VkPipelineStageFlags use =
+        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+
+    // wait for the last trace
+    app.device->call().vkCmdPipelineBarrier(cmd_buf, use, build, 0, 0, nullptr,
+                                            0, nullptr, 0, nullptr);
+
+    top_as->update(cmd_buf, scratch_buffer_address);
+
+    // wait for update to finish before the next trace
+    const VkMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR |
+                         VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+        .dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+    app.device->call().vkCmdPipelineBarrier(cmd_buf, build, use, 0, 1, &barrier,
+                                            0, nullptr, 0, nullptr);
+
+    // wait for previous image reads
+    app.device->call().vkCmdPipelineBarrier(
+        cmd_buf, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0, nullptr,
+        0, nullptr);
+
+    raytracing_pipeline->bind(cmd_buf);
+
+    app.device->call().vkCmdBindDescriptorSets(
+        cmd_buf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        raytracing_pipeline_layout->get(), 0, 1, &shared_descriptor_set, 1,
+        &uniform_offset);
+    app.device->call().vkCmdBindDescriptorSets(
+        cmd_buf, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        raytracing_pipeline_layout->get(), 1, 1, &raytracing_descriptor_sets[0],
+        0, nullptr);
+
+    // trace rays!
+
+    const glm::uvec3 size = {uniform_data.viewport.z, uniform_data.viewport.w,
+                             1};
+
+    const VkStridedDeviceAddressRegionKHR raygen =
+        shader_binding->get_raygen_region();
+    app.device->call().vkCmdTraceRaysKHR(
+        cmd_buf, &raygen, &shader_binding->get_miss_region(),
+        &shader_binding->get_hit_region(),
+        &shader_binding->get_callable_region(), size.x, size.y, size.z);
+
+    // wait for trace to finish before reading the image
+    insert_image_memory_barrier(
+        app.device, cmd_buf, output_image->get(), VK_ACCESS_SHADER_WRITE_BIT,
+        VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        output_image->get_subresource_range());
   };
 
   app.add_run_end([&]() {
     crow::audio::cleanup();
     crow::end_game(game_state);
+
+    instance_buffer->destroy();
+    vertex_buffer->destroy();
+    index_buffer->destroy();
+    top_as->destroy();
   });
 
   return app.run();
