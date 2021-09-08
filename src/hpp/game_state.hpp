@@ -20,8 +20,6 @@ struct game_state {
   enum state : int { MAIN_MENU = 0, PLAYING = 1, PAUSED = 2 } current_state;
 
   // pointers to important game data so they can be easily accessed
-  crow::descriptor_sets* environment_descriptor_sets;
-  crow::descriptor_writes_stack* descriptor_writes;
   crow::minimap* minimap;
   crow::entities* entities;
   crow::world_map<5, 5> world_map;
