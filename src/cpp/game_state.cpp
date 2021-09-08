@@ -120,7 +120,7 @@ void new_game(crow::game_state& state) {
   lava::mesh_data player_mesh_data =
       lava::create_mesh_data(lava::mesh_type::cube);
   state.entities->meshes[crow::entity::WORKER] = player_mesh_data;
-  state.entities->initialize_transforms(*state.app, crow::entity::WORKER);
+  state.entities->initialize_transform(*state.app, crow::entity::WORKER);
   state.entities->velocities[crow::entity::WORKER] = glm::vec3{0.1f, 0, 0};
   //}
   state.map_created = true;
