@@ -85,4 +85,6 @@ target_sources(
   src/hpp/game_state.hpp
   src/cpp/game_state.cpp
   src/hpp/player_behavior.hpp
+  src/hpp/behavior_tree.hpp
+  src/hpp/enemy_behaviors.hpp
 )

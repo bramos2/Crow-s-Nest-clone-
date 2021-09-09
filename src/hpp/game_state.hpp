@@ -4,12 +4,12 @@
 
 #include <imgui.h>
 
-#include "audio.hpp"
-#include "geometry.hpp"
-#include "map.hpp"
-#include "minimap.hpp"
-#include "object.hpp"
-#include "pipeline.hpp"
+//#include "../hpp/enemy_behaviors.hpp"
+#include "../hpp/geometry.hpp"
+#include "../hpp/map.hpp"
+#include "../hpp/minimap.hpp"
+#include "../hpp/object.hpp"
+#include "../hpp/pipeline.hpp"
 
 namespace crow {
 // a struct that holds overarching game data to help with things such as scene
@@ -23,11 +23,13 @@ struct game_state {
 
   // pointers to important game data so they can be easily accessed
   crow::descriptor_sets* environment_descriptor_sets;
+  crow::descriptor_sets* enemy_descriptor_sets;
   crow::descriptor_writes_stack* descriptor_writes;
   crow::minimap* minimap;
   crow::entities* entities;
   crow::world_map<5, 5> world_map;
   lava::app* app;
+  // ai_manager enemy_manager;
 
   // time the left click was last pressed
   float left_click_time;

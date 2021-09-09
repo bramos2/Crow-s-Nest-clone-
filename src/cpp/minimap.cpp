@@ -71,7 +71,6 @@ void minimap::calculate_mouse_drag(lava::mouse_position_ref mouse_pos) {
   // minimap around
   // is_dragging = true;
 
-
   // this makes sure that the minimap doesnt get dragged way out of bounds
   // or anything like that
   minimap_center_position.x =
@@ -92,6 +91,22 @@ void minimap::populate_map_data(crow::world_map<5, 5>* map) {
     }
   }
   active_room = room_ptr_list[0];
+  // FOR BUILD SHOWCASE PURPOSE ONLY, REMOVE THIS LATER
+  for (size_t i = 6; i < 13; i++) {
+    active_room->floor_tiles.map[9][i]->is_open = false;
+    active_room->floor_tiles.map[i][9]->is_open = false;
+  }
+
+  for (size_t i = 0; i < 3; i++) {
+    active_room->floor_tiles.map[9][i]->is_open = false;
+    active_room->floor_tiles.map[i][9]->is_open = false;
+  }
+
+  for (size_t i = 16; i < 19; i++) {
+    active_room->floor_tiles.map[9][i]->is_open = false;
+    active_room->floor_tiles.map[i][9]->is_open = false;
+  }
+  // REMOVE AFTER BUILD SHOWCASE
 }
 
 minimap::minimap()

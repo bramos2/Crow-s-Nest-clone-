@@ -17,6 +17,7 @@
 namespace crow {
 
 #define WORLD_SEED std::time(NULL)
+#define DEBUG_SEED 9
 constexpr int block_world_width = 80;
 constexpr int block_world_height = 80;
 constexpr int block_world_padding = 5;
@@ -30,6 +31,7 @@ struct map_room {
   glm::vec3 cam_pos = {0, -7, 3};
   glm::vec3 cam_rotation = {-75.0f, 0, 0.0f};
   lava::mesh_data room_mesh_data;
+  lava::mesh::ptr room_mesh;
   crow::tile_map floor_tiles;
   void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
                   lava::camera& camera);
@@ -67,7 +69,7 @@ void world_map<br_width, br_height>::generate_blocks(int blocks_count) {
   crow::map_block<br_width, br_height> starting_block;
   int current_index_x = starting_index_x;
   int current_index_y = starting_index_y;
-  std::srand(WORLD_SEED);
+  std::srand(DEBUG_SEED);
 
   // generating blockout
   int current_blocks_count = 0;
@@ -204,12 +206,13 @@ void map_block<br_width, br_height>::generate_rooms(int min_rooms,
         .world_x = x + this->block_index_x * crow::block_world_width,
         .world_y = y + this->block_index_y * crow::block_world_height,
         .width = room_width,
-        .height = room_width,
+        .height = room_height,
     });
     // default room mesh data being loaded
     map_room* curr_room = &room_list.back();
     curr_room->cam_pos;
     curr_room->room_mesh_data = lava::create_mesh_data(lava::mesh_type::cube);
+
     // room_list.back().room_mesh_data.move({0, 0.0f, 0});
     curr_room->room_mesh_data.scale_vector(
         {static_cast<float>(room_width * 2), 0.2f,

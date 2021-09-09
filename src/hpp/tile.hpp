@@ -20,7 +20,8 @@ struct tile {
   float m_distance(tile* const to) const;
   // TODO: FIX BUG CAUSING CRASH in line_of_sight
   // uses the Parametric algorythim to check LOS between *this and *to
-  bool line_of_sight(tile* const to, std::vector<std::vector<tile*>> const map) const;
+  bool line_of_sight(tile* const to,
+                     std::vector<std::vector<tile*>> const map) const;
 };
 
 // linked grid

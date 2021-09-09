@@ -1,5 +1,10 @@
 #include "../hpp/game_state.hpp"
 
+#include <liblava-extras/fbx.hpp>
+
+#include "../hpp/audio.hpp"
+#include "../hpp/cross.hpp"
+
 namespace crow {
 
 void draw_menus(game_state& state, ImVec2 wh) {
@@ -122,23 +127,56 @@ void new_game(crow::game_state& state) {
   state.minimap->populate_map_data(&state.world_map);
 
   // if (!state.map_created) {
-  // Create entities.
+  // Create entities
+
+  // PLAYER CREATION
+  std::string player_fbx_path =
+      crow::get_exe_path() +
+      "../../res/fbx/character.fbx";  // temp character model
+  ofbx::IScene* scene_player =
+      lava::extras::load_fbx_scene(player_fbx_path.c_str());
+  fmt::print("Loaded FBX scene.\n");
+  lava::extras::fbx_data player_fbx_data =
+      lava::extras::load_fbx_model(scene_player);
+  player_fbx_data.mesh_data.scale(0.05f);
   lava::mesh::ptr player_mesh = lava::make_mesh();
-  lava::mesh_data player_mesh_data =
-      lava::create_mesh_data(lava::mesh_type::cube);
-  player_mesh->add_data(player_mesh_data);
+  /* lava::mesh_data player_mesh_data =
+       lava::create_mesh_data(lava::mesh_type::cube);*/
+  player_mesh->add_data(player_fbx_data.mesh_data);
   player_mesh->create(state.app->device);
   state.entities->meshes[crow::entity::WORKER] = player_mesh;
   state.entities->initialize_transforms(*state.app, crow::entity::WORKER,
                                         state.environment_descriptor_sets,
                                         state.descriptor_writes);
   state.entities->velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
+  // crow::update_descriptor_writes(*state.app, state.descriptor_writes);
+
+  // ENEMY CREATION
+  std::string enemy_fbx_path = crow::get_exe_path() + "../../res/fbx/deer.fbx";
+  ofbx::IScene* scene_enemy =
+      lava::extras::load_fbx_scene(enemy_fbx_path.c_str());
+  fmt::print("Loaded FBX scene");
+  lava::extras::fbx_data enemy_fbx_data =
+      lava::extras::load_fbx_model(scene_enemy);
+  enemy_fbx_data.mesh_data.scale(0.05f);
+  lava::mesh::ptr enemy_mesh = lava::make_mesh();
+  enemy_mesh->add_data(enemy_fbx_data.mesh_data);
+  enemy_mesh->create(state.app->device);
+  state.entities->meshes[crow::entity::SPHYNX] = enemy_mesh;
+  state.entities->initialize_transforms(*state.app, crow::entity::SPHYNX,
+                                        state.enemy_descriptor_sets,
+                                        state.descriptor_writes);
+  state.entities->velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
   crow::update_descriptor_writes(*state.app, state.descriptor_writes);
+
   //}
   state.map_created = true;
 
   state.left_click_time = 0;
   state.current_state = state.PLAYING;
+
+  /*state.enemy_manager.load_entity_data(*state.entities, crow::entity::SPHYNX,
+                                       crow::entity::WORKER);*/
 }
 
 void end_game(crow::game_state& state) {
@@ -147,4 +185,5 @@ void end_game(crow::game_state& state) {
     state.entities->meshes[i].get()->destroy();
   }
 }
+
 }  // namespace crow

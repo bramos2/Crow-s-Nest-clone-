@@ -6,20 +6,23 @@ namespace crow {
 
 void map_room::set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
                           lava::camera& camera) {
-  if (!mesh_ptr) {
+  if (/*!mesh_ptr*/ !this->room_mesh) {
+    this->room_mesh = lava::make_mesh();
+    this->room_mesh->add_data(this->room_mesh_data);
+    this->room_mesh->create(app->device);
     // mesh_ptr->destroy();
     // mesh_ptr->set_data(nullptr);
 
-    mesh_ptr = lava::make_mesh();
+    /*mesh_ptr = lava::make_mesh();
     mesh_ptr->add_data(room_mesh_data);
-    mesh_ptr->create(app->device);
+    mesh_ptr->create(app->device);*/
   } else {
     /*lava::mesh::ptr new_mesh_ptr = lava::make_mesh();
     new_mesh_ptr->add_data(room_mesh_data);
     new_mesh_ptr->create(app->device);
     mesh_ptr->destroy();
     mesh_ptr = new_mesh_ptr;*/
-    mesh_ptr->set_data(room_mesh_data);
+    // mesh_ptr->set_data(room_mesh_data);
   }
   crow::update_room_camera(this, camera);
   // load tilemap
@@ -44,7 +47,7 @@ std::vector<glm::vec2> map_room::get_path(glm::vec2 start, glm::vec2 goal) {
   tile* s = get_tile_at(start);
   tile* g = get_tile_at(goal);
   crow::theta_star path_finder;
-  path_finder.set_weight(1);
+  path_finder.set_weight(1.2f);
   // initializing the path finder, returns false if s or g are null
   if (path_finder.set_theta_star(s, g, &floor_tiles)) {
     path_finder.search_theta_star();
