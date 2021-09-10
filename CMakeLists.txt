@@ -6,10 +6,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS)
 set(CMAKE_ENABLE_EXPORTS ON)
 
-project(crows_nest C CXX)
+# Feature flags.
 option(DEBUG_STACK_TRACE "Print a stack trace on error." OFF)
+option(DEBUG_IMGUI "Present a Dear ImGUI window with extra information." OFF)
+option(DEBUG_RAYTRACING "Provide runtime sanatization for raytracing." OFF)
+
+project(crows_nest C CXX)
 
 if(DEBUG_STACK_TRACE)
+  message("Linking stack trace.")
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext/backward-cpp)
   add_executable(${CMAKE_PROJECT_NAME} src/main.cpp ${BACKWARD_ENABLE})
 else()
   add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
@@ -23,6 +29,7 @@ set(SOLOUD_BACKEND_SDL2 OFF CACHE BOOL "" FORCE)
 
 # Dependencies
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ext)
+
 if(DEBUG_STACK_TRACE)
   add_backward(${CMAKE_PROJECT_NAME})
 endif()
@@ -38,10 +45,6 @@ target_link_libraries(
 if(WIN32)
   add_compile_definitions(WIN32)
 endif()
-
-# Feature flags.
-option(DEBUG_IMGUI "Present a Dear ImGUI window with extra information." OFF)
-option(DEBUG_RAYTRACING "Provide runtime sanatization for raytracing." OFF)
 
 # Control the debug camera flight controls.
 option(BUILD_CONTROLS "Populate the controls for a debug camera." ON)

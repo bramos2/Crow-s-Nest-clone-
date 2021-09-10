@@ -34,9 +34,13 @@ auto main(int argc, char *argv[]) -> int {
   config.cmd_line = {argc, argv};
   config.info.req_api_version = lava::api_version::v1_2;
   lava::app app(config);
-  app.config.surface.formats = {VK_FORMAT_B8G8R8A8_SRGB};
-  lava::device::ptr device = crow::create_logical_device(app.manager);
-  app.device = device.get();
+  app.config.surface.formats = {
+      VK_FORMAT_B8G8R8A8_SRGB,
+  };
+  {
+    lava::device::ptr device = crow::create_logical_device(app.manager);
+    app.device = device.get();
+  }
   app.manager.on_create_param = [](lava::device::create_param &param) {};
   app.setup();
 
