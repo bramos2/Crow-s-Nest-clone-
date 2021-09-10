@@ -1,9 +1,11 @@
 #include "../hpp/device.hpp"
 
+#include <vector>
+
 namespace crow {
 
 auto create_logical_device(lava::device_manager& manager) -> lava::device::ptr {
-  const std::array<const char*, 9> extensions = {
+  std::vector<char const*> extensions = {
       VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
       // next 3 required by VK_KHR_acceleration_structure
       VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,

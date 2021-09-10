@@ -24,12 +24,15 @@
 #include "hpp/minimap.hpp"
 #include "hpp/raytracing.hpp"
 
-auto main() -> int {
+auto main(int argc, char *argv[]) -> int {
   // soloud sound initialization
   crow::audio::sound_loaded = false;
   crow::audio::initialize();
 
   lava::frame_config config;
+  config.info.app_name = "Crow's Nest";
+  config.cmd_line = {argc, argv};
+  config.info.req_api_version = lava::api_version::v1_2;
   lava::app app(config);
   app.config.surface.formats = {VK_FORMAT_B8G8R8A8_SRGB};
   lava::device::ptr device = crow::create_logical_device(app.manager);

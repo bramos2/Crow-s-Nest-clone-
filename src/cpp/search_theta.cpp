@@ -1,5 +1,7 @@
 #include "../hpp/search_theta.hpp"
 
+#include <limits>
+
 namespace path {
 
 theta_star::~theta_star() {
@@ -84,7 +86,7 @@ void theta_star::search_theta_star() {
         cpath = cpath->parent;
       }
 
-      //TODO: REMOVE AFTER TEST
+      // TODO: REMOVE AFTER TEST
       path.push_back(start->tileptr);
 
       return;
@@ -134,4 +136,3 @@ void theta_star::update_vertex(node* s, node* neighbor) {
 }
 
 }  // namespace path
-
