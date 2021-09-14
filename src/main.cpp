@@ -77,6 +77,7 @@ auto main(int argc, char *argv[]) -> int {
 
   // These only hold a single index.
   std::vector<lava::descriptor::ptr> raytracing_descriptor_layouts;
+  raytracing_descriptor_layouts.push_back(lava::make_descriptor());
   std::vector<VkDescriptorSet> raytracing_descriptor_sets;
 
   lava::extras::raytracing::top_level_acceleration_structure::ptr top_as;
@@ -115,9 +116,9 @@ auto main(int argc, char *argv[]) -> int {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
 
     lava::VkVertexInputAttributeDescriptions vertex_attributes = {
-        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},
-        {1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(lava::vertex, color)},
-        {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
+        // {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, position)},
+        // {1, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(lava::vertex, color)},
+        // {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(lava::vertex, normal)},
     };
 
     // uniform buffer for camera parameters and background color
