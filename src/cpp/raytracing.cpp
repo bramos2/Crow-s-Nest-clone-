@@ -19,7 +19,8 @@ void instance_data::add_data(crow::raytracing_data& arrays,
   }
 }
 
-auto create_swapchain_callback(lava::app& app, VkDescriptorSet& descriptor_set,
+auto create_swapchain_callback(lava::app& app,
+                               VkDescriptorSet& shared_descriptor_set,
                                crow::raytracing_uniform_data& uniforms,
                                lava::image::ptr output_image,
                                VkCommandPool& pool, lava::queue::ref& queue)
@@ -30,8 +31,7 @@ auto create_swapchain_callback(lava::app& app, VkDescriptorSet& descriptor_set,
   swapchain_callback.on_created = [&](lava::VkAttachmentsRef /*unused*/,
                                       lava::rect area) {
     const glm::uvec2 size = area.get_size();
-    uniforms.inv_proj =
-        glm::inverse(lava::perspective_matrix(size, 90.0f, 5.0f));
+    uniforms.inv_proj = glm::inverse(lava::perspective_matrix(size, 90.f, 5.f));
     uniforms.viewport = {area.get_origin(), size};
 
     if (!output_image->create(app.device, size)) {
@@ -45,7 +45,7 @@ auto create_swapchain_callback(lava::app& app, VkDescriptorSet& descriptor_set,
         .imageLayout = VK_IMAGE_LAYOUT_GENERAL};
     const VkWriteDescriptorSet write_info = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
+        .dstSet = shared_descriptor_set,
         .dstBinding = 1,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -231,6 +231,8 @@ void push_raytracing_descriptor_writes(
           .descriptorCount = 1,
           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
           .pBufferInfo = &buffer_info},
+      // shared_descriptor_set binding 1 is written in
+      // crow::create_swapchain_callback()
 
       VkWriteDescriptorSet{
           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,

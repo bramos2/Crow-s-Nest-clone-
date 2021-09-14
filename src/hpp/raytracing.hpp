@@ -20,7 +20,7 @@ struct raytracing_uniform_data {
   glm::mat4 inv_proj;
   glm::uvec4 viewport;
   glm::vec4 background_color;
-  uint32_t max_depth;
+  std::uint32_t max_depth;
 };
 
 struct raytracing_data;

@@ -99,7 +99,7 @@ auto main(int argc, char *argv[]) -> int {
     glm::vec3 direction = {0.0f, 0.0f, 1.0f};
   } callable_record;
 
-  auto swapchain_callback =
+  lava::target_callback swapchain_callback =
       crow::create_swapchain_callback(app, shared_descriptor_set, uniform_data,
                                       output_image, command_pool, queue);
   app.target->add_callback(&swapchain_callback);
@@ -143,11 +143,11 @@ auto main(int argc, char *argv[]) -> int {
     // Blitting pipeline
     std::vector<crow::shader_module> simple_shaders = {{
         crow::shader_module{
-            .file_name = crow::get_exe_path() + "../../res/spv/simple.vert.spv",
+            .file_name = crow::get_exe_path() + "../../res/spv/vert.spv",
             .flags = VK_SHADER_STAGE_VERTEX_BIT,
         },
         crow::shader_module{
-            .file_name = crow::get_exe_path() + "../../res/spv/simple.frag.spv",
+            .file_name = crow::get_exe_path() + "../../res/spv/frag.spv",
             .flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         },
     }};
