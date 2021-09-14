@@ -87,10 +87,10 @@ auto main(int argc, char *argv[]) -> int {
 
   lava::buffer::ptr scratch_buffer;
   VkDeviceAddress scratch_buffer_address = 0;
-  lava::buffer::ptr instance_buffer;
-  lava::buffer::ptr vertex_buffer;
-  lava::buffer::ptr index_buffer;
-  lava::buffer::ptr uniform_buffer;
+  lava::buffer::ptr instance_buffer = lava::make_buffer();
+  lava::buffer::ptr vertex_buffer = lava::make_buffer();
+  lava::buffer::ptr index_buffer = lava::make_buffer();
+  lava::buffer::ptr uniform_buffer = lava::make_buffer();
   crow::raytracing_uniform_data uniform_data{};
   lava::image::ptr output_image = crow::create_raytracing_image();
 
@@ -353,12 +353,10 @@ auto main(int argc, char *argv[]) -> int {
     // Raytracing:
     // TODO: VMA_MEMORY_USAGE_GPU_ONLY
     // TODO: Extract out of this function.
-    instance_buffer = lava::make_buffer();
     instance_buffer->create(
         app.device, raytracing_data.instances.data(),
         sizeof(crow::instance_data) * raytracing_data.instances.size(),
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, false, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    vertex_buffer = lava::make_buffer();
     vertex_buffer->create(
         app.device, raytracing_data.vertices.data(),
         sizeof(lava::vertex) * raytracing_data.vertices.size(),
@@ -366,7 +364,6 @@ auto main(int argc, char *argv[]) -> int {
             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
         false, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    index_buffer = lava::make_buffer();
     index_buffer->create(
         app.device, raytracing_data.indices.data(),
         sizeof(lava::index) * raytracing_data.indices.size(),
