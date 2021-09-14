@@ -212,10 +212,10 @@ auto create_acceleration_structure(lava::app& app, crow::raytracing_data& data,
 }
 
 void push_raytracing_descriptor_writes(
-    crow::descriptor_writes_stack& writes_stack,
-    size_t const& uniform_stride, lava::buffer::ptr& uniform_buffer,
-    lava::buffer::ptr& vertex_buffer, lava::buffer::ptr& index_buffer,
-    lava::buffer::ptr& instance_buffer, VkDescriptorSet& shared_descriptor_set,
+    crow::descriptor_writes_stack& writes_stack, size_t const& uniform_stride,
+    lava::buffer::ptr& uniform_buffer, lava::buffer::ptr& vertex_buffer,
+    lava::buffer::ptr& index_buffer, lava::buffer::ptr& instance_buffer,
+    VkDescriptorSet& shared_descriptor_set,
     lava::extras::raytracing::top_level_acceleration_structure::ptr& top_as,
     VkDescriptorSet& raytracing_descriptor_set) {
   VkDescriptorBufferInfo buffer_info = *uniform_buffer->get_descriptor_info();
@@ -265,6 +265,19 @@ void push_raytracing_descriptor_writes(
   for (auto const& write_set : write_sets) {
     writes_stack.push(write_set);
   }
+}
+
+auto create_raytracing_image() -> lava::image::ptr {
+  // Output image for the raytracing shader.
+  // RGBA 16 is guaranteed to support these usage flags.
+  VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
+  auto output_image = lava::make_image(format);
+  output_image->set_usage(
+      VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+  output_image->set_layout(VK_IMAGE_LAYOUT_UNDEFINED);
+  output_image->set_aspect_mask(lava::format_aspect_mask(format));
+  return output_image;
 }
 
 }  // namespace crow

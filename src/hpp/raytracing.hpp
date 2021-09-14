@@ -60,4 +60,6 @@ void push_raytracing_descriptor_writes(
     lava::extras::raytracing::top_level_acceleration_structure::ptr& top_as,
     VkDescriptorSet& raytracing_descriptor_set);
 
+auto create_raytracing_image() -> lava::image::ptr;
+
 }  // namespace crow

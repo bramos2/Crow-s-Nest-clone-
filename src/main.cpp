@@ -92,18 +92,8 @@ auto main(int argc, char *argv[]) -> int {
   lava::buffer::ptr index_buffer;
   lava::buffer::ptr uniform_buffer;
   crow::raytracing_uniform_data uniform_data{};
-  lava::image::ptr output_image;
-  {
-    // Output image for the raytracing shader.
-    // RGBA 16 is guaranteed to support these usage flags.
-    VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
-    output_image->set_usage(
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    output_image->set_layout(VK_IMAGE_LAYOUT_UNDEFINED);
-    output_image->set_aspect_mask(lava::format_aspect_mask(format));
-    output_image = lava::make_image(format);
-  }
+  lava::image::ptr output_image = crow::create_raytracing_image();
+
   crow::raytracing_data raytracing_data{};
   struct callable_record_data {
     glm::vec3 direction = {0.0f, 0.0f, 1.0f};
