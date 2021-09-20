@@ -24,7 +24,7 @@
 #include "hpp/object.hpp"
 #include "hpp/player_behavior.hpp"
 
-auto main() -> int {
+auto main(int argc, char* argv[]) -> int {
   // soloud sound initialization
   crow::audio::sound_loaded = false;
   crow::audio::initialize();
@@ -33,6 +33,9 @@ auto main() -> int {
   ai_manager enemy_manager;
 
   lava::frame_config config;
+  config.info.app_name = "Crow's Nest";
+  config.cmd_line = {argc, argv};
+  config.info.req_api_version = lava::api_version::v1_2;
   lava::app app(config);
   app.manager.on_create_param = [](lava::device::create_param& param) {};
   app.setup();
