@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#define NOMINMAX
 #include "../soloud/include/soloud.h"
 #include "../soloud/include/soloud_wav.h"
 #include "../soloud/include/soloud_wavstream.h"

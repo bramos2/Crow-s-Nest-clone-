@@ -5,6 +5,7 @@ namespace crow {
 
 // http://www.cplusplus.com/forum/general/11104/
 #ifdef WIN32
+#define NOMINMAX
 #include <windows.h>
 inline auto get_exe_path() -> std::string {
   std::array<char, MAX_PATH> result{};
