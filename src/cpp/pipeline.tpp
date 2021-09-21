@@ -49,6 +49,22 @@ auto create_raytracing_pipeline(
   lava::extras::raytracing::raytracing_pipeline::ptr pipeline =
       lava::extras::raytracing::make_raytracing_pipeline(app.device);
 
+  for (auto& descriptor_layout : shared_descriptor_layouts) {
+    pipeline_layout->add_descriptor(descriptor_layout);
+  }
+  for (auto& raytracing_layout : raytracing_descriptor_layouts) {
+    pipeline_layout->add_descriptor(raytracing_layout);
+  }
+  pipeline_layout->create(app.device);
+
+  for (size_t i = 0; i < raytracing_descriptor_sets.size(); i++) {
+    raytracing_descriptor_sets[i] =
+        raytracing_descriptor_layouts[i]->allocate(descriptor_pool->get());
+  }
+  // Shared descriptor sets must have already been allocated.
+
+  lava::extras::raytracing::make_raytracing_pipeline(app.device);
+
   for (auto& shader : shader_modules) {
     pipeline->add_shader(lava::file_data(shader.file_name), shader.flags);
   }
@@ -56,22 +72,6 @@ auto create_raytracing_pipeline(
   pipeline->add_shader_general_group(crow::raytracing_stage::MISS);
   pipeline->add_shader_hit_group(crow::raytracing_stage::CLOSEST_HIT);
   pipeline->add_shader_general_group(crow::raytracing_stage::CALLABLE);
-  for (auto& shader : shader_modules) {
-    pipeline->add_shader(lava::file_data(shader.file_name), shader.flags);
-  }
-
-  for (auto& descriptor_layout : shared_descriptor_layouts) {
-    pipeline_layout->add_descriptor(descriptor_layout);
-  }
-  for (auto& raytracing_layout : raytracing_descriptor_layouts) {
-    pipeline_layout->add_descriptor(raytracing_layout);
-  }
-
-  for (size_t i = 0; i < raytracing_descriptor_sets.size(); i++) {
-    raytracing_descriptor_sets[i] =
-        raytracing_descriptor_layouts[i]->allocate(descriptor_pool->get());
-  }
-  // Shared descriptor sets must have already been allocated.
 
   pipeline->set_max_recursion_depth(1);
   pipeline->set_layout(pipeline_layout);
