@@ -5,13 +5,14 @@
 #include <imgui.h>
 #include <vector>
 
+#include "../hpp/camera.hpp"
+#include "../hpp/enemy_behaviors.hpp"
 #include "../hpp/geometry.hpp"
 #include "../hpp/map.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/object.hpp"
 #include "../hpp/pipeline.hpp"
 #include "../hpp/player_behavior.hpp"
-#include "../hpp/enemy_behaviors.hpp"
 
 namespace crow {
 // a struct that holds overarching game data to help with things such as scene
@@ -24,8 +25,8 @@ struct game_state {
   enum state : int { MAIN_MENU = 0, PLAYING = 1, PAUSED = 2 } current_state;
 
   // pointers to important game data so they can be easily accessed
-  //crow::descriptor_sets* environment_descriptor_sets;  // to be replaced
-  //crow::descriptor_sets* enemy_descriptor_sets;        // to be replaced
+  // crow::descriptor_sets* environment_descriptor_sets;  // to be replaced
+  // crow::descriptor_sets* enemy_descriptor_sets;        // to be replaced
 
   std::vector<crow::descriptor_sets*> desc_sets_list;
   crow::descriptor_writes_stack* descriptor_writes;
@@ -35,6 +36,8 @@ struct game_state {
   crow::player_behavior_data player_data;
   ai_manager enemy_manager;
   lava::app* app;
+  lava::buffer camera_buffer;
+  crow::camera_device_data camera_buffer_data;
   // ai_manager enemy_manager;
 
   // time the left click was last pressed
@@ -68,5 +71,9 @@ void new_game(crow::game_state& state);
 void end_game(crow::game_state& state);
 
 void clean_state(crow::game_state& state);
+
+void update(crow::game_state& state, lava::delta dt);
+
+auto left_click_update(game_state& state) -> bool;
 
 }  // namespace crow

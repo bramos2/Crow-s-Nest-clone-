@@ -31,7 +31,7 @@ void set_velocity(glm::vec2 position, glm::vec2 destination,
   velocity = glm::vec3{vel_x, 0, vel_y};
 }
 
-void path_through(player_behavior_data p_data, crow::entities& entity,
+void path_through(player_behavior_data& p_data, crow::entities& entity,
                         crow::entity ent, float dt) {
   if (is_pathing(p_data.path_result)) {
     set_velocity(p_data.path_result.back(), entity, ent, p_data.worker_speed);

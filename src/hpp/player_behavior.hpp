@@ -7,8 +7,8 @@
 
 namespace crow {
 struct player_behavior_data {
-  float worker_walk_speed = 2.0f;
-  float worker_run_speed = 3.5f;
+  const float worker_walk_speed = 2.0f;
+  const float worker_run_speed = 3.5f;
   std::vector<glm::vec2> path_result;
   float worker_speed;
 };
@@ -23,7 +23,7 @@ void set_velocity(glm::vec2 destination, crow::entities& entity,
 void set_velocity(glm::vec2 position, glm::vec2 destination,
                   glm::vec3& velocity, float speed);
 
-void path_through(player_behavior_data p_data, crow::entities& entity,
+void path_through(player_behavior_data& p_data, crow::entities& entity,
                   crow::entity ent, float dt);
 
 }  // namespace crow

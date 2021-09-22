@@ -79,7 +79,7 @@ void minimap::calculate_mouse_drag(lava::mouse_position_ref mouse_pos) {
       std::clamp(minimap_center_position.y, map_minc.y, map_maxc.y);
 }
 
-void minimap::populate_map_data(crow::world_map<5, 5>* map) {
+void minimap::populate_map_data(crow::world_map<5, 5>* map, lava::app* app) {
   for (auto& block_y : map->block_grid) {
     for (auto& block_x : block_y) {
       if (block_x != nullptr) {
@@ -91,6 +91,7 @@ void minimap::populate_map_data(crow::world_map<5, 5>* map) {
     }
   }
   active_room = room_ptr_list[0];
+  active_room->set_active(app, active_room->room_mesh, app->camera);
   // FOR BUILD SHOWCASE PURPOSE ONLY, REMOVE THIS LATER
   for (size_t i = 6; i < 13; i++) {
     active_room->floor_tiles.map[9][i]->is_open = false;
