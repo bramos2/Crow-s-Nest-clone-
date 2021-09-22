@@ -112,6 +112,13 @@ auto main(int argc, char *argv[]) -> int {
   game_state.entities = &entities;
   game_state.app = &app;
 
+  // Create entities.
+  lava::mesh_data player_mesh_data =
+      lava::create_mesh_data(lava::mesh_type::cube);
+  entities.meshes[crow::entity::WORKER] = player_mesh_data;
+  crow::new_game(game_state);
+  game_state.current_state = game_state.MAIN_MENU;
+
   app.on_create = [&]() {
     lava::render_pass::ptr render_pass = app.shading.get_pass();
 
@@ -201,7 +208,6 @@ auto main(int argc, char *argv[]) -> int {
         },
     }};
 
-    raytracing_pipeline_layout = lava::make_pipeline_layout();
     raytracing_pipeline = crow::create_raytracing_pipeline(
         app, raytracing_pipeline_layout, raytracing_shader_modules,
         descriptor_pool, raytracing_descriptor_sets,
@@ -209,6 +215,40 @@ auto main(int argc, char *argv[]) -> int {
 
     auto shader_binding_table =
         crow::create_shader_binding_table(raytracing_pipeline);
+
+    // Raytracing:
+    // TODO: VMA_MEMORY_USAGE_GPU_ONLY
+    // TODO: Extract out of this function.
+    instance_buffer->create(
+        app.device, raytracing_data.instances.data(),
+        sizeof(crow::instance_data) * raytracing_data.instances.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    vertex_buffer->create(
+        app.device, raytracing_data.vertices.data(),
+        sizeof(lava::vertex) * raytracing_data.vertices.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    index_buffer->create(
+        app.device, raytracing_data.indices.data(),
+        sizeof(lava::index) * raytracing_data.indices.size(),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    top_as = crow::create_acceleration_structure(
+        app, raytracing_data, vertex_buffer, index_buffer, command_pool, queue);
+
+    // TODO: Fix narrowing conversions.
+    for (size_t i = 0; i < raytracing_data.instances.size(); i++) {
+      glm::vec3 pos = {(2.0f * i - 1) * 0.5f, 0.0f, i * 0.5f};
+      float angle = glm::radians(15.0f) * float(lava::to_sec(lava::now())) * i;
+      glm::mat4 transform =
+          glm::translate(glm::mat4(1.0f), pos) *
+          glm::rotate(glm::mat4(1.0f), angle, {0.0f, 1.0f, 0.0});
+      top_as->set_instance_transform(i, transform);
+    }
 
     crow::descriptor_writes_stack raytracing_writes_stack;
     crow::push_raytracing_descriptor_writes(
@@ -226,17 +266,11 @@ auto main(int argc, char *argv[]) -> int {
         glm::inverse(lava::perspective_matrix(size, 90.0f, 5.0f));
     uniform_data.viewport = {0, 0, size};
     uniform_data.background_color = {
-        glm::convertSRGBToLinear(render_pass->get_clear_color()), 1.0f};
+        glm::convertSRGBToLinear(app.shading.get_pass()->get_clear_color()),
+        1.0f};
     uniform_data.max_depth = 5;
 
     swapchain_callback.on_created({}, {{0, 0}, size});
-
-    // Create entities.
-    lava::mesh_data player_mesh_data =
-        lava::create_mesh_data(lava::mesh_type::cube);
-    entities.meshes[crow::entity::WORKER] = player_mesh_data;
-    crow::new_game(game_state);
-    game_state.current_state = game_state.MAIN_MENU;
 
     return true;
   };
@@ -350,40 +384,6 @@ auto main(int argc, char *argv[]) -> int {
     }
     entities.update_transform_data(crow::entity::WORKER, dt);
     entities.update_transform_buffer(crow::entity::WORKER);
-
-    // Raytracing:
-    // TODO: VMA_MEMORY_USAGE_GPU_ONLY
-    // TODO: Extract out of this function.
-    instance_buffer->create(
-        app.device, raytracing_data.instances.data(),
-        sizeof(crow::instance_data) * raytracing_data.instances.size(),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, false, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    vertex_buffer->create(
-        app.device, raytracing_data.vertices.data(),
-        sizeof(lava::vertex) * raytracing_data.vertices.size(),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    index_buffer->create(
-        app.device, raytracing_data.indices.data(),
-        sizeof(lava::index) * raytracing_data.indices.size(),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        false, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    top_as = crow::create_acceleration_structure(
-        app, raytracing_data, vertex_buffer, index_buffer, command_pool, queue);
-
-    // TODO: Fix narrowing conversions.
-    for (size_t i = 0; i < raytracing_data.instances.size(); i++) {
-      glm::vec3 pos = {(2.0f * i - 1) * 0.5f, 0.0f, i * 0.5f};
-      float angle = glm::radians(15.0f) * float(lava::to_sec(lava::now())) * i;
-      glm::mat4 transform =
-          glm::translate(glm::mat4(1.0f), pos) *
-          glm::rotate(glm::mat4(1.0f), angle, {0.0f, 1.0f, 0.0});
-      top_as->set_instance_transform(i, transform);
-    }
 
     return true;
   };
