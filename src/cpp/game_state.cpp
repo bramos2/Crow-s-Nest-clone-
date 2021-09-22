@@ -113,18 +113,18 @@ void draw_menus(game_state& state, ImVec2 wh) {
 void new_game(crow::game_state& state) {
   //-----map  generation testing----
   state.world_map = crow::world_map<5, 5>();
-
   // minimap logic
-  state.minimap->map_minc = {-300, -300};
-  state.minimap->map_maxc = {300, 300};
-  state.minimap->screen_minr = {0.0f, 0.65f};
-  state.minimap->screen_maxr = {0.4f, 0.35f};
-  state.minimap->resolution = {1920, 1080};
-  state.minimap->set_window_size(state.app->window.get_size());
+  state.minimap = crow::minimap({0.0f, 0.65f}, {0.4f, 0.35f});
+  state.minimap.map_minc = {-300, -300};
+  state.minimap.map_maxc = {300, 300};
+  state.minimap.screen_minr = {0.0f, 0.65f};
+  state.minimap.screen_maxr = {0.4f, 0.35f};
+  state.minimap.resolution = {1920, 1080};
+  state.minimap.set_window_size(state.app->window.get_size());
   state.world_map.generate_blocks(4);
   state.world_map.generate_rooms(6, 3);
   state.world_map.generate_adjacencies();
-  state.minimap->populate_map_data(&state.world_map);
+  state.minimap.populate_map_data(&state.world_map);
 
   // if (!state.map_created) {
   // Create entities
@@ -144,11 +144,11 @@ void new_game(crow::game_state& state) {
        lava::create_mesh_data(lava::mesh_type::cube);*/
   player_mesh->add_data(player_fbx_data.mesh_data);
   player_mesh->create(state.app->device);
-  state.entities->meshes[crow::entity::WORKER] = player_mesh;
-  state.entities->initialize_transforms(*state.app, crow::entity::WORKER,
-                                        state.environment_descriptor_sets,
+  state.entities.meshes[crow::entity::WORKER] = player_mesh;
+  state.entities.initialize_transforms(*state.app, crow::entity::WORKER,
+                                        state.desc_sets_list[crow::entity::WORKER],
                                         state.descriptor_writes);
-  state.entities->velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
+  state.entities.velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
   // crow::update_descriptor_writes(*state.app, state.descriptor_writes);
 
   // ENEMY CREATION
@@ -162,28 +162,24 @@ void new_game(crow::game_state& state) {
   lava::mesh::ptr enemy_mesh = lava::make_mesh();
   enemy_mesh->add_data(enemy_fbx_data.mesh_data);
   enemy_mesh->create(state.app->device);
-  state.entities->meshes[crow::entity::SPHYNX] = enemy_mesh;
-  state.entities->initialize_transforms(*state.app, crow::entity::SPHYNX,
-                                        state.enemy_descriptor_sets,
+  state.entities.meshes[crow::entity::SPHYNX] = enemy_mesh;
+  state.entities.initialize_transforms(*state.app, crow::entity::SPHYNX,
+                                        state.desc_sets_list[crow::entity::SPHYNX],
                                         state.descriptor_writes);
-  state.entities->velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
+  state.entities.velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
   crow::update_descriptor_writes(*state.app, state.descriptor_writes);
-
-  //}
-  state.map_created = true;
 
   state.left_click_time = 0;
   state.current_state = state.PLAYING;
-
-  /*state.enemy_manager.load_entity_data(*state.entities, crow::entity::SPHYNX,
-                                       crow::entity::WORKER);*/
 }
 
 void end_game(crow::game_state& state) {
   for (int i = 0; i < 1; i++) {
-    state.entities->transforms_pbuffer[i].get()->destroy();
-    state.entities->meshes[i].get()->destroy();
+    state.entities.transforms_pbuffer[i].get()->destroy();
+    state.entities.meshes[i].get()->destroy();
   }
 }
+
+void clean_state(crow::game_state& state) {}
 
 }  // namespace crow

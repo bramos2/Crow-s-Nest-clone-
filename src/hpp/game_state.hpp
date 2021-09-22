@@ -3,13 +3,15 @@
 #include <liblava/lava.hpp>
 
 #include <imgui.h>
+#include <vector>
 
-//#include "../hpp/enemy_behaviors.hpp"
 #include "../hpp/geometry.hpp"
 #include "../hpp/map.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/object.hpp"
 #include "../hpp/pipeline.hpp"
+#include "../hpp/player_behavior.hpp"
+#include "../hpp/enemy_behaviors.hpp"
 
 namespace crow {
 // a struct that holds overarching game data to help with things such as scene
@@ -22,12 +24,16 @@ struct game_state {
   enum state : int { MAIN_MENU = 0, PLAYING = 1, PAUSED = 2 } current_state;
 
   // pointers to important game data so they can be easily accessed
-  crow::descriptor_sets* environment_descriptor_sets;
-  crow::descriptor_sets* enemy_descriptor_sets;
+  //crow::descriptor_sets* environment_descriptor_sets;  // to be replaced
+  //crow::descriptor_sets* enemy_descriptor_sets;        // to be replaced
+
+  std::vector<crow::descriptor_sets*> desc_sets_list;
   crow::descriptor_writes_stack* descriptor_writes;
-  crow::minimap* minimap;
-  crow::entities* entities;
+  crow::minimap minimap;
+  crow::entities entities;
   crow::world_map<5, 5> world_map;
+  crow::player_behavior_data player_data;
+  ai_manager enemy_manager;
   lava::app* app;
   // ai_manager enemy_manager;
 
@@ -60,5 +66,7 @@ void new_game(crow::game_state& state);
 // cleanup for any game-related objects, called when quitting the game in any
 // way, such as clicking the x or trying to start a new game
 void end_game(crow::game_state& state);
+
+void clean_state(crow::game_state& state);
 
 }  // namespace crow

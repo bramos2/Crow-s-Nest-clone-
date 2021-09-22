@@ -148,8 +148,8 @@ void update_audio_timers(crow::game_state* state, lava::delta dt) {
 }
 
 bool worker_isnt_moving(crow::game_state* state) {
-  if (state->entities->velocities[crow::WORKER].x == 0 &&
-      state->entities->velocities[crow::WORKER].z == 0)
+  if (state->entities.velocities[crow::WORKER].x == 0 &&
+      state->entities.velocities[crow::WORKER].z == 0)
     return true;
   return false;
 }
