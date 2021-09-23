@@ -20,7 +20,7 @@ struct entities {
   // NOLINT
   std::vector<glm::vec3> velocities;
   // NOLINT
- // std::vector<std::unique_ptr<crow::component_interface>> pcomponents;
+  // std::vector<std::unique_ptr<crow::component_interface>> pcomponents;
 
   entities() {
     // Reserve space for the worker and sphynx.
@@ -29,7 +29,7 @@ struct entities {
     transforms_data.resize(2);
     transforms_pbuffer.resize(2);
     velocities.resize(2);
-   // pcomponents.resize(2);
+    // pcomponents.resize(2);
   }
 
   void initialize_transforms(lava::app& app, size_t entity_index,
@@ -64,6 +64,7 @@ struct entities {
   void free(size_t index) {}
 };
 
+// NOLINTNEXTLINE
 enum entity {
   WORKER = 0,
   SPHYNX = 1,

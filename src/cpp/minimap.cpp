@@ -34,9 +34,12 @@ void minimap::set_window_size(glm::vec2 window_size) {
 }
 
 auto minimap::inside_minimap(lava::mouse_position_ref& mouse_pos) -> bool {
-  return (mouse_pos.x < window_pos.x + window_ext.x &&
-          mouse_pos.y < window_pos.y + window_ext.y &&
-          mouse_pos.x > window_pos.x && mouse_pos.y > window_pos.y);
+  return (mouse_pos.x < static_cast<double>(window_pos.x) +
+                            static_cast<double>(window_ext.x) &&
+          mouse_pos.y < static_cast<double>(window_pos.y) +
+                            static_cast<double>(window_ext.y) &&
+          mouse_pos.x > static_cast<double>(window_pos.x) &&
+          static_cast<double>(mouse_pos.y) > window_pos.y);
 }
 
 void minimap::calculate_mouse_position(lava::mouse_position_ref mouse_pos) {

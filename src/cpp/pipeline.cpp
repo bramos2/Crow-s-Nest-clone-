@@ -46,6 +46,8 @@ auto create_descriptor_sets(crow::descriptor_layouts& layouts,
       descriptor_sets[i] = layouts[i]->allocate(pool->get());
     }
   }
+  // TODO: fix
+  // NOLINTNEXTLINE
   return descriptor_sets;
 }
 

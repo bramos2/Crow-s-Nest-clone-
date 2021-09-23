@@ -203,7 +203,8 @@ void end_game(crow::game_state& state) {
   }
 }
 
-//unused atm, should clean memory before starting a new game or exiting the program
+// unused atm, should clean memory before starting a new game or exiting the
+// program
 void clean_state(crow::game_state& state) {}
 
 void update(crow::game_state& state, lava::delta dt) {
@@ -248,10 +249,9 @@ auto left_click_update(game_state& state) -> bool {
     if (mouse_point.y != -1) {
       std::vector<glm::vec2> temporary_results =
           state.minimap.active_room->get_path(
-              glm::vec2(state.entities
-                            .transforms_data[crow::entity::WORKER][3][0],
-                        state.entities
-                            .transforms_data[crow::entity::WORKER][3][2]),
+              glm::vec2(
+                  state.entities.transforms_data[crow::entity::WORKER][3][0],
+                  state.entities.transforms_data[crow::entity::WORKER][3][2]),
               glm::vec2(mouse_point.x, mouse_point.z));
 
       if (temporary_results.size()) {
@@ -266,8 +266,7 @@ auto left_click_update(game_state& state) -> bool {
           // the clicked destination
           if (state.left_click_time < 0.5f) {
             // worker starts running to destination
-            state.player_data.worker_speed =
-                state.player_data.worker_run_speed;
+            state.player_data.worker_speed = state.player_data.worker_run_speed;
 
             // plays footstep sound when worker moves
             crow::audio::add_footstep_sound(
@@ -275,8 +274,7 @@ auto left_click_update(game_state& state) -> bool {
           }
         } else {
           // worker starts walking to destination
-          state.player_data.worker_speed =
-              state.player_data.worker_walk_speed;
+          state.player_data.worker_speed = state.player_data.worker_walk_speed;
 
           // plays footstep sound when worker moves
           crow::audio::add_footstep_sound(

@@ -29,14 +29,18 @@ class theta_star {
   // comparator used to sorting the heap to pop the current head in open list
   struct compare_cost {
     bool operator()(node* const a, node* const b) const {
-      if (a->f > b->f) return true;
-      if (a->f < b->f) return false;
-      if (a->f == b->f) {
-        if (a->g > b->g)
+      if (a->f > b->f) {
+        return true;
+      } else if (a->f < b->f) {
+        return false;
+      } else {
+        if (a->g > b->g) {
           return true;
-        else
+        } else {
           return false;
+        }
       }
+      return false;
     }
   };
 

@@ -29,19 +29,19 @@ struct game_state {
   // crow::descriptor_sets* enemy_descriptor_sets;        // to be replaced
 
   std::vector<crow::descriptor_sets*> desc_sets_list;
-  crow::descriptor_writes_stack* descriptor_writes;
+  crow::descriptor_writes_stack* descriptor_writes = nullptr;
   crow::minimap minimap;
   crow::entities entities;
   crow::world_map<5, 5> world_map;
   crow::player_behavior_data player_data;
   ai_manager enemy_manager;
-  lava::app* app;
+  lava::app* app = nullptr;
   lava::buffer camera_buffer;
   crow::camera_device_data camera_buffer_data;
   // ai_manager enemy_manager;
 
   // time the left click was last pressed
-  float left_click_time;
+  float left_click_time = 0.f;
 
   // TODO: remove this line
   bool map_created = false;
