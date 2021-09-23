@@ -3,6 +3,7 @@
 #include <liblava-extras/fbx.hpp>
 
 #include "../hpp/audio.hpp"
+#include "../hpp/camera.hpp"
 #include "../hpp/cross.hpp"
 
 namespace crow {
@@ -113,22 +114,37 @@ void draw_menus(game_state& state, ImVec2 wh) {
 void new_game(crow::game_state& state) {
   //-----map  generation testing----
   state.world_map = crow::world_map<5, 5>();
-
   // minimap logic
-  state.minimap->map_minc = {-300, -300};
-  state.minimap->map_maxc = {300, 300};
-  state.minimap->screen_minr = {0.0f, 0.65f};
-  state.minimap->screen_maxr = {0.4f, 0.35f};
-  state.minimap->resolution = {1920, 1080};
-  state.minimap->set_window_size(state.app->window.get_size());
+  state.minimap = crow::minimap({0.0f, 0.65f}, {0.4f, 0.35f});
+  state.minimap.map_minc = {-300, -300};
+  state.minimap.map_maxc = {300, 300};
+  state.minimap.screen_minr = {0.0f, 0.65f};
+  state.minimap.screen_maxr = {0.4f, 0.35f};
+  state.minimap.resolution = {1920, 1080};
+  state.minimap.set_window_size(state.app->window.get_size());
   state.world_map.generate_blocks(4);
   state.world_map.generate_rooms(6, 3);
   state.world_map.generate_adjacencies();
-  state.minimap->populate_map_data(&state.world_map);
+  state.minimap.populate_map_data(&state.world_map, state.app);
 
-  // if (!state.map_created) {
+  // camera data
+  state.camera_buffer_data = {
+      state.app->camera.get_view_projection(),
+  };
+
+  // setting enemy manager
+  state.enemy_manager.set_current_room(state.minimap.active_room);
+  state.enemy_manager.load_entity_data(state.entities, crow::entity::SPHYNX,
+                                       crow::entity::WORKER);
+  state.enemy_manager.create_behavior_tree();
+
+  // TODO: Move this from main (causes crash)
+  /*state.camera_buffer.create_mapped(
+      state.app->device, &state.camera_buffer_data,
+      sizeof(state.camera_buffer_data),
+      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);*/
+
   // Create entities
-
   // PLAYER CREATION
   std::string player_fbx_path =
       crow::get_exe_path() +
@@ -144,12 +160,11 @@ void new_game(crow::game_state& state) {
        lava::create_mesh_data(lava::mesh_type::cube);*/
   player_mesh->add_data(player_fbx_data.mesh_data);
   player_mesh->create(state.app->device);
-  state.entities->meshes[crow::entity::WORKER] = player_mesh;
-  state.entities->initialize_transforms(*state.app, crow::entity::WORKER,
-                                        state.environment_descriptor_sets,
-                                        state.descriptor_writes);
-  state.entities->velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
-  // crow::update_descriptor_writes(*state.app, state.descriptor_writes);
+  state.entities.meshes[crow::entity::WORKER] = player_mesh;
+  state.entities.initialize_transforms(
+      *state.app, crow::entity::WORKER,
+      state.desc_sets_list[crow::entity::WORKER], state.descriptor_writes);
+  state.entities.velocities[crow::entity::WORKER] = glm::vec3{0, 0, 0};
 
   // ENEMY CREATION
   std::string enemy_fbx_path = crow::get_exe_path() + "../../res/fbx/deer.fbx";
@@ -162,28 +177,118 @@ void new_game(crow::game_state& state) {
   lava::mesh::ptr enemy_mesh = lava::make_mesh();
   enemy_mesh->add_data(enemy_fbx_data.mesh_data);
   enemy_mesh->create(state.app->device);
-  state.entities->meshes[crow::entity::SPHYNX] = enemy_mesh;
-  state.entities->initialize_transforms(*state.app, crow::entity::SPHYNX,
-                                        state.enemy_descriptor_sets,
-                                        state.descriptor_writes);
-  state.entities->velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
-  crow::update_descriptor_writes(*state.app, state.descriptor_writes);
-
-  //}
-  state.map_created = true;
+  state.entities.meshes[crow::entity::SPHYNX] = enemy_mesh;
+  state.entities.initialize_transforms(
+      *state.app, crow::entity::SPHYNX,
+      state.desc_sets_list[crow::entity::SPHYNX], state.descriptor_writes);
+  state.entities.velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
+  crow::update_descriptor_writes(*state.app,
+                                 state.descriptor_writes);  // now crashing
 
   state.left_click_time = 0;
   state.current_state = state.PLAYING;
 
-  /*state.enemy_manager.load_entity_data(*state.entities, crow::entity::SPHYNX,
-                                       crow::entity::WORKER);*/
+  // FOR BUILD PURPOSES ONLY, TO BE REMOVED
+  state.entities.transforms_data[crow::entity::WORKER][3][0] = -7.0f;
+  state.entities.transforms_data[crow::entity::WORKER][3][2] = -7.0f;
+
+  state.entities.transforms_data[crow::entity::SPHYNX][3][0] = 7.0f;
+  state.entities.transforms_data[crow::entity::SPHYNX][3][2] = 7.0f;
 }
 
 void end_game(crow::game_state& state) {
   for (int i = 0; i < 1; i++) {
-    state.entities->transforms_pbuffer[i].get()->destroy();
-    state.entities->meshes[i].get()->destroy();
+    state.entities.transforms_pbuffer[i].get()->destroy();
+    state.entities.meshes[i].get()->destroy();
   }
+}
+
+// unused atm, should clean memory before starting a new game or exiting the
+// program
+void clean_state(crow::game_state& state) {}
+
+void update(crow::game_state& state, lava::delta dt) {
+  crow::path_through(state.player_data, state.entities, crow::entity::WORKER,
+                     dt);
+
+  // setting up enemy data for behavior tree (temporary)
+  state.enemy_manager.set_current_room(state.minimap.active_room);
+
+  state.enemy_manager.update_position(state.entities, crow::entity::SPHYNX);
+  state.enemy_manager.update_target_position(state.entities,
+                                             crow::entity::WORKER);
+  // running behavior tree for ai
+  status b_tree_result = state.enemy_manager.b_tree.run();
+
+  for (size_t i = 0; i < state.entities.transforms_data.size(); i++) {
+    state.entities.update_transform_data(i, dt);
+    state.entities.update_transform_buffer(i);
+  }
+
+  if (state.current_state == state.PLAYING) {
+    state.app->camera.update_view(dt, state.app->input.get_mouse_position());
+    state.camera_buffer_data.projection_view =
+        state.app->camera.get_view_projection();
+    memcpy(state.camera_buffer.get_mapped_data(), &state.camera_buffer_data,
+           sizeof(state.camera_buffer_data));
+
+    // time elapsed since last left click
+    state.left_click_time += dt;
+    // updates sound timer objects
+    crow::audio::update_audio_timers(&state, dt);
+  }
+}
+
+auto left_click_update(game_state& state) -> bool {
+  // processing for left clicks while you are currently playing the game
+  if (state.current_state == state.PLAYING) {
+    // crow::audio::play_sfx(0);
+    glm::vec3 mouse_point = crow::mouse_to_floor(state.app);
+    // if mouse_point.y == -1 then the mouse is not pointing at the
+    // floor
+    if (mouse_point.y != -1) {
+      std::vector<glm::vec2> temporary_results =
+          state.minimap.active_room->get_path(
+              glm::vec2(
+                  state.entities.transforms_data[crow::entity::WORKER][3][0],
+                  state.entities.transforms_data[crow::entity::WORKER][3][2]),
+              glm::vec2(mouse_point.x, mouse_point.z));
+
+      if (temporary_results.size()) {
+        // if the clicked position is the same as the previous position,
+        // then we can assume that you've double clicked. thus, the
+        // worker should run instead of walk
+        if (state.player_data.path_result.size() &&
+            state.player_data.path_result[0] == temporary_results[0]) {
+          // check to ensure that the clicks were close enough to each
+          // other to count as a double click. if not, then nothing
+          // should happen since the worker is always walking towards
+          // the clicked destination
+          if (state.left_click_time < 0.5f) {
+            // worker starts running to destination
+            state.player_data.worker_speed = state.player_data.worker_run_speed;
+
+            // plays footstep sound when worker moves
+            crow::audio::add_footstep_sound(
+                &state.entities.transforms_data[crow::WORKER], 0.285f);
+          }
+        } else {
+          // worker starts walking to destination
+          state.player_data.worker_speed = state.player_data.worker_walk_speed;
+
+          // plays footstep sound when worker moves
+          crow::audio::add_footstep_sound(
+              &state.entities.transforms_data[crow::WORKER], 0.5f);
+        }
+      }
+
+      // set the worker's path
+      state.player_data.path_result = temporary_results;
+    }
+  }
+  state.left_click_time = 0;
+
+  return true;
 }
 
 }  // namespace crow

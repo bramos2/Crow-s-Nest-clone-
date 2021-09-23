@@ -116,8 +116,8 @@ void world_map<br_width, br_height>::generate_blocks(int blocks_count) {
   }
 
   // connecting all blocks with their neighbors
-  for (int i = 0; i < br_width; i++) {
-    for (int j = 0; j < br_height; j++) {
+  for (ptrdiff_t i = 0; i < br_width; i++) {
+    for (ptrdiff_t j = 0; j < br_height; j++) {
       if (block_grid[i][j] != nullptr) {
         auto current_block = block_grid[i][j];
         if (i > 0) {

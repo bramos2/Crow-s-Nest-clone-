@@ -16,21 +16,15 @@
 #include "hpp/audio.hpp"
 #include "hpp/component.hpp"
 #include "hpp/cross.hpp"
-#include "hpp/enemy_behaviors.hpp"
 #include "hpp/game_state.hpp"
 #include "hpp/geometry.hpp"
-#include "hpp/map.hpp"
-#include "hpp/minimap.hpp"
-#include "hpp/object.hpp"
-#include "hpp/player_behavior.hpp"
 
 auto main(int argc, char* argv[]) -> int {
   // soloud sound initialization
   crow::audio::sound_loaded = false;
   crow::audio::initialize();
 
-  // temporary
-  ai_manager enemy_manager;
+  crow::game_state game_state;
 
   lava::frame_config config;
   config.info.app_name = "Crow's Nest";
@@ -41,16 +35,13 @@ auto main(int argc, char* argv[]) -> int {
   app.setup();
 
   crow::initialize_debug_camera(app.camera);
-  crow::camera_device_data camera_buffer_data = {
-      app.camera.get_view_projection(),
-  };
-  lava::buffer camera_buffer;
-  camera_buffer.create_mapped(
-      app.device, &camera_buffer_data, sizeof(camera_buffer_data),
-      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
-  crow::minimap minimap({0.0f, 0.65f}, {0.4f, 0.35f});
-  lava::mesh::ptr current_room_mesh;
+  // TODO: move to game state (crashes when doing so at the moment, may not be
+  // necessary)
+  game_state.camera_buffer.create_mapped(
+      app.device, &game_state.camera_buffer_data,
+      sizeof(game_state.camera_buffer_data),
+      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
   // MESHES FOR BUILD PRESENTATION
   lava::mesh_data wall_cube_data =
@@ -114,14 +105,6 @@ auto main(int argc, char* argv[]) -> int {
                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
   // lava::mesh::ptr cube = lava::make_mesh();
-  std::string fbx_path =
-      crow::get_exe_path() + "../../res/fbx/deer.fbx";  // Deer model
-  ofbx::IScene* scene = lava::extras::load_fbx_scene(fbx_path.c_str());
-  std::cout << "Loaded FBX scene.\n";
-
-  lava::extras::fbx_data fbx_data = lava::extras::load_fbx_model(scene);
-  // cube->add_data(fbx_data.mesh_data);
-  // cube->create(app.device);
 
   lava::descriptor::pool::ptr descriptor_pool = lava::make_descriptor_pool();
   descriptor_pool->create(app.device,
@@ -140,7 +123,7 @@ auto main(int argc, char* argv[]) -> int {
   // VkDescriptorSet environment_descriptor_set = VK_NULL_HANDLE;
   crow::descriptor_writes_stack descriptor_writes;
 
-  crow::entities entities;
+  // crow::entities entities;
 
   // room buffer creation
   crow::descriptor_sets room_descriptor_sets;
@@ -153,14 +136,12 @@ auto main(int argc, char* argv[]) -> int {
   crow::descriptor_layouts s_desc_layouts;
 
   // setting up the gamestate
-  crow::game_state game_state;
-  game_state.current_state = game_state.PLAYING;
-  // points to important game data
-  game_state.environment_descriptor_sets = &environment_descriptor_sets;
-  game_state.enemy_descriptor_sets = &s_desc_sets;
+  game_state.desc_sets_list.resize(game_state.entities.transforms_data.size());
+  game_state.desc_sets_list[crow::entity::WORKER] =
+      &environment_descriptor_sets;  // player enviroment set
+  game_state.desc_sets_list[crow::entity::SPHYNX] =
+      &s_desc_sets;  // enemy ai enviroment set
   game_state.descriptor_writes = &descriptor_writes;
-  game_state.minimap = &minimap;
-  game_state.entities = &entities;
   game_state.app = &app;
 
   app.on_create = [&]() {
@@ -255,7 +236,7 @@ auto main(int argc, char* argv[]) -> int {
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = camera_buffer.get_descriptor_info(),
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_pass{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -290,7 +271,7 @@ auto main(int argc, char* argv[]) -> int {
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = camera_buffer.get_descriptor_info(),
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_pass_s{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -326,7 +307,7 @@ auto main(int argc, char* argv[]) -> int {
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = camera_buffer.get_descriptor_info(),
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
     };
     VkWriteDescriptorSet const write_ubo_pass_room{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -362,27 +343,7 @@ auto main(int argc, char* argv[]) -> int {
         app, environment_pipeline_layout, environment_shaders,
         environment_descriptor_layouts, vertex_attributes);
 
-    // Create entities.
-    // lava::mesh::ptr player_mesh = lava::make_mesh();
-    // lava::mesh_data player_mesh_data =
-    //   lava::create_mesh_data(lava::mesh_type::cube);
-    /* player_mesh->add_data(fbx_data.mesh_data);
-     player_mesh->create(app.device);
-     entities.meshes[crow::entity::WORKER] = player_mesh;*/
     crow::new_game(game_state);
-    minimap.active_room->set_active(&app, current_room_mesh, app.camera);
-    enemy_manager.set_current_room(minimap.active_room);
-    enemy_manager.load_entity_data(*game_state.entities, crow::entity::SPHYNX,
-                                   crow::entity::WORKER);
-    enemy_manager.create_behavior_tree();
-    // game_state.current_state = game_state.MAIN_MENU;
-
-    // FOR BUILD PURPOSES ONLY, TO BE REMOVED
-    entities.transforms_data[crow::entity::WORKER][3][0] = -7.0f;
-    entities.transforms_data[crow::entity::WORKER][3][2] = -7.0f;
-
-    entities.transforms_data[crow::entity::SPHYNX][3][0] = 7.0f;
-    entities.transforms_data[crow::entity::SPHYNX][3][2] = 7.0f;
     return true;
   };
 
@@ -398,61 +359,13 @@ auto main(int argc, char* argv[]) -> int {
   app.input.mouse_button.listeners.add(
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
-          // processing for left clicks while you are currently playing the game
-          if (game_state.current_state == game_state.PLAYING) {
-            // crow::audio::play_sfx(0);
-            glm::vec3 mouse_point = crow::mouse_to_floor(&app);
-            // if mouse_point.y == -1 then the mouse is not pointing at the
-            // floor
-            if (mouse_point.y != -1) {
-              std::vector<glm::vec2> temporary_results =
-                  minimap.active_room->get_path(
-                      glm::vec2(
-                          entities.transforms_data[crow::entity::WORKER][3][0],
-                          entities.transforms_data[crow::entity::WORKER][3][2]),
-                      glm::vec2(mouse_point.x, mouse_point.z));
-
-              if (temporary_results.size()) {
-                // if the clicked position is the same as the previous position,
-                // then we can assume that you've double clicked. thus, the
-                // worker should run instead of walk
-                if (crow::path_result.size() &&
-                    crow::path_result[0] == temporary_results[0]) {
-                  // check to ensure that the clicks were close enough to each
-                  // other to count as a double click. if not, then nothing
-                  // should happen since the worker is always walking towards
-                  // the clicked destination
-                  if (game_state.left_click_time < 0.5f) {
-                    // worker starts running to destination
-                    crow::worker_speed = crow::worker_run_speed;
-
-                    // plays footstep sound when worker moves
-                    crow::audio::add_footstep_sound(
-                        &entities.transforms_data[crow::WORKER], 0.285f);
-                  }
-                } else {
-                  // worker starts walking to destination
-                  crow::worker_speed = crow::worker_walk_speed;
-
-                  // plays footstep sound when worker moves
-                  crow::audio::add_footstep_sound(
-                      &entities.transforms_data[crow::WORKER], 0.5f);
-                }
-              }
-
-              // set the worker's path
-              crow::path_result = temporary_results;
-            }
-          }
-          game_state.left_click_time = 0;
-
-          return true;
+          return left_click_update(game_state);
         }
         return false;
       });
 
   app.imgui.on_draw = [&]() {
-    minimap.camera = &app.camera;
+    game_state.minimap.camera = &app.camera;
     // need this for having the GUI items scale with the window size
     glm::vec2 wh = app.window.get_size();
     // pass this flag into ImGui::Begin when you need to spawn a window that
@@ -502,8 +415,10 @@ auto main(int argc, char* argv[]) -> int {
     crow::draw_menus(game_state, {wh.x, wh.y});
 
     // start of minimap processing
-    minimap.draw_call(&app, current_room_mesh);
-    // end of minimap processing
+    game_state.minimap.draw_call(
+        &app, game_state.minimap.active_room
+                  ->room_mesh);  // function parameter could be changed perhaps
+                                 // end of minimap processing
 
     // debug window
 #ifdef DEBUG_IMGUI
@@ -537,52 +452,20 @@ auto main(int argc, char* argv[]) -> int {
   };  // end imguiondraw
 
   app.on_update = [&](lava::delta dt) {
-    crow::path_through(entities, crow::entity::WORKER, crow::worker_speed, dt);
-    // could be move to on click
-    enemy_manager.set_current_room(minimap.active_room);
-
-    enemy_manager.update_position(*game_state.entities, crow::entity::SPHYNX);
-    enemy_manager.update_target_position(*game_state.entities,
-                                         crow::entity::WORKER);
-    status b_tree_result = enemy_manager.b_tree.run();
-
-    for (size_t i = 0; i < entities.transforms_data.size(); i++) {
-      entities.update_transform_data(i, dt);
-      entities.update_transform_buffer(i);
-    }
-
-    /* game_state.entities->velocities[crow::entity::SPHYNX] =
-     *enemy_manager.velocity;*/
-    /* std::cout << "sphynx velocity x: " << enemy_manager.velocity->x
-               << " z: " << enemy_manager.velocity->z << "\n";
-
-     std::cout << "sphynx pos x:"
-               << entities.transforms_data[crow::entity::SPHYNX][3][0] << " z: "
-               << entities.transforms_data[crow::entity::SPHYNX][3][2] <<
-     "\n";*/
-
-    if (game_state.current_state == game_state.PLAYING) {
-      app.camera.update_view(dt, app.input.get_mouse_position());
-      camera_buffer_data.projection_view = app.camera.get_view_projection();
-      memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
-             sizeof(camera_buffer_data));
-
-      // time elapsed since last left click
-      game_state.left_click_time += dt;
-      // updates sound timer objects
-      crow::audio::update_audio_timers(&game_state, dt);
-    }
+    // game logic is processed here
+    crow::update(game_state, dt);
 
     // actual game loop; execute the entire game by simply cycling through
     // the array of objects
 
+    // the rest of this update function is concern of the rendering
     environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
           environment_pipeline_layout->get(), 0, 4, room_descriptor_sets.data(),
           0, nullptr);
-      if (/*current_room_mesh*/ minimap.active_room->room_mesh) {
-        minimap.active_room->room_mesh->bind_draw(cmd_buf);
+      if (game_state.minimap.active_room->room_mesh) {
+        game_state.minimap.active_room->room_mesh->bind_draw(cmd_buf);
       }
       wall1->bind_draw(cmd_buf);
       wall2->bind_draw(cmd_buf);
@@ -596,13 +479,13 @@ auto main(int argc, char* argv[]) -> int {
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
           environment_pipeline_layout->get(), 0, 4,
           environment_descriptor_sets.data(), 0, nullptr);
-      entities.meshes[crow::entity::WORKER]->bind_draw(cmd_buf);
+      game_state.entities.meshes[crow::entity::WORKER]->bind_draw(cmd_buf);
 
       app.device->call().vkCmdBindDescriptorSets(
           cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
           environment_pipeline_layout->get(), 0, 4, s_desc_sets.data(), 0,
           nullptr);
-      entities.meshes[crow::entity::SPHYNX]->bind_draw(cmd_buf);
+      game_state.entities.meshes[crow::entity::SPHYNX]->bind_draw(cmd_buf);
 
       // TODO(conscat): Write a bind_descriptor_sets() method.
       // environment_pipeline_layout->bind_descriptor_set(
@@ -622,7 +505,6 @@ auto main(int argc, char* argv[]) -> int {
       //}
     };
 
-    // temp_position = crow::get_floor_point(app.camera);
     return true;
   };
 
