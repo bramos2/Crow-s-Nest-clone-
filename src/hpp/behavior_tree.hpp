@@ -11,6 +11,7 @@ struct behavior_tree {
     virtual status run() = 0;
   };
 
+
   struct composite_node : public behavior_tree::node {
     void add_child(behavior_tree::node* n);
     const std::vector<behavior_tree::node*>& get_children() const;

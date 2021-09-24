@@ -185,7 +185,6 @@ void new_game(crow::game_state& state) {
 
   state.entities.transforms_data[temp_item_b.index][3][0] = b_pos.x;
   state.entities.transforms_data[temp_item_b.index][3][2] = b_pos.y;
-
   // camera data
   state.camera_buffer_data = {
       state.app->camera.get_view_projection(),
@@ -239,6 +238,7 @@ void new_game(crow::game_state& state) {
       *state.app, crow::entity::SPHYNX,
       state.desc_sets_list[crow::entity::SPHYNX], state.descriptor_writes);
   state.entities.velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
+
   crow::update_descriptor_writes(*state.app, state.descriptor_writes);
 
   state.left_click_time = 0;
@@ -411,6 +411,7 @@ auto right_click_update(game_state& state) -> bool {
       }
     }
   }
+
   return true;
 }
 

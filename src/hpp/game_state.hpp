@@ -78,5 +78,4 @@ void update(crow::game_state& state, lava::delta dt);
 auto left_click_update(game_state& state) -> bool;
 
 auto right_click_update(game_state& state) -> bool;
-
 }  // namespace crow
