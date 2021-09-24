@@ -434,7 +434,8 @@ auto right_click_update(game_state& state) -> bool {
         }
         state.right_click_time = 0;
       }
-      if (state.minimap.active_room->r_console && !state.minimap.active_room->r_console->active &&
+      if (state.minimap.active_room->r_console &&
+          !state.minimap.active_room->r_console->active &&
           (map_point->col == state.minimap.active_room->r_console->x &&
            map_point->row == state.minimap.active_room->r_console->y)) {
         glm::vec2 c_to_p = {

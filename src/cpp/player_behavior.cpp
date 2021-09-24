@@ -57,9 +57,11 @@ void path_through(player_behavior_data& p_data, crow::entities& entity,
       // temporary solution
       if (p_data.item_target) {
         p_data.item_target->interact();
+        p_data.item_target = nullptr;
 
       } else if (p_data.sdc_target) {
         p_data.sdc_target->interact();
+        p_data.sdc_target = nullptr;
       }
       p_data.interacting = false;
     }

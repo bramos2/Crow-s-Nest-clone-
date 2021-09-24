@@ -7,8 +7,8 @@
 void sd_console::interact() {
   *win_condition += 1;
   active = true;
-
-  fmt::print("interacted with self_destruct console\n");
+  // TODO: REMOVE
+  fmt::print("\ninteracted with self_destruct console\n");
 }
 
 void pg_console::interact() {}

@@ -3,14 +3,7 @@
 
 namespace crow {
 
-theta_star::~theta_star() {
-  for (size_t c = 0; c < nodes.size(); ++c) {
-    for (size_t r = 0; r < nodes[c].size(); ++r) {
-      node* curr = nodes[c][r];
-      delete curr;
-    }
-  }
-}
+theta_star::~theta_star() { clean_data(); }
 
 void theta_star::set_weight(float w) { weight = w; }
 
@@ -18,24 +11,33 @@ float theta_star::get_weight() { return weight; }
 
 std::vector<tile*> theta_star::get_path() { return path; }
 
+void theta_star::clean_data() {
+  for (size_t c = 0; c < nodes.size(); ++c) {
+    for (size_t r = 0; r < nodes[c].size(); ++r) {
+      node* curr = nodes[c][r];
+      if (curr) {
+        delete curr;
+      }
+    }
+  }
+}
+
 bool theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
   if (!_start || !_goal) {
     return false;
   }
-  finished = false;
+
   tilemap = _map;
   nodes.resize(tilemap->get_height());
   for (auto& row : nodes) {
     row.resize(tilemap->get_width());
   }
-  std::unordered_map<tile*, node*>
-      nodemap;  // temporary map to assign correct start and goal node pointers
-  // making all nodes
+
+  // loading all the nodes
   for (size_t row = 0; row < tilemap->map.size(); ++row) {
     for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
       node* curr = new node(tilemap->map[row][col], nullptr);
       nodes[row][col] = curr;
-      nodemap[curr->tileptr] = curr;
     }
   }
 
@@ -44,19 +46,26 @@ bool theta_star::set_theta_star(tile* _start, tile* _goal, tile_map* _map) {
     for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
       tile* curr = tilemap->map[row][col];
 
-      nodemap[curr]->neighbors.reserve(curr->neighbors.size());
+      // nodemap[curr]->neighbors.reserve(curr->neighbors.size());
+      nodes[row][col]->neighbors.reserve(curr->neighbors.size());
       for (auto neighbor : curr->neighbors) {
         if (neighbor->is_open) {
-          nodemap[curr]->neighbors.push_back(nodemap[neighbor]);
+          nodes[row][col]->neighbors.push_back(
+              nodes[neighbor->row][neighbor->col]);
         }
       }
     }
   }
 
-  // initialize our start and goal pointers
-  goal = nodemap[_goal];
+  finished = false;
+  open.clear();
+  open.resize(0);
 
-  start = nodemap[_start];
+  // initialize our start and goal pointers
+  // goal = nodemap[_goal];
+  goal = nodes[_goal->row][_goal->col];
+  // start = nodemap[_start];
+  start = nodes[_start->row][_start->col];
   start->parent = start;
   start->g = 0;
   start->h = start->tileptr->m_distance(_goal) * weight;

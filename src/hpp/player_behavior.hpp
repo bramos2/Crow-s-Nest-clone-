@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "../hpp/object.hpp"
 #include "../hpp/interactible.hpp"
+#include "../hpp/object.hpp"
 
 namespace crow {
 struct player_behavior_data {

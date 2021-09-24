@@ -72,6 +72,8 @@ class theta_star {
   // returns a vector with the path from the goal to our position
   std::vector<tile*> get_path();
 
+  void clean_data();
+
  private:
   // theta* part of the algorithm
   void update_vertex(node* s, node* neighbor);
