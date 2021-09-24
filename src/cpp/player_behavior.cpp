@@ -54,10 +54,12 @@ void path_through(player_behavior_data& p_data, crow::entities& entity,
   } else {
     entity.velocities[ent] = glm::vec3(0.0f, 0.0f, 0.0f);
     if (p_data.interacting) {
-      if (p_data.target) {
-        p_data.target->interact();
-        //temporary solution
-        
+      // temporary solution
+      if (p_data.item_target) {
+        p_data.item_target->interact();
+
+      } else if (p_data.sdc_target) {
+        p_data.sdc_target->interact();
       }
       p_data.interacting = false;
     }

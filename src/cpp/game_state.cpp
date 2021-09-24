@@ -132,31 +132,46 @@ void new_game(crow::game_state& state) {
   // TODO: ADD ITEMS TO SHOWCASE ROOM
   item temp_item_a;
   item temp_item_b;
+  sd_console* temp_sdc = new sd_console;
   temp_item_a.type = item_type::FLASK;
   temp_item_b.type = item_type::ALARM;
   temp_item_a.player_inv = temp_item_b.player_inv =
       &state.player_data.player_inventory;
+
+  // giving reference to win condition to console
+  temp_sdc->win_condition = &state.win_condition;
 
   // setting the temporary items tile
   temp_item_a.x = 3;
   temp_item_a.y = 7;
   temp_item_b.x = 12;
   temp_item_b.y = 5;
+  temp_sdc->x = 15;
+  temp_sdc->y = 13;
+  // need to close the tile where the console is
+  state.minimap.active_room->floor_tiles.map[13][15]->is_open = false;
 
   temp_item_a.index = temp_item_a.mesh_inx = 2;
   temp_item_b.index = temp_item_b.mesh_inx = 3;
+  temp_sdc->index = temp_sdc->mesh_inx = 4;
 
-  // TODO: will need to add the 2 items to the entity system
-  state.entities.allocate(2);
+  // TODO: will need to add the 3 interactibles to the entity system
+  state.entities.allocate(3);
 
   // adding the temporary items to the active showcase room
   state.minimap.active_room->items.push_back(temp_item_a);
   state.minimap.active_room->items.push_back(temp_item_b);
+  state.minimap.active_room->r_console = temp_sdc;
 
   lava::mesh_data cube_data = lava::create_mesh_data(lava::mesh_type::cube);
   lava::mesh::ptr cube_mesh = lava::make_mesh();
+  lava::mesh::ptr cube_mesh2 = lava::make_mesh();
   cube_mesh->add_data(cube_data);
   cube_mesh->create(state.app->device);
+  cube_data.scale(2);
+  cube_data.move({0.f, -2.f, 0.f});
+  cube_mesh2->add_data(cube_data);
+  cube_mesh2->create(state.app->device);
 
   lava::mesh_data triangle_data =
       lava::create_mesh_data(lava::mesh_type::triangle);
@@ -172,19 +187,28 @@ void new_game(crow::game_state& state) {
   state.entities.initialize_transforms(*state.app, temp_item_b.index,
                                        state.desc_sets_list[3],
                                        state.descriptor_writes);
+  state.entities.meshes[temp_sdc->index] = cube_mesh2;
+  state.entities.initialize_transforms(*state.app, temp_sdc->index,
+                                       state.desc_sets_list[4],
+                                       state.descriptor_writes);
 
   // need to change the position of these items to match their tile
   glm::vec2 a_pos =
       state.minimap.active_room->get_tile_wpos(temp_item_a.x, temp_item_a.y);
   glm::vec2 b_pos =
       state.minimap.active_room->get_tile_wpos(temp_item_b.x, temp_item_b.y);
+  glm::vec2 c_pos =
+      state.minimap.active_room->get_tile_wpos(temp_sdc->x, temp_sdc->y);
 
-  // setting the position of the items
+  // setting the position of the interactibles
   state.entities.transforms_data[temp_item_a.index][3][0] = a_pos.x;
   state.entities.transforms_data[temp_item_a.index][3][2] = a_pos.y;
 
   state.entities.transforms_data[temp_item_b.index][3][0] = b_pos.x;
   state.entities.transforms_data[temp_item_b.index][3][2] = b_pos.y;
+
+  state.entities.transforms_data[temp_sdc->index][3][0] = c_pos.x;
+  state.entities.transforms_data[temp_sdc->index][3][2] = c_pos.y;
 
   // camera data
   state.camera_buffer_data = {
@@ -358,11 +382,12 @@ auto right_click_update(game_state& state) -> bool {
           {mouse_point.x, mouse_point.z});
       if (state.minimap.active_room->items.size() > 0) {
         for (item& i : state.minimap.active_room->items) {
-          if (map_point->col == i.x && map_point->row == i.y) {
+          if (i.type != item_type::NONE && map_point->col == i.x &&
+              map_point->row == i.y) {
             // if there is an item at this location we can then move to the item
             // and interact
             // setting interactible target for player
-            state.player_data.target = &i;
+            state.player_data.item_target = &i;
             std::vector<glm::vec2> temporary_results =
                 state.minimap.active_room->get_path(
                     glm::vec2(state.entities
@@ -408,6 +433,62 @@ auto right_click_update(game_state& state) -> bool {
           }
         }
         state.right_click_time = 0;
+      }
+      if (state.minimap.active_room->r_console && !state.minimap.active_room->r_console->active &&
+          (map_point->col == state.minimap.active_room->r_console->x &&
+           map_point->row == state.minimap.active_room->r_console->y)) {
+        glm::vec2 c_to_p = {
+            state.entities.transforms_data[crow::entity::WORKER][3][0] -
+                mouse_point.x,
+            state.entities.transforms_data[crow::entity::WORKER][3][2] -
+                mouse_point.y};
+        c_to_p = glm::normalize(c_to_p);
+        c_to_p += glm::vec2{
+            state.entities.transforms_data[state.minimap.active_room->r_console
+                                               ->index][3][0],
+            state.entities.transforms_data[state.minimap.active_room->r_console
+                                               ->index][3][2]};
+
+        state.player_data.sdc_target = state.minimap.active_room->r_console;
+        std::vector<glm::vec2> temporary_results =
+            state.minimap.active_room->get_path(
+                glm::vec2(
+                    state.entities.transforms_data[crow::entity::WORKER][3][0],
+                    state.entities.transforms_data[crow::entity::WORKER][3][2]),
+                c_to_p);
+        if (temporary_results.size()) {
+          // if the clicked position is the same as the previous position,
+          // then we can assume that you've double clicked. thus, the
+          // worker should run instead of walk
+          if (state.player_data.path_result.size() &&
+              state.player_data.path_result[0] == temporary_results[0]) {
+            // check to ensure that the clicks were close enough to each
+            // other to count as a double click. if not, then nothing
+            // should happen since the worker is always walking towards
+            // the clicked destination
+            if (state.right_click_time < 0.5f) {
+              // worker starts running to destination
+              state.player_data.worker_speed =
+                  state.player_data.worker_run_speed;
+
+              // plays footstep sound when worker moves
+              crow::audio::add_footstep_sound(
+                  &state.entities.transforms_data[crow::WORKER], 0.285f);
+            }
+          } else {
+            // worker starts walking to destination
+            state.player_data.worker_speed =
+                state.player_data.worker_walk_speed;
+
+            // plays footstep sound when worker moves
+            crow::audio::add_footstep_sound(
+                &state.entities.transforms_data[crow::WORKER], 0.5f);
+          }
+        }
+
+        // set the worker's path
+        state.player_data.path_result = temporary_results;
+        state.player_data.interacting = true;
       }
     }
   }

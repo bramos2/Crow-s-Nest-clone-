@@ -38,6 +38,10 @@ struct game_state {
   lava::app* app = nullptr;
   lava::buffer camera_buffer;
   crow::camera_device_data camera_buffer_data;
+
+  // simple variables to check for win condition
+  unsigned int win_condition = 0;
+  const unsigned int win_goal = 1;
   // ai_manager enemy_manager;
 
   // time the left click was last pressed

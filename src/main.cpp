@@ -10,7 +10,6 @@
 #include "hpp/pipeline.hpp"
 #include "liblava/resource/mesh.hpp"
 #define STB_IMAGE_IMPLEMENTATION
-#include <iostream>
 #include <stb_image.h>
 
 #include "hpp/audio.hpp"
@@ -140,15 +139,19 @@ auto main(int argc, char* argv[]) -> int {
   crow::descriptor_sets i2_desc_sets;
   crow::descriptor_layouts i2_desc_layouts;
 
+  crow::descriptor_sets c_desc_sets;
+  crow::descriptor_layouts c_desc_layouts;
+
   // setting up the gamestate
   game_state.desc_sets_list.resize(game_state.entities.transforms_data.size() +
-                                   2);
+                                   3);
   game_state.desc_sets_list[crow::entity::WORKER] =
       &environment_descriptor_sets;  // player enviroment set
   game_state.desc_sets_list[crow::entity::SPHYNX] =
       &s_desc_sets;  // enemy ai enviroment set
   game_state.desc_sets_list[2] = &i_desc_sets;
   game_state.desc_sets_list[3] = &i2_desc_sets;
+  game_state.desc_sets_list[4] = &c_desc_sets;
   game_state.descriptor_writes = &descriptor_writes;
   game_state.app = &app;
 
@@ -250,6 +253,24 @@ auto main(int argc, char* argv[]) -> int {
                                      .descriptors_count = 1},
         });
 
+    c_desc_layouts[0] =
+        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // Render-pass buffers:
+    c_desc_layouts[1] =
+        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // Material buffers:
+    c_desc_layouts[2] =
+        crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // Object buffers:
+    c_desc_layouts[3] = crow::create_descriptor_layout(
+        app,
+        {
+            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                                     .binding_slot = 0,
+                                     .descriptors_count = 1},
+        });
+
     // Global buffers:
     environment_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
@@ -281,6 +302,8 @@ auto main(int argc, char* argv[]) -> int {
 
     i2_desc_sets =
         crow::create_descriptor_sets(i2_desc_layouts, descriptor_pool);
+
+    c_desc_sets = crow::create_descriptor_sets(c_desc_layouts, descriptor_pool);
 
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
@@ -465,6 +488,43 @@ auto main(int argc, char* argv[]) -> int {
                                         write_ubo_material_i2,
                                         write_ubo_object_i2});
 
+    VkWriteDescriptorSet const write_ubo_global_c{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = c_desc_sets[0],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_pass_c{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = c_desc_sets[1],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_material_c{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = c_desc_sets[2],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_object_c{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = c_desc_sets[3],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+
+    app.device->vkUpdateDescriptorSets({write_ubo_global_c, write_ubo_pass_c,
+                                        write_ubo_material_c,
+                                        write_ubo_object_c});
+
     // Create pipelines.
     environment_pipeline = crow::create_rasterization_pipeline(
         app, environment_pipeline_layout, environment_shaders,
@@ -604,6 +664,16 @@ auto main(int argc, char* argv[]) -> int {
       wall5->bind_draw(cmd_buf);
       wall6->bind_draw(cmd_buf);
 
+      if (game_state.minimap.active_room->r_console) {
+        app.device->call().vkCmdBindDescriptorSets(
+            cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            environment_pipeline_layout->get(), 0, 4, c_desc_sets.data(), 0,
+            nullptr);
+        game_state.entities
+            .meshes[game_state.minimap.active_room->r_console->index]
+            ->bind_draw(cmd_buf);
+      }
+
       // TODO: DRAW ITEMS FOR THE ROOM
       if (game_state.minimap.active_room->items[0].type != item_type::NONE) {
         app.device->call().vkCmdBindDescriptorSets(
@@ -663,6 +733,9 @@ auto main(int argc, char* argv[]) -> int {
     // cube->destroy();
     crow::audio::cleanup();
     crow::end_game(game_state);
+    if (game_state.minimap.active_room->r_console) {
+      delete game_state.minimap.active_room->r_console;
+    }
     // for (auto& meshes : meshes) {
     //   if (meshes) {
     //     meshes->destroy();

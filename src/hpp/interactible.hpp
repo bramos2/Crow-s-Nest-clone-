@@ -14,11 +14,16 @@ struct interactible {
 struct sd_console : public interactible {
   // TODO: tick win condition
   virtual void interact() override;
+
+  bool active = false;
+  unsigned int* win_condition;
 };
 
 struct pg_console : public interactible {
   // TODO: POWER A BLOCK
   virtual void interact() override;
+
+  bool active = false;
 };
 
 enum class item_type { NONE = -1, BEAKER = 0, FLASK, ALARM, RADIO, BAR };

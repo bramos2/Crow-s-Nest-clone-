@@ -1,6 +1,15 @@
- #include "../hpp/interactible.hpp"
+#include "../hpp/interactible.hpp"
 
-void sd_console::interact() {}
+#include <liblava-extras/fbx.hpp>
+
+#include <iostream>
+
+void sd_console::interact() {
+  *win_condition += 1;
+  active = true;
+
+  fmt::print("interacted with self_destruct console\n");
+}
 
 void pg_console::interact() {}
 

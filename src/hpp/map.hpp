@@ -36,6 +36,8 @@ struct map_room {
   crow::tile_map floor_tiles;
   // list of items in this room
   std::vector<item> items;
+  //rooms can have at most 1 self destruct console
+  sd_console* r_console = nullptr;
   void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
                   lava::camera& camera);
   glm::vec2 get_tile_wpos(std::int_fast32_t const x, std::int_fast32_t const y);

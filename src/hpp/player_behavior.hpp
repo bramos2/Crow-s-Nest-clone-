@@ -14,7 +14,8 @@ struct player_behavior_data {
   float worker_speed = 0.f;
   bool interacting = false;
   item player_inventory;
-  item* target = nullptr;
+  item* item_target = nullptr;
+  sd_console* sdc_target = nullptr;
 };
 
 auto get_angle(glm::vec2 const pos_from, glm::vec2 const pos_to) -> float;
