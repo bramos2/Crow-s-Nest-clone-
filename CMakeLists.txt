@@ -90,4 +90,6 @@ target_sources(
   src/cpp/behavior_tree.cpp
   src/hpp/enemy_behaviors.hpp
   src/cpp/enemy_behaviors.cpp
+  src/hpp/interactible.hpp
+  src/cpp/interactible.cpp
 )

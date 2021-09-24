@@ -5,6 +5,7 @@
 #include "../hpp/audio.hpp"
 #include "../hpp/camera.hpp"
 #include "../hpp/cross.hpp"
+#include "../hpp/interactible.hpp" 1
 
 namespace crow {
 
@@ -127,6 +128,64 @@ void new_game(crow::game_state& state) {
   state.world_map.generate_adjacencies();
   state.minimap.populate_map_data(&state.world_map, state.app);
 
+  // TEMPORARY
+  // TODO: ADD ITEMS TO SHOWCASE ROOM
+  item temp_item_a;
+  item temp_item_b;
+  temp_item_a.type = item_type::FLASK;
+  temp_item_b.type = item_type::ALARM;
+  temp_item_a.player_inv = temp_item_b.player_inv =
+      &state.player_data.player_inventory;
+
+  // setting the temporary items tile
+  temp_item_a.x = 3;
+  temp_item_a.y = 7;
+  temp_item_b.x = 12;
+  temp_item_b.y = 5;
+
+  temp_item_a.index = temp_item_a.mesh_inx = 2;
+  temp_item_b.index = temp_item_b.mesh_inx = 3;
+
+  // TODO: will need to add the 2 items to the entity system
+  state.entities.allocate(2);
+
+  // adding the temporary items to the active showcase room
+  state.minimap.active_room->items.push_back(temp_item_a);
+  state.minimap.active_room->items.push_back(temp_item_b);
+
+  lava::mesh_data cube_data = lava::create_mesh_data(lava::mesh_type::cube);
+  lava::mesh::ptr cube_mesh = lava::make_mesh();
+  cube_mesh->add_data(cube_data);
+  cube_mesh->create(state.app->device);
+
+  lava::mesh_data triangle_data =
+      lava::create_mesh_data(lava::mesh_type::triangle);
+  triangle_data.scale(4);
+  lava::mesh::ptr triangle_mesh = lava::make_mesh();
+  triangle_mesh->add_data(triangle_data);
+  triangle_mesh->create(state.app->device);
+  state.entities.meshes[temp_item_a.index] = cube_mesh;
+  state.entities.initialize_transforms(*state.app, temp_item_a.index,
+                                       state.desc_sets_list[2],
+                                       state.descriptor_writes);
+  state.entities.meshes[temp_item_b.index] = triangle_mesh;
+  state.entities.initialize_transforms(*state.app, temp_item_b.index,
+                                       state.desc_sets_list[3],
+                                       state.descriptor_writes);
+
+  // need to change the position of these items to match their tile
+  glm::vec2 a_pos =
+      state.minimap.active_room->get_tile_wpos(temp_item_a.x, temp_item_a.y);
+  glm::vec2 b_pos =
+      state.minimap.active_room->get_tile_wpos(temp_item_b.x, temp_item_b.y);
+
+  // setting the position of the items
+  state.entities.transforms_data[temp_item_a.index][3][0] = a_pos.x;
+  state.entities.transforms_data[temp_item_a.index][3][2] = a_pos.y;
+
+  state.entities.transforms_data[temp_item_b.index][3][0] = b_pos.x;
+  state.entities.transforms_data[temp_item_b.index][3][2] = b_pos.y;
+
   // camera data
   state.camera_buffer_data = {
       state.app->camera.get_view_projection(),
@@ -156,8 +215,6 @@ void new_game(crow::game_state& state) {
       lava::extras::load_fbx_model(scene_player);
   player_fbx_data.mesh_data.scale(0.05f);
   lava::mesh::ptr player_mesh = lava::make_mesh();
-  /* lava::mesh_data player_mesh_data =
-       lava::create_mesh_data(lava::mesh_type::cube);*/
   player_mesh->add_data(player_fbx_data.mesh_data);
   player_mesh->create(state.app->device);
   state.entities.meshes[crow::entity::WORKER] = player_mesh;
@@ -182,8 +239,7 @@ void new_game(crow::game_state& state) {
       *state.app, crow::entity::SPHYNX,
       state.desc_sets_list[crow::entity::SPHYNX], state.descriptor_writes);
   state.entities.velocities[crow::entity::SPHYNX] = glm::vec3{0, 0, 0};
-  crow::update_descriptor_writes(*state.app,
-                                 state.descriptor_writes);  // now crashing
+  crow::update_descriptor_writes(*state.app, state.descriptor_writes);
 
   state.left_click_time = 0;
   state.current_state = state.PLAYING;
@@ -288,6 +344,73 @@ auto left_click_update(game_state& state) -> bool {
   }
   state.left_click_time = 0;
 
+  return true;
+}
+
+auto right_click_update(game_state& state) -> bool {
+  // processing for left clicks while you are currently playing the game
+  if (state.current_state == state.PLAYING) {
+    glm::vec3 mouse_point = crow::mouse_to_floor(state.app);
+    // if mouse_point.y == -1 then the mouse is not pointing at the
+    // floor
+    if (mouse_point.y != -1) {
+      const crow::tile* map_point = state.minimap.active_room->get_tile_at(
+          {mouse_point.x, mouse_point.z});
+      if (state.minimap.active_room->items.size() > 0) {
+        for (item& i : state.minimap.active_room->items) {
+          if (map_point->col == i.x && map_point->row == i.y) {
+            // if there is an item at this location we can then move to the item
+            // and interact
+            // setting interactible target for player
+            state.player_data.target = &i;
+            std::vector<glm::vec2> temporary_results =
+                state.minimap.active_room->get_path(
+                    glm::vec2(state.entities
+                                  .transforms_data[crow::entity::WORKER][3][0],
+                              state.entities
+                                  .transforms_data[crow::entity::WORKER][3][2]),
+                    glm::vec2(mouse_point.x, mouse_point.z));
+
+            if (temporary_results.size()) {
+              // if the clicked position is the same as the previous position,
+              // then we can assume that you've double clicked. thus, the
+              // worker should run instead of walk
+              if (state.player_data.path_result.size() &&
+                  state.player_data.path_result[0] == temporary_results[0]) {
+                // check to ensure that the clicks were close enough to each
+                // other to count as a double click. if not, then nothing
+                // should happen since the worker is always walking towards
+                // the clicked destination
+                if (state.right_click_time < 0.5f) {
+                  // worker starts running to destination
+                  state.player_data.worker_speed =
+                      state.player_data.worker_run_speed;
+
+                  // plays footstep sound when worker moves
+                  crow::audio::add_footstep_sound(
+                      &state.entities.transforms_data[crow::WORKER], 0.285f);
+                }
+              } else {
+                // worker starts walking to destination
+                state.player_data.worker_speed =
+                    state.player_data.worker_walk_speed;
+
+                // plays footstep sound when worker moves
+                crow::audio::add_footstep_sound(
+                    &state.entities.transforms_data[crow::WORKER], 0.5f);
+              }
+            }
+
+            // set the worker's path
+            state.player_data.path_result = temporary_results;
+            state.player_data.interacting = true;
+            break;
+          }
+        }
+        state.right_click_time = 0;
+      }
+    }
+  }
   return true;
 }
 

@@ -42,6 +42,7 @@ struct game_state {
 
   // time the left click was last pressed
   float left_click_time = 0.f;
+  float right_click_time = 0.f;
 
   // TODO: remove this line
   bool map_created = false;
@@ -75,5 +76,7 @@ void clean_state(crow::game_state& state);
 void update(crow::game_state& state, lava::delta dt);
 
 auto left_click_update(game_state& state) -> bool;
+
+auto right_click_update(game_state& state) -> bool;
 
 }  // namespace crow

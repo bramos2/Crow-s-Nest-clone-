@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../hpp/object.hpp"
+#include "../hpp/interactible.hpp"
 
 namespace crow {
 struct player_behavior_data {
@@ -11,6 +12,9 @@ struct player_behavior_data {
   const float worker_run_speed = 3.5f;
   std::vector<glm::vec2> path_result;
   float worker_speed = 0.f;
+  bool interacting = false;
+  item player_inventory;
+  item* target = nullptr;
 };
 
 auto get_angle(glm::vec2 const pos_from, glm::vec2 const pos_to) -> float;

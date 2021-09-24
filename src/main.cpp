@@ -14,7 +14,6 @@
 #include <stb_image.h>
 
 #include "hpp/audio.hpp"
-#include "hpp/component.hpp"
 #include "hpp/cross.hpp"
 #include "hpp/game_state.hpp"
 #include "hpp/geometry.hpp"
@@ -135,12 +134,21 @@ auto main(int argc, char* argv[]) -> int {
   // crow::descriptor_writes_stack s_desc_writes;
   crow::descriptor_layouts s_desc_layouts;
 
+  // items buffer creation
+  crow::descriptor_sets i_desc_sets;
+  crow::descriptor_layouts i_desc_layouts;
+  crow::descriptor_sets i2_desc_sets;
+  crow::descriptor_layouts i2_desc_layouts;
+
   // setting up the gamestate
-  game_state.desc_sets_list.resize(game_state.entities.transforms_data.size());
+  game_state.desc_sets_list.resize(game_state.entities.transforms_data.size() +
+                                   2);
   game_state.desc_sets_list[crow::entity::WORKER] =
       &environment_descriptor_sets;  // player enviroment set
   game_state.desc_sets_list[crow::entity::SPHYNX] =
       &s_desc_sets;  // enemy ai enviroment set
+  game_state.desc_sets_list[2] = &i_desc_sets;
+  game_state.desc_sets_list[3] = &i2_desc_sets;
   game_state.descriptor_writes = &descriptor_writes;
   game_state.app = &app;
 
@@ -203,6 +211,46 @@ auto main(int argc, char* argv[]) -> int {
         });
 
     // Global buffers:
+    i_desc_layouts[0] =
+        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // Render-pass buffers:
+    i_desc_layouts[1] =
+        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // Material buffers:
+    i_desc_layouts[2] =
+        crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // Object buffers:
+    i_desc_layouts[3] = crow::create_descriptor_layout(
+        app,
+        {
+            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                                     .binding_slot = 0,
+                                     .descriptors_count = 1},
+        });
+
+    // eventually the pipeline will be finished and eventually we won't have to
+    // hard code every single desc_set/layout.
+    // Global buffers:
+    i2_desc_layouts[0] =
+        crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
+    // Render-pass buffers:
+    i2_desc_layouts[1] =
+        crow::create_descriptor_layout(app, crow::simple_render_pass_bindings);
+    // Material buffers:
+    i2_desc_layouts[2] =
+        crow::create_descriptor_layout(app, crow::simple_material_bindings);
+    // Object buffers:
+    i2_desc_layouts[3] = crow::create_descriptor_layout(
+        app,
+        {
+            crow::descriptor_binding{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT,
+                                     .binding_slot = 0,
+                                     .descriptors_count = 1},
+        });
+
+    // Global buffers:
     environment_descriptor_layouts[0] =
         crow::create_descriptor_layout(app, crow::global_descriptor_bindings);
     // Render-pass buffers:
@@ -228,6 +276,11 @@ auto main(int argc, char* argv[]) -> int {
         crow::create_descriptor_sets(room_descriptor_layouts, descriptor_pool);
 
     s_desc_sets = crow::create_descriptor_sets(s_desc_layouts, descriptor_pool);
+
+    i_desc_sets = crow::create_descriptor_sets(i_desc_layouts, descriptor_pool);
+
+    i2_desc_sets =
+        crow::create_descriptor_sets(i2_desc_layouts, descriptor_pool);
 
     // TODO(conscat): Push to stack.
     VkWriteDescriptorSet const write_ubo_global{
@@ -338,6 +391,80 @@ auto main(int argc, char* argv[]) -> int {
         {write_ubo_global_room, write_ubo_pass_room, write_ubo_material_room,
          write_ubo_object_room});
 
+    VkWriteDescriptorSet const write_ubo_global_i{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i_desc_sets[0],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_pass_i{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i_desc_sets[1],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_material_i{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i_desc_sets[2],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_object_i{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i_desc_sets[3],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+
+    app.device->vkUpdateDescriptorSets({write_ubo_global_i, write_ubo_pass_i,
+                                        write_ubo_material_i,
+                                        write_ubo_object_i});
+
+    VkWriteDescriptorSet const write_ubo_global_i2{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i2_desc_sets[0],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = game_state.camera_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_pass_i2{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i2_desc_sets[1],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_material_i2{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i2_desc_sets[2],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+    VkWriteDescriptorSet const write_ubo_object_i2{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = i2_desc_sets[3],
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = room_matrix_buffer.get_descriptor_info(),
+    };
+
+    app.device->vkUpdateDescriptorSets({write_ubo_global_i2, write_ubo_pass_i2,
+                                        write_ubo_material_i2,
+                                        write_ubo_object_i2});
+
     // Create pipelines.
     environment_pipeline = crow::create_rasterization_pipeline(
         app, environment_pipeline_layout, environment_shaders,
@@ -360,6 +487,9 @@ auto main(int argc, char* argv[]) -> int {
       [&](lava::mouse_button_event::ref click) {
         if (click.released(lava::mouse_button::left)) {
           return left_click_update(game_state);
+        }
+        if (click.released(lava::mouse_button::right)) {
+          return right_click_update(game_state);
         }
         return false;
       });
@@ -473,6 +603,27 @@ auto main(int argc, char* argv[]) -> int {
       wall4->bind_draw(cmd_buf);
       wall5->bind_draw(cmd_buf);
       wall6->bind_draw(cmd_buf);
+
+      // TODO: DRAW ITEMS FOR THE ROOM
+      if (game_state.minimap.active_room->items[0].type != item_type::NONE) {
+        app.device->call().vkCmdBindDescriptorSets(
+            cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            environment_pipeline_layout->get(), 0, 4, i_desc_sets.data(), 0,
+            nullptr);
+        game_state.entities
+            .meshes[game_state.minimap.active_room->items[0].mesh_inx]
+            ->bind_draw(cmd_buf);
+      }
+
+      if (game_state.minimap.active_room->items[1].type != item_type::NONE) {
+        app.device->call().vkCmdBindDescriptorSets(
+            cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            environment_pipeline_layout->get(), 0, 4, i2_desc_sets.data(), 0,
+            nullptr);
+        game_state.entities
+            .meshes[game_state.minimap.active_room->items[1].mesh_inx]
+            ->bind_draw(cmd_buf);
+      }
 
       // this is annoying right now
       app.device->call().vkCmdBindDescriptorSets(

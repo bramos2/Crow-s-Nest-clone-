@@ -62,6 +62,13 @@ struct entities {
   }
 
   void free(size_t index) {}
+
+  void allocate(size_t amount) {
+    meshes.resize(meshes.size() + amount);
+    transforms_data.resize(transforms_data.size() + amount);
+    transforms_pbuffer.resize(transforms_pbuffer.size() + amount);
+    velocities.resize(velocities.size() + amount);
+  }
 };
 
 // NOLINTNEXTLINE

@@ -10,9 +10,10 @@
 #include <optional>
 #include <vector>
 
+#include "../hpp/collision.hpp"
+#include "../hpp/interactible.hpp"
 #include "../hpp/search_theta.hpp"
 #include "../hpp/tile.hpp"
-#include "collision.hpp"
 
 namespace crow {
 
@@ -33,6 +34,8 @@ struct map_room {
   lava::mesh_data room_mesh_data;
   lava::mesh::ptr room_mesh;
   crow::tile_map floor_tiles;
+  // list of items in this room
+  std::vector<item> items;
   void set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
                   lava::camera& camera);
   glm::vec2 get_tile_wpos(std::int_fast32_t const x, std::int_fast32_t const y);
