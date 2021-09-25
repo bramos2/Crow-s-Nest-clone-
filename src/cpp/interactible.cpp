@@ -2,8 +2,6 @@
 
 #include <liblava-extras/fbx.hpp>
 
-#include <iostream>
-
 void sd_console::interact() {
   *win_condition += 1;
   active = true;

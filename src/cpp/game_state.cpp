@@ -388,6 +388,7 @@ auto right_click_update(game_state& state) -> bool {
             // and interact
             // setting interactible target for player
             state.player_data.item_target = &i;
+            state.player_data.sdc_target = nullptr;
             std::vector<glm::vec2> temporary_results =
                 state.minimap.active_room->get_path(
                     glm::vec2(state.entities
@@ -451,6 +452,7 @@ auto right_click_update(game_state& state) -> bool {
                                                ->index][3][2]};
 
         state.player_data.sdc_target = state.minimap.active_room->r_console;
+        state.player_data.item_target = nullptr;
         std::vector<glm::vec2> temporary_results =
             state.minimap.active_room->get_path(
                 glm::vec2(
