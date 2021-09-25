@@ -65,6 +65,7 @@ void path_through(player_behavior_data& p_data, crow::entities& entity,
       }
       p_data.interacting = false;
     }
+
   }
 }
 
