@@ -41,22 +41,22 @@ tile_map::tile_map(std::uint_fast16_t w, std::uint_fast16_t h)
       height(h),
       tile_w(1.0f),
       tile_h(1.0f),
-      max_room_pos(0),
-      min_room_pos(0) {
+      max_room_pos(glm::vec2(-w / 2.0f, -h / 2.0f)),
+      min_room_pos(glm::vec2(w / 2.0f, h / 2.0f)) {
   map.resize(height);
   for (auto& column : map) {
     column.resize(width);
   }
+  create_map();
 }
 
-tile_map::~tile_map() {}
+tile_map::~tile_map() { clean_map(); }
 
 void tile_map::clean_map() {
-  for (size_t i = 0; i < map.size(); ++i) {
-    for (size_t j = 0; j < map[i].size(); ++j) {
-      tile* curr = map[i][j];
-      if (curr) {
-        delete curr;
+  for (auto& row : map) {
+    for (crow::tile* t : row) {
+      if (t) {
+        delete t;
       }
     }
   }
@@ -64,10 +64,10 @@ void tile_map::clean_map() {
 
 void tile_map::create_map() {
   if (width > 0 && height > 0) {
-    for (size_t row = 0; row < height; ++row) {
-      for (size_t col = 0; col < width; ++col) {
-        tile* current = new tile(row, col);
-        map[row][col] = current;
+    for (size_t y = 0; y < height; ++y) {
+      for (size_t x = 0; x < width; ++x) {
+        tile* current = new tile(y, x);
+        map[y][x] = current;
       }
     }
     for (size_t row = 0; row < height; ++row) {
@@ -93,61 +93,31 @@ void tile_map::create_map() {
   }
 }
 
-glm::vec2 tile_map::get_tile_wpos(std::int_fast32_t const x,
-                                  std::int_fast32_t const y) {
+auto tile_map::get_tile_wpos(std::int_fast32_t const x,
+                             std::int_fast32_t const y) -> glm::vec2 {
   glm::vec2 result;
-  result.y = std::floor(y - ((height - 1) / 2.0f));
-  result.x = std::floor(x - ((width - 1) / 2.0f));
-
-  /* if (result.y < 0) {
-     result.y += tile_h / 2.0f;
-   } else {
-     result.y -= tile_h / 2.0f;
-   }
-
-   if (result.x < 0) {
-     result.x += tile_w / 2.0f;
-   } else {
-     result.x -= tile_w / 2.0f;
-   }*/
+  result.y = std::floor(y - (((height * tile_h) - 1) / 2.0f));
+  result.x = std::floor(x - (((width * tile_w) - 1) / 2.0f));
 
   return result;
 }
 
-glm::vec2 tile_map::get_tile_wpos(tile* const tile) {
+auto tile_map::get_tile_wpos(tile* const tile) -> glm::vec2 {
   return get_tile_wpos(tile->col, tile->row);
 }
 
-tile* tile_map::get_tile_at(glm::vec2 const pos) {
-  float y = height / 2.0f + pos.y;
-  float x = width / 2.0f + pos.x;
-  if (y < height && x < width && y >= 0 && x >= 0) {
-    return map[static_cast<int>(std::floor(y))]
-              [static_cast<int>(std::floor(x))];
+auto tile_map::get_tile_at(glm::vec2 const pos) -> tile* {
+  float y = (height * tile_h) / 2.0f + pos.y;
+  float x = (width * tile_w) / 2.0f + pos.x;
+
+  if (static_cast<uint16_t>(y) < height && static_cast<uint16_t>(x) < width &&
+      static_cast<uint16_t>(y) >= 0 && static_cast<uint16_t>(x) >= 0) {
+    tile* temp =
+        map[static_cast<int>(std::floor(y))][static_cast<int>(std::floor(x))];
+    return temp;
   }
 
   return nullptr;
-  /*glm::vec2 temp = min_room_pos;
-  std::uint_fast32_t y = height - 1;
-  std::uint_fast32_t x = width - 1;
-
-  for (size_t _y = 0; _y < height; ++_y) {
-    temp.y += tile_h;
-    if (temp.y > pos.y) {
-      y = _y - 1;
-      break;
-    }
-  }
-
-  for (size_t _x = 0; _x < width; ++_x) {
-    temp.x += tile_w;
-    if (temp.x > pos.x) {
-      x = _x - 1;
-      break;
-    }
-  }
-
-  return map[x][y];*/
 }
 
 }  // namespace crow

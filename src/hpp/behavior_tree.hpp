@@ -11,38 +11,39 @@ struct behavior_tree {
     virtual status run() = 0;
   };
 
-  struct composite_node : public node {
-    void add_child(node* n);
-    const std::vector<node*>& get_children() const;
+
+  struct composite_node : public behavior_tree::node {
+    void add_child(behavior_tree::node* n);
+    const std::vector<behavior_tree::node*>& get_children() const;
 
    private:
-    std::vector<node*> children;
+    std::vector<behavior_tree::node*> children;
   };
 
-  struct selector_node : public composite_node {
+  struct selector_node : public behavior_tree::composite_node {
     virtual status run() override;
   };
 
-  struct sequence_node : public composite_node {
+  struct sequence_node : public behavior_tree::composite_node {
     virtual status run() override;
   };
 
-  class decorator_node : public node {
-    node* child;
+  class decorator_node : public behavior_tree::node {
+    behavior_tree::node* child;
 
    protected:
-    node* get_child() const;
+    behavior_tree::node* get_child() const;
 
    public:
-    void set_child(node* n);
+    void set_child(behavior_tree::node* n);
   };
 
-  class root_node : public decorator_node {
+  class root_node : public behavior_tree::decorator_node {
     friend class behavior_tree;
     virtual status run();
   };
 
-  class inverter_node : public decorator_node {
+  class inverter_node : public behavior_tree::decorator_node {
     virtual status run() override;
   };
 
@@ -50,10 +51,10 @@ struct behavior_tree {
   ~behavior_tree();
 
  private:
-  root_node* root;
+  behavior_tree::root_node* root;
 
  public:
-  void set_root_child(node* n) const;
+  void set_root_child(behavior_tree::node* n) const;
   status run() const;
 };
 

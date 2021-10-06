@@ -44,9 +44,10 @@ class tile_map {
   std::uint_fast16_t get_width() { return width; }
   std::uint_fast16_t get_height() { return height; }
 
-  glm::vec2 get_tile_wpos(std::int_fast32_t const x, std::int_fast32_t const y);
-  glm::vec2 get_tile_wpos(tile* const tile);
-  tile* get_tile_at(glm::vec2 const pos);
+  auto get_tile_wpos(std::int_fast32_t const x, std::int_fast32_t const y)
+      -> glm::vec2;
+  auto get_tile_wpos(tile* const tile) -> glm::vec2;
+  auto get_tile_at(glm::vec2 const pos) -> tile*;
 };
 
 }  // namespace crow

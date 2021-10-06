@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "../hpp/game_state.hpp"
+#include "../hpp/game_manager.hpp"
 #include "../soloud/include/soloud.h"
 #include "../soloud/include/soloud_wav.h"
 #include "../soloud/include/soloud_wavstream.h"
@@ -20,7 +20,7 @@
 #define SOUND_MAX_VOLUME 1.5f
 
 namespace crow {
-struct game_state;
+//struct game_state;
 }
 
 namespace crow::audio {
@@ -35,7 +35,7 @@ struct timed_audio {
   // self destruct
   // note that if nullptr is passed here then the object will always immediately
   // self-destruct
-  bool (*escape_clause)(crow::game_state* state);
+  bool (*escape_clause)(crow::game_manager* state);
   // position of the audio in world space.
   // if the audio is not to be played as 3d audio, set this to nullptr
   glm::mat4* position;
@@ -49,7 +49,7 @@ struct timed_audio {
   float timer;
 
   // simple constructor that sets all of the variables
-  timed_audio(bool (*_escape_clause)(crow::game_state* state),
+  timed_audio(bool (*_escape_clause)(crow::game_manager* state),
               glm::mat4* _position, int _sound, float _time_frame,
               int _loops_remaining) {
     escape_clause = _escape_clause;
@@ -121,14 +121,14 @@ void add_footstep_sound(glm::mat4* worker_position, float interval);
 // checks if an audio timer with the passed in escape clause exists
 // returns true if it exists
 // returns false otherwise
-bool audio_timers_includes(bool (*_escape_clause)(crow::game_state* state));
+bool audio_timers_includes(bool (*_escape_clause)(crow::game_manager* state));
 // same as above, but returns the index of such
-int audio_timers_index(bool (*_escape_clause)(crow::game_state* state));
+int audio_timers_index(bool (*_escape_clause)(crow::game_manager* state));
 
 // updates every single instance of an audio timer in the audio timer vector
-void update_audio_timers(crow::game_state* state, lava::delta dt);
+void update_audio_timers(crow::game_manager* state, lava::delta dt);
 
 // simply returns true if the worker isnt moving, and false if he is
-bool worker_isnt_moving(crow::game_state* state);
+bool worker_isnt_moving(crow::game_manager* state);
 
 }  // namespace crow::audio

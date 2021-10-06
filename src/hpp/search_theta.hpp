@@ -1,7 +1,6 @@
 #pragma once
 #include <algorithm>
 #include <assert.h>
-#include <unordered_map>
 #include <vector>
 
 #include "../hpp/tile.hpp"
@@ -9,12 +8,12 @@
 namespace crow {
 
 class theta_star {
-  bool finished;  // unused at the moment
-  float weight;   // heuristic weight
+  bool finished = false;  // unused at the moment
+  float weight = 1.2f;   // heuristic weight
 
   struct node {
-    tile* tileptr;
-    node* parent;
+    tile* tileptr = nullptr;
+    node* parent = nullptr;
     std::vector<node*> neighbors;
     float g;
     float h;
@@ -47,14 +46,15 @@ class theta_star {
   std::vector<node*> open;
   std::vector<node*> closed;
   std::vector<tile*> path;
-  node* start;
-  node* goal;
-  tile_map* tilemap;
+  node* start = nullptr;
+  node* goal = nullptr;
+  tile_map* tilemap = nullptr;
   std::vector<std::vector<node*>> nodes;
 
  public:
-  theta_star() = default;
-
+  theta_star();
+  theta_star(const theta_star& ts);
+  theta_star(crow::tile_map* t_map);
   ~theta_star();
 
   // sets heuristic weight
@@ -64,13 +64,15 @@ class theta_star {
   float get_weight();
 
   // initializes data for search
-  bool set_theta_star(tile* _start, tile* _goal, tile_map* _map);
+  bool set_theta_star(tile* _start, tile* _goal);
 
   // searches for a path between the initialized start and goal nodes
   void search_theta_star();
 
   // returns a vector with the path from the goal to our position
   std::vector<tile*> get_path();
+
+  void clean_data();
 
  private:
   // theta* part of the algorithm

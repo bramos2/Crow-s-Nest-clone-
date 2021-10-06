@@ -1,6 +1,7 @@
 #include "../hpp/audio.hpp"
 
 #include "../hpp/cross.hpp"
+#include "../hpp/entities.hpp"
 
 // TODO: There are so many clang-tidy warnings.
 
@@ -102,21 +103,21 @@ void add_footstep_sound(glm::mat4* worker_position, float interval) {
       crow::audio::FOOTSTEP_WORKER, interval, -1));
 }
 
-bool audio_timers_includes(bool (*_escape_clause)(crow::game_state* state)) {
+bool audio_timers_includes(bool (*_escape_clause)(crow::game_manager* state)) {
   for (int i = 0; i < audio_timers.size(); i++) {
     if (audio_timers[i].escape_clause == _escape_clause) return true;
   }
   return false;
 }
 
-int audio_timers_index(bool (*_escape_clause)(crow::game_state* state)) {
+int audio_timers_index(bool (*_escape_clause)(crow::game_manager* state)) {
   for (int i = 0; i < audio_timers.size(); i++) {
     if (audio_timers[i].escape_clause == _escape_clause) return i;
   }
   return -1;
 }
 
-void update_audio_timers(crow::game_state* state, lava::delta dt) {
+void update_audio_timers(crow::game_manager* state, lava::delta dt) {
   for (int i = 0; i < audio_timers.size(); i++) {
     // check for exit clause
     // will destroy this object if:
@@ -147,9 +148,10 @@ void update_audio_timers(crow::game_state* state, lava::delta dt) {
   }
 }
 
-bool worker_isnt_moving(crow::game_state* state) {
-  if (state->entities.velocities[crow::WORKER].x == 0 &&
-      state->entities.velocities[crow::WORKER].z == 0)
+bool worker_isnt_moving(crow::game_manager* state) {
+  if (state->entities.velocities[static_cast<size_t>(crow::entity2::WORKER)].x == 0 &&
+      state->entities.velocities[static_cast<size_t>(crow::entity2::WORKER)]
+              .z == 0)
     return true;
   return false;
 }

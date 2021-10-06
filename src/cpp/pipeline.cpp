@@ -28,10 +28,10 @@ auto create_descriptor_layout(lava::app& app,
 // TODO(conscat): Non-moving objects should have a different descriptor layout
 // and pipeline.
 
-void update_descriptor_writes(lava::app& app,
+void update_descriptor_writes(lava::app* app,
                               crow::descriptor_writes_stack* descriptors) {
   while (!descriptors->empty()) {
-    app.device->vkUpdateDescriptorSets({descriptors->top()});
+    app->device->vkUpdateDescriptorSets({descriptors->top()});
     descriptors->pop();
   }
 }

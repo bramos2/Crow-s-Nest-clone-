@@ -124,16 +124,27 @@ glm::vec3 ray_to_floor(glm::vec3 ray_direction, glm::vec3 ray_position) {
 void initialize_debug_camera(lava::camera& camera) {
   camera.rotation_speed = 250;
   camera.movement_speed += 10;
-  camera.position = lava::v3(0.0f, -4.036f, 8.304f);
-  camera.rotation = lava::v3(0, 0, 0);
+  camera.position = lava::v3(0.f, -7.f, 3.f);
+  camera.rotation = lava::v3(-75.f, 0.f, 0.f);
   // These globals are defined in debug_camera_control.hpp
   camera.set_movement_keys(debug_key_up, debug_key_down, debug_key_left,
                            debug_key_right);
 }
 
-void update_room_camera(crow::map_room* active_room, lava::camera& camera) {
+// void update_room_camera(crow::map_room* active_room, lava::camera& camera) {
+//  camera.position = active_room->cam_pos;
+//  camera.rotation = active_room->cam_rotation;
+//}
+
+void update_room_camera(crow::room* active_room, lava::camera& camera) {
   camera.position = active_room->cam_pos;
   camera.rotation = active_room->cam_rotation;
+}
+
+void update_room_cam(lava::v3 position, lava::v3 rotation,
+                     lava::camera& camera) {
+  camera.position = position;
+  camera.rotation = rotation;
 }
 
 }  // namespace crow

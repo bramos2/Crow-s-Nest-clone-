@@ -25,7 +25,7 @@ auto create_rasterization_pipeline(
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
     -> lava::graphics_pipeline::ptr;
 
-void update_descriptor_writes(lava::app& app,
+void update_descriptor_writes(lava::app* app,
                               crow::descriptor_writes_stack* descriptors);
 
 #include "../cpp/pipeline.tpp"
