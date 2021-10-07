@@ -9,6 +9,7 @@
 #include "../hpp/game_objects.hpp"
 #include "../hpp/search_theta.hpp"
 #include "../hpp/tile.hpp"
+#include "../hpp/interactible.hpp"
 
 namespace crow {
 
@@ -22,7 +23,7 @@ struct room {
   crow::theta_star pather;
   // 0 = floor, 1-4 walls
   // NOTE: must be added to entity system, this is for creation
-  std::vector<lava::mesh::ptr> room_meshes;
+  std::vector<lava::mesh::ptr> r_meshes;
 
   lava::v3 cam_pos = lava::v3(0.f, -7.f, 3.f);
   lava::v3 cam_rotation = lava::v3(-75.f, 0.f, 0.f);
@@ -32,11 +33,12 @@ struct room {
 
   // the tile location and type of every object in this room
   // std::unordered_map<glm::uvec2, object_type> room_objects;
+  std::vector<crow::interactible*> objects;
 
   // may not be needed as doors will handle ajacencies
   // std::vector<std::shared_ptr<room>> neighbors;
 
-  void load_entities(lava::app* app, crow::entities2& entities,
+  void load_entities(lava::app* app, crow::entities& entities,
                      std::vector<lava::mesh::ptr>& meshes,
                      crow::descriptor_writes_stack* writes_stack,
                      lava::descriptor::pool::ptr descriptor_pool,
@@ -50,12 +52,12 @@ struct room {
   auto get_path(glm::vec2 start, glm::vec2 goal) -> std::vector<glm::vec2>;
 };
 
-struct door {
-  // the rooms this door is connected to
-  std::vector<std::shared_ptr<room>> rooms;
-
-  void move_entity(const size_t entity_indx, int const room_number);
-};
+//struct door {
+//  // the rooms this door is connected to
+//  std::vector<std::shared_ptr<room>> rooms;
+//
+//  void move_entity(const size_t entity_indx, int const room_number);
+//};
 
 struct level {
   unsigned int x = 0;
@@ -67,7 +69,7 @@ struct level {
   std::vector<std::vector<room>> rooms;
   std::vector<door> doors;
 
-  void load_entities(lava::app* app, crow::entities2& entities,
+  void load_entities(lava::app* app, crow::entities& entities,
                      std::vector<lava::mesh::ptr>& meshes,
                      crow::descriptor_writes_stack* writes_stack,
                      lava::descriptor::pool::ptr descriptor_pool,
@@ -81,14 +83,6 @@ struct level {
 };
 
 }  // namespace crow
-
-
-
-
-
-
-
-
 
 //#pragma once
 //#include <liblava/lava.hpp>
@@ -107,16 +101,16 @@ struct level {
 //#include "../hpp/search_theta.hpp"
 //#include "../hpp/tile.hpp"
 //
-//namespace crow {
+// namespace crow {
 //
 //#define WORLD_SEED std::time(NULL)
 //#define DEBUG_SEED 9
-//constexpr int block_world_width = 80;
-//constexpr int block_world_height = 80;
-//constexpr int block_world_padding = 5;
-//constexpr int room_world_padding = 5;
+// constexpr int block_world_width = 80;
+// constexpr int block_world_height = 80;
+// constexpr int block_world_padding = 5;
+// constexpr int room_world_padding = 5;
 //
-//struct map_room {
+// struct map_room {
 //  int const world_x, world_y, width, height;
 //  std::vector<std::shared_ptr<crow::map_room>> neighbors;
 //  crow::collision_universe collision_universe;
@@ -139,17 +133,17 @@ struct level {
 //  std::vector<glm::vec2> get_path(glm::vec2 start, glm::vec2 goal);
 //};
 //
-//template <int br_width, int br_height>
-//struct map_block {
+// template <int br_width, int br_height>
+// struct map_block {
 //  // TODO: Make x and y const.
 //  int block_index_x, block_index_y;
-//  std::vector<std::shared_ptr<crow::map_block<br_width, br_height>>> neighbors;
-//  std::vector<crow::map_room> room_list;
-//  void generate_rooms(int min_rooms, int max_rooms);
+//  std::vector<std::shared_ptr<crow::map_block<br_width, br_height>>>
+//  neighbors; std::vector<crow::map_room> room_list; void generate_rooms(int
+//  min_rooms, int max_rooms);
 //};
 //
-//template <int br_width, int br_height>
-//struct world_map {
+// template <int br_width, int br_height>
+// struct world_map {
 //  std::array<std::array<std::shared_ptr<crow::map_block<br_width, br_height>>,
 //                        br_width>,
 //             br_height>
@@ -159,8 +153,8 @@ struct level {
 //  void generate_adjacencies();
 //};
 //
-//template <int br_width, int br_height>
-//void world_map<br_width, br_height>::generate_blocks(int blocks_count) {
+// template <int br_width, int br_height>
+// void world_map<br_width, br_height>::generate_blocks(int blocks_count) {
 //  // center position of our map
 //  int const starting_index_x = br_width / 2;
 //  int const starting_index_y = br_height / 2;
@@ -173,8 +167,8 @@ struct level {
 //  int current_blocks_count = 0;
 //  while (current_blocks_count < blocks_count) {
 //    unsigned random_number = std::floor(rand() % 4);
-//    // determining the direction we are moving to in this frame based on random
-//    switch (random_number) {
+//    // determining the direction we are moving to in this frame based on
+//    random switch (random_number) {
 //      case 0: {
 //        ++current_index_x;
 //        break;
@@ -247,8 +241,8 @@ struct level {
 //  }
 //}
 //
-//template <int br_width, int br_height>
-//void map_block<br_width, br_height>::generate_rooms(int min_rooms,
+// template <int br_width, int br_height>
+// void map_block<br_width, br_height>::generate_rooms(int min_rooms,
 //                                                    int max_rooms) {
 //  auto overlaps_room = [&](std::vector<crow::map_room>& rooms,
 //                           int current_world_x, int current_world_y,
@@ -256,8 +250,8 @@ struct level {
 //                           int current_room_height) -> bool {
 //    for (const crow::map_room& room : rooms) {
 //      if (
-//          // If the other room is rightward of the current room's left boundary:
-//          room.world_x + room.width > current_world_x &&
+//          // If the other room is rightward of the current room's left
+//          boundary: room.world_x + room.width > current_world_x &&
 //          // If the other room is leftward of
 //          // the current room's right boundary:
 //          room.world_x < current_world_x + current_room_width &&
@@ -325,14 +319,15 @@ struct level {
 //
 //  // temporary for mesh creation
 //  /*for (size_t i = 0; i < room_list.size(); i++) {
-//    room_list[i].room_mesh_data = lava::create_mesh_data(lava::mesh_type::cube);
+//    room_list[i].room_mesh_data =
+//    lava::create_mesh_data(lava::mesh_type::cube);
 //    room_list[i].room_mesh_data.move({0, 10.0f, 0});
 //    room_list[i].room_mesh_data.scale_vector({10.0f, 0.2f, 10.0f});
 //  }*/
 //}
 //
-//template <int br_width, int br_height>
-//void world_map<br_width, br_height>::generate_rooms(int min_rooms,
+// template <int br_width, int br_height>
+// void world_map<br_width, br_height>::generate_rooms(int min_rooms,
 //                                                    int max_rooms) {
 //  for (auto& block_x : block_grid) {
 //    for (auto& block : block_x) {
@@ -344,8 +339,8 @@ struct level {
 //  }
 //}
 //
-//template <int br_width, int br_height>
-//void world_map<br_width, br_height>::generate_adjacencies() {
+// template <int br_width, int br_height>
+// void world_map<br_width, br_height>::generate_adjacencies() {
 //  // TODO: Generate flat rooms ahead of time.
 //  std::vector<std::shared_ptr<crow::map_room>> flat_rooms;
 //  for (auto& block_y : this->block_grid) {

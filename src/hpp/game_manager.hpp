@@ -1,16 +1,16 @@
-
 #pragma once
 #include <liblava/lava.hpp>
 
 #include <vector>
 
-#include "../hpp/minimap.hpp"
 #include "../hpp/camera.hpp"
 #include "../hpp/entities.hpp"
 #include "../hpp/geometry.hpp"
+#include "../hpp/minimap.hpp"
 #include "../hpp/player_behavior.hpp"
 
 namespace crow {
+
 class game_manager {
  public:
   enum class game_state {
@@ -51,7 +51,7 @@ class game_manager {
   // memory
   std::vector<lava::mesh::ptr> mesh_models_trash;
 
-  crow::entities2 entities;
+  crow::entities entities;
 
   crow::minimap minimap;
 
@@ -107,7 +107,7 @@ class game_manager {
 //// a struct that holds overarching game data to help with things such as scene
 //// switching (main menu, cutscenes, playing, etc)
 //// any random game related variable should be stored here so it can be
-///accessed / anywhere
+/// accessed / anywhere
 // struct game_state {
 //  // current game state. are we in the main menu? playing? paused? end
 //  credits?

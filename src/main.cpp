@@ -1,22 +1,5 @@
-//#include <liblava-extras/fbx.hpp>
-//#include <liblava-extras/raytracing.hpp>
-#include <liblava/lava.hpp>
-
-//#include <imgui.h>
-#include <iostream>
-
-//#include "hpp/device.hpp"
-//#include "hpp/pipeline.hpp"
-//#include "liblava/resource/mesh.hpp"
-#define STB_IMAGE_IMPLEMENTATION
-//#include <stb_image.h>
-
 #include "hpp/game_manager.hpp"
-//#include "hpp/audio.hpp"
-//#include "hpp/cross.hpp"
-//#include "hpp/descriptor_setup.hpp"
-//#include "hpp/game_state.hpp"
-//#include "hpp/geometry.hpp"
+#define STB_IMAGE_IMPLEMENTATION
 
 auto main(int argc, char* argv[]) -> int {
   crow::game_manager game_state(argc, argv);
@@ -24,37 +7,6 @@ auto main(int argc, char* argv[]) -> int {
   game_state.init_app();
 
   return game_state.app->run();
-
-  // crow::descriptor_layouts desc_layouts;
-  // crow::descriptor_sets desc_sets_list;
-
-  // crow::set_desc_layouts(desc_layouts, game_state.app);
-  // crow::create_desc_sets(desc_layouts, desc_sets_list,
-  //                       game_state.descriptor_pool);
-  // crow::update_desc_sets(desc_sets_list, game_state.app,
-  // game_state.camera_buffer);
-
-  // lava::buffer::ptr transforms_pbuffer = lava::make_buffer();
-  //{
-  //  glm::mat4 transforms_data = glm::mat4(1);  // Identity matrix.
-  //  transforms_pbuffer->create_mapped(game_state.app->device,
-  //  &transforms_data,
-  //                                    sizeof(transforms_data),
-  //                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-  //  game_state.descriptor_writes.push(VkWriteDescriptorSet{
-  //      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-  //      .dstSet = (desc_sets_list)[3],  // [3] is the per-object
-  //                                      // buffer.
-  //      .dstBinding = 0,
-  //      .descriptorCount = 1,
-  //      .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-  //      .pBufferInfo = transforms_pbuffer->get_descriptor_info(),
-  //  });
-  //  memcpy(lava::as_ptr(transforms_pbuffer->get_mapped_data()),
-  //         &transforms_data, sizeof(transforms_data));
-  //}
-  // transforms_pbuffer->destroy();
-  // int stop = 0;
 }
 
 // auto main(int argc, char* argv[]) -> int {

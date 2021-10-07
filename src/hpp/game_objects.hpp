@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace crow {
-
+// meshes need to be loaded in the order objects are listed here
 enum class object_type {
   PLAYER = 0,
   ENEMY = 1,
@@ -16,6 +16,7 @@ enum class object_type {
   FLOOR,
   WALL,
   SHORT_WALL,
+  COUNT,
 };
 
 }  // namespace crow

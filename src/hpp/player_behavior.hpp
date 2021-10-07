@@ -14,6 +14,7 @@ struct player_behavior_data {
   std::vector<glm::vec2> path_result;
   float worker_speed = 0.f;
   bool interacting = false;
+  unsigned int current_room = 0;
   player_behavior_data();
  // interactible* target = nullptr;
  // player_interact* p_interact = new player_interact;
@@ -27,13 +28,13 @@ auto get_angle(glm::vec2 const pos_from, glm::vec2 const pos_to) -> float;
 
 auto is_pathing(std::vector<glm::vec2> const curr_path) -> bool;
 
-void set_velocity(glm::vec2 destination, crow::entities2& entity,
+void set_velocity(glm::vec2 destination, crow::entities& entity,
                   crow::entity2 ent, float speed);
 
 void set_velocity(glm::vec2 position, glm::vec2 destination,
                   glm::vec3& velocity, float speed);
 
-void path_through(player_behavior_data& p_data, crow::entities2& entity,
+void path_through(player_behavior_data& p_data, crow::entities& entity,
                   crow::entity2 ent, float dt);
 
 }  // namespace crow

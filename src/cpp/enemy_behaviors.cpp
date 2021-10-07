@@ -2,14 +2,14 @@
 
 #include "../hpp/player_behavior.hpp"
 
-void ai_manager::update_position(crow::entities2 objects) {
+void ai_manager::update_position(crow::entities objects) {
   position = glm::vec2(
       objects.transforms_data[static_cast<size_t>(crow::entity2::SPHYNX)][3][0],
       objects
           .transforms_data[static_cast<size_t>(crow::entity2::SPHYNX)][3][2]);
 }
 
-void ai_manager::update_target_position(crow::entities2 objects,
+void ai_manager::update_target_position(crow::entities objects,
                                         crow::entity2 target_index) {
   current_target_position =
       glm::vec2(objects.transforms_data[static_cast<size_t>(target_index)][3][0],
@@ -20,7 +20,7 @@ void ai_manager::set_current_room(std::shared_ptr<crow::room> room) {
   current_room = room;
 }
 
-void ai_manager::load_entity_data(crow::entities2& objects,
+void ai_manager::load_entity_data(crow::entities& objects,
                                   crow::entity2 enemy_index,
                                   crow::entity2 target_index) {
   velocity = &objects.velocities[static_cast<size_t>(enemy_index)];
@@ -112,7 +112,7 @@ status has_target::run() {
   return status::FAILED;
 }
 
-has_target::has_target(interactible* a_target) : target_i(a_target) {}
+has_target::has_target(crow::interactible* a_target) : target_i(a_target) {}
 
 status get_target::run() {
   // simply just updating the values for now, this node is temporary and will
@@ -209,7 +209,7 @@ status scan_room::run() {
 }
 
 scan_room::scan_room(std::shared_ptr<crow::room> room,
-                     interactible*& target) {
+                     crow::interactible*& target) {
   current_room = room;
   target = target_i;
 }

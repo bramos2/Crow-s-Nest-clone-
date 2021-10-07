@@ -109,6 +109,9 @@ void game_manager::new_game() {
   minimap.set_window_size(app->window.get_size());
   minimap.current_level = &test_level;
 
+  // must always start on the starting room
+  player_data.current_room = test_level.starting_room;
+
   current_state = crow::game_manager::game_state::PLAYING;
 }
 
@@ -125,18 +128,27 @@ void game_manager::load_mesh_data() {
     return fbx_mesh;
   };
 
-  auto get_cube_mesh = [&]() -> lava::mesh::ptr {
+  auto get_cube_mesh = [&](float x = 1.f, float y = 1.f,
+                           float z = 1.f) -> lava::mesh::ptr {
     lava::mesh_data cube_data = lava::create_mesh_data(lava::mesh_type::cube);
-    cube_data.scale(2);
+    cube_data.scale_vector({x, y, z});
     lava::mesh::ptr cube_mesh = lava::make_mesh();
     cube_mesh->add_data(cube_data);
     cube_mesh->create(app->device);
     return cube_mesh;
   };
 
+  // player mesh
   mesh_models.push_back(get_fbx_mesh("../../res/fbx/character.fbx", 0.05f));
+  // enemy mesh
   mesh_models.push_back(get_fbx_mesh("../../res/fbx/deer.fbx", 0.05f));
-  mesh_models.push_back(get_cube_mesh());
+  // sd console mesh
+  mesh_models.push_back(get_cube_mesh(1.5f,4.f,1.5f));
+  // power console mesh
+  mesh_models.push_back(get_cube_mesh(2.f,5.f,2.f));
+  // door mesh
+  mesh_models.push_back(get_cube_mesh(1.f, 10.f, 3.f));
+  // door panel mesh
 }
 
 void game_manager::unload_game() {
@@ -176,7 +188,9 @@ void game_manager::render_game() {
 
 auto game_manager::l_click_update() -> bool {
   // processing for left clicks while you are currently playing the game
-  if (current_state == crow::game_manager::game_state::PLAYING) {
+  if (current_state == crow::game_manager::game_state::PLAYING &&
+      test_level.selected_room &&
+      player_data.current_room == test_level.selected_room->id) {
     // crow::audio::play_sfx(0);
     glm::vec3 mouse_point = crow::mouse_to_floor(app);
     // if mouse_point.y == -1 then the mouse is not pointing at the
@@ -197,9 +211,7 @@ auto game_manager::l_click_update() -> bool {
         if (player_data.path_result.size() &&
             player_data.path_result[0] == temporary_results[0]) {
           // check to ensure that the clicks were close enough to each
-          // other to count as a double click. if not, then nothing
-          // should happen since the worker is always walking towards
-          // the clicked destination
+          // other to count as a double click.
           if (left_click_time < 0.5f) {
             // worker starts running to destination
             player_data.worker_speed = player_data.worker_run_speed;
@@ -224,9 +236,6 @@ auto game_manager::l_click_update() -> bool {
 
       // set the worker's path
       player_data.path_result = temporary_results;
-
-      // player_data.interacting = false;
-      // player_data.target = nullptr;
     }
   }
   left_click_time = 0;

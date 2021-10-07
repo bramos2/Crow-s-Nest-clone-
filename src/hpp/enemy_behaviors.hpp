@@ -18,8 +18,8 @@
 // updated
 struct has_target : public behavior_tree::node {
   virtual status run() override;
-  has_target(interactible* target);
-  interactible* target_i = nullptr;
+  has_target(crow::interactible* target);
+  crow::interactible* target_i = nullptr;
 };
 
 // to be replaced for now by scan room
@@ -39,9 +39,9 @@ struct get_target : public behavior_tree::node {
 struct scan_room : public behavior_tree::node {
   virtual status run() override;
 
-  scan_room(std::shared_ptr<crow::room> room, interactible*& target);
+  scan_room(std::shared_ptr<crow::room> room, crow::interactible*& target);
   std::shared_ptr<crow::room> current_room;
-  interactible* target_i = nullptr;
+  crow::interactible* target_i = nullptr;
 };
 
 struct has_path : public behavior_tree::node {  // node that checks if an
@@ -60,7 +60,7 @@ struct ai_get_path : public behavior_tree::node {
   // will need a reference to the current room
   std::shared_ptr<crow::room> current_room;
 
-  interactible* target_i = nullptr;
+  crow::interactible* target_i = nullptr;
   // a starting position
   glm::vec2* position = nullptr;
   // a target destination
@@ -86,7 +86,7 @@ struct move_to_target : public behavior_tree::node {
   std::vector<glm::vec2>* current_path;
   glm::vec3* velocity;
   glm::vec2* position;
-  interactible* target_i;
+  crow::interactible* target_i;
 };
 
 // this class is meant to keep track of the ai by holding references to data the
@@ -108,7 +108,7 @@ class ai_manager {
   std::shared_ptr<crow::room> current_room;
   std::vector<glm::vec2> path;
 
-  interactible* target;
+  crow::interactible* target;
 
   behavior_tree b_tree;
 
@@ -123,14 +123,14 @@ class ai_manager {
 
   // has_target_changed* htc1 = new has_target_changed();
 
-  void update_position(crow::entities2 objects);
+  void update_position(crow::entities objects);
 
-  void update_target_position(crow::entities2 objects,
+  void update_target_position(crow::entities objects,
                               crow::entity2 target_index);
 
   void set_current_room(std::shared_ptr<crow::room> room);
 
-  void load_entity_data(crow::entities2& objects, crow::entity2 enemy_index,
+  void load_entity_data(crow::entities& objects, crow::entity2 enemy_index,
                         crow::entity2 target_index);
 
   void create_behavior_tree();

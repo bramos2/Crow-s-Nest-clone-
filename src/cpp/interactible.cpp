@@ -2,12 +2,7 @@
 
 #include <liblava-extras/fbx.hpp>
 
-// void sd_console::interact() {
-//  *win_condition += 1;
-//  active = true;
-//  // TODO: REMOVE
-//  fmt::print("\ninteracted with self_destruct console\n");
-//}
+namespace crow {
 
 void pg_console::interact() {
   if (!is_broken) {
@@ -18,6 +13,8 @@ void pg_console::interact() {
   }
   is_active = true;
 }
+
+pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
 
 void interactible::interact() {
   if (!is_broken) {
@@ -40,7 +37,11 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
   y = _y;
 }
 
+interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
+
 void door_panel::interact() {}
+
+door_panel::door_panel() { type = crow::object_type::DOOR_PANEL; }
 
 void sd_console::interact() {
   if (!is_broken) {
@@ -52,9 +53,17 @@ void sd_console::interact() {
   is_active = true;
 }
 
+sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
+
 void player_interact::dissable() {
   fmt::print("\n*****enemy is attacking player\n");
   interactible::dissable();
 }
 
 player_interact::player_interact() { is_active = true; }
+
+void door::interact() {}
+
+door::door() { type = crow::object_type::DOOR; }
+
+}  // namespace crow

@@ -13,7 +13,7 @@ auto is_pathing(std::vector<glm::vec2> const curr_path) -> bool {
   return true;
 }
 
-void set_velocity(glm::vec2 destination, crow::entities2& entity,
+void set_velocity(glm::vec2 destination, crow::entities& entity,
                   crow::entity2 ent, float speed) {
   // float worker_speed = 1.0f;
   float rad_angle = crow::get_angle(
@@ -33,7 +33,7 @@ void set_velocity(glm::vec2 position, glm::vec2 destination,
   velocity = glm::vec3{vel_x, 0, vel_y};
 }
 
-void path_through(player_behavior_data& p_data, crow::entities2& entity,
+void path_through(player_behavior_data& p_data, crow::entities& entity,
                   crow::entity2 ent, float dt) {
   if (is_pathing(p_data.path_result)) {
     set_velocity(p_data.path_result.back(), entity, ent, p_data.worker_speed);

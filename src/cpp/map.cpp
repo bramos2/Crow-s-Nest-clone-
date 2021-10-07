@@ -3,32 +3,31 @@
 
 namespace crow {
 
-void door::move_entity(const size_t entity_indx, int const room_number) {}
+// void door::move_entity(const size_t entity_indx, int const room_number) {}
 
-void room::load_entities(lava::app* app, crow::entities2& entities,
+void room::load_entities(lava::app* app, crow::entities& entities,
                          std::vector<lava::mesh::ptr>& meshes,
                          crow::descriptor_writes_stack* writes_stack,
                          lava::descriptor::pool::ptr descriptor_pool,
                          lava::buffer& camera_buffer) {
   // first we need to know what our entity and total indices will be
   size_t initial_index = entities.current_size;
-  const unsigned int total_entities = room_meshes.size();
-  //+room_objects.size();
+  const unsigned int total_entities = r_meshes.size() + objects.size();
 
   // then we need to allocate entities
   entities.allocate(total_entities);
 
-  if (!room_meshes.empty()) {
+  if (!r_meshes.empty()) {
     // loading floor
     object_indices.push_back(initial_index++);
-    entities.initialize_entity(app, object_indices.back(), room_meshes[0],
+    entities.initialize_entity(app, object_indices.back(), r_meshes[0],
                                writes_stack, descriptor_pool, camera_buffer);
 
     // loading walls
-    if (room_meshes.size() > 1) {
-      for (size_t i = 1; i < room_meshes.size(); ++i) {
+    if (r_meshes.size() > 1) {
+      for (size_t i = 1; i < r_meshes.size(); ++i) {
         object_indices.push_back(initial_index++);
-        entities.initialize_entity(app, object_indices.back(), room_meshes[i],
+        entities.initialize_entity(app, object_indices.back(), r_meshes[i],
                                    writes_stack, descriptor_pool,
                                    camera_buffer);
       }
@@ -36,14 +35,14 @@ void room::load_entities(lava::app* app, crow::entities2& entities,
   }
 
   // loading objects
-  /*if (!room_objects.empty()) {
-    for (const auto& obj : room_objects) {
-      object_indices.push_back(initial_index++);
-      entities.initialize_entity(app, object_indices.back(),
-                                 meshes[static_cast<size_t>(obj.second)],
-                                 writes_stack, descriptor_pool, camera_buffer);
-    }
-  }*/
+  for (crow::interactible*& i : objects) {
+    object_indices.push_back(initial_index++);
+    entities.initialize_entity(app, object_indices.back(),
+                               meshes[static_cast<size_t>(i->type)],
+                               writes_stack, descriptor_pool, camera_buffer);
+    glm::vec2 pos = get_tile_wpos(i->x, i->y);
+    entities.set_world_position(object_indices.back(), pos.x, 0.f, pos.y);
+  }
 }
 
 void room::make_room_meshes(lava::app* app) {
@@ -52,12 +51,18 @@ void room::make_room_meshes(lava::app* app) {
   lava::mesh::ptr floor_mesh = lava::make_mesh();
   floor_mesh->add_data(cube);
   floor_mesh->create(app->device);
-  room_meshes.push_back(floor_mesh);
+  r_meshes.push_back(floor_mesh);
 
-  // initializing tile map
+  // initializing tile map TODO: MOVE THIS TO AN INIT DATA FUNCTION
   tiles = crow::tile_map(width, length);
   tiles.create_map();
   pather = crow::theta_star(&tiles);
+
+  for (crow::interactible*& i : objects) {
+    if (i && i->type != crow::object_type::DOOR) {
+      tiles.map[i->y][i->x]->is_open = false;
+    }
+  }
 }
 
 auto room::get_tile_wpos(unsigned int const x, unsigned int const y)
@@ -94,7 +99,7 @@ auto room::get_path(glm::vec2 start, glm::vec2 goal) -> std::vector<glm::vec2> {
   return result;
 }
 
-void level::load_entities(lava::app* app, crow::entities2& entities,
+void level::load_entities(lava::app* app, crow::entities& entities,
                           std::vector<lava::mesh::ptr>& meshes,
                           crow::descriptor_writes_stack* writes_stack,
                           lava::descriptor::pool::ptr descriptor_pool,
@@ -122,6 +127,9 @@ void level::test_level(lava::app* app) {
   }
 
   rooms[0][0].id = 1;
+  crow::door* test_door = new door();
+  test_door->set_tile(14, 7);
+  rooms[0][0].objects.push_back(test_door);
   rooms[0][0].make_room_meshes(app);
   // pushing worker index for desmostrations
   rooms[0][0].object_indices.push_back(0);
@@ -149,14 +157,20 @@ void level::clean_level(std::vector<lava::mesh::ptr>& trash) {
   selected_room = nullptr;
   for (auto& row : rooms) {
     for (auto& r : row) {
-      while (!r.room_meshes.empty()) {
-        trash.push_back(r.room_meshes.back());
-        r.room_meshes.pop_back();
+      while (!r.r_meshes.empty()) {
+        trash.push_back(r.r_meshes.back());
+        r.r_meshes.pop_back();
+      }
+
+      while (!r.objects.empty()) {
+        crow::interactible* t = r.objects.back();
+        r.objects.pop_back();
+        delete t;
       }
 
       r.id = 0;
       r.object_indices.clear();
-      r.room_meshes.clear();
+      r.r_meshes.clear();
       r.pather.clean_data();
       int debug = 0;
     }
@@ -165,21 +179,13 @@ void level::clean_level(std::vector<lava::mesh::ptr>& trash) {
 
 }  // namespace crow
 
-
-
-
-
-
-
-
-
 //#include "../hpp/map.hpp"
 //
 //#include "../hpp/camera.hpp"
 //
-//namespace crow {
+// namespace crow {
 //
-//void map_room::set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
+// void map_room::set_active(lava::app* app, lava::mesh::ptr& mesh_ptr,
 //                          lava::camera& camera) {
 //  if (/*!mesh_ptr*/ !this->room_mesh) {
 //    this->room_mesh = lava::make_mesh();
@@ -203,19 +209,20 @@ void level::clean_level(std::vector<lava::mesh::ptr>& trash) {
 //  // load tilemap
 //}
 //
-//glm::vec2 map_room::get_tile_wpos(unsigned int const x, unsigned int const y) {
+// glm::vec2 map_room::get_tile_wpos(unsigned int const x, unsigned int const y)
+// {
 //  return floor_tiles.get_tile_wpos(x, y);
 //}
 //
-//glm::vec2 map_room::get_tile_wpos(tile* const tile) {
+// glm::vec2 map_room::get_tile_wpos(tile* const tile) {
 //  return floor_tiles.get_tile_wpos(tile);
 //}
 //
-//tile* map_room::get_tile_at(glm::vec2 const pos) {
+// tile* map_room::get_tile_at(glm::vec2 const pos) {
 //  return floor_tiles.get_tile_at(pos);
 //}
 //
-//std::vector<glm::vec2> map_room::get_path(glm::vec2 start, glm::vec2 goal) {
+// std::vector<glm::vec2> map_room::get_path(glm::vec2 start, glm::vec2 goal) {
 //  std::vector<glm::vec2> result;
 //  // converting given positions into tiles
 //  tile* s = get_tile_at(start);

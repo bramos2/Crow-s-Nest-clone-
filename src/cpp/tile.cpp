@@ -107,13 +107,14 @@ auto tile_map::get_tile_wpos(tile* const tile) -> glm::vec2 {
 }
 
 auto tile_map::get_tile_at(glm::vec2 const pos) -> tile* {
-  float y = (height * tile_h) / 2.0f + pos.y;
-  float x = (width * tile_w) / 2.0f + pos.x;
+  const float fy = (height * tile_h) / 2.0f + pos.y;
+  const float fx = (width * tile_w) / 2.0f + pos.x;
 
-  if (static_cast<uint16_t>(y) < height && static_cast<uint16_t>(x) < width &&
-      static_cast<uint16_t>(y) >= 0 && static_cast<uint16_t>(x) >= 0) {
-    tile* temp =
-        map[static_cast<int>(std::floor(y))][static_cast<int>(std::floor(x))];
+  const unsigned int x = static_cast<uint16_t>(fx);
+  const unsigned int y = static_cast<uint16_t>(fy);
+
+  if (y < height && x < width && y >= 0 && x >= 0) {
+    tile* temp = map[y][x];
     return temp;
   }
 

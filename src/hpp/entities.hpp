@@ -6,7 +6,8 @@
 #include "../../src/hpp/geometry.hpp"
 
 namespace crow {
-struct entities2 {
+
+struct entities {
   // NOLINT
   std::vector<lava::mesh::ptr> meshes;
   // NOLINT
@@ -24,7 +25,7 @@ struct entities2 {
   std::vector<lava::buffer::ptr> transforms_buffer_trash;
   // std::vector<std::unique_ptr<crow::component_interface>> pcomponents;
   size_t current_size = 0;
-  entities2() {
+  entities() {
     // Reserve space for the worker and sphynx.
     // TODO(conscat): Reserve space for other entities.
     current_size = 2;
