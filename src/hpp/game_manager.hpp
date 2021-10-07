@@ -82,6 +82,7 @@ class game_manager {
   void unload_game();
   void render_game();
   auto l_click_update() -> bool;
+  auto r_click_update() -> bool;
   void cleanup();
 };
 

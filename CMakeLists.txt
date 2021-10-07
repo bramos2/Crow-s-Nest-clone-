@@ -83,6 +83,7 @@ target_sources(
   src/hpp/collision.hpp
   src/hpp/game_manager.hpp
   src/cpp/game_manager.cpp
+  src/cpp/app_calls.cpp
   src/hpp/player_behavior.hpp
   src/cpp/player_behavior.cpp
   src/hpp/behavior_tree.hpp

@@ -126,12 +126,12 @@ class ai_manager {
   void update_position(crow::entities objects);
 
   void update_target_position(crow::entities objects,
-                              crow::entity2 target_index);
+                              crow::entity target_index);
 
   void set_current_room(std::shared_ptr<crow::room> room);
 
-  void load_entity_data(crow::entities& objects, crow::entity2 enemy_index,
-                        crow::entity2 target_index);
+  void load_entity_data(crow::entities& objects, crow::entity enemy_index,
+                        crow::entity target_index);
 
   void create_behavior_tree();
 

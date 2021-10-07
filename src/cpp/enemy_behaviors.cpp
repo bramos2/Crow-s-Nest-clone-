@@ -4,13 +4,13 @@
 
 void ai_manager::update_position(crow::entities objects) {
   position = glm::vec2(
-      objects.transforms_data[static_cast<size_t>(crow::entity2::SPHYNX)][3][0],
+      objects.transforms_data[static_cast<size_t>(crow::entity::SPHYNX)][3][0],
       objects
-          .transforms_data[static_cast<size_t>(crow::entity2::SPHYNX)][3][2]);
+          .transforms_data[static_cast<size_t>(crow::entity::SPHYNX)][3][2]);
 }
 
 void ai_manager::update_target_position(crow::entities objects,
-                                        crow::entity2 target_index) {
+                                        crow::entity target_index) {
   current_target_position =
       glm::vec2(objects.transforms_data[static_cast<size_t>(target_index)][3][0],
       objects.transforms_data[static_cast<size_t>(target_index)][3][2]);
@@ -21,8 +21,8 @@ void ai_manager::set_current_room(std::shared_ptr<crow::room> room) {
 }
 
 void ai_manager::load_entity_data(crow::entities& objects,
-                                  crow::entity2 enemy_index,
-                                  crow::entity2 target_index) {
+                                  crow::entity enemy_index,
+                                  crow::entity target_index) {
   velocity = &objects.velocities[static_cast<size_t>(enemy_index)];
   update_position(objects);
   target_pos = glm::vec2{0, 0};

@@ -20,7 +20,8 @@ struct entities {
   std::vector<crow::descriptor_layouts> desc_layouts;
   // NOLINT
   std::vector<crow::descriptor_sets> desc_sets_list;
-  //push t buffers here when they are no longer needed for now. Destroying them causes crash.
+  // push t buffers here when they are no longer needed for now. Destroying them
+  // causes crash.
   // NOLINT
   std::vector<lava::buffer::ptr> transforms_buffer_trash;
   // std::vector<std::unique_ptr<crow::component_interface>> pcomponents;
@@ -53,7 +54,6 @@ struct entities {
     transforms_buffer_trash.push_back(transforms_pbuffer.back());
     transforms_pbuffer.pop_back();
     transforms_data.pop_back();
-   
   }
 
   void initialize_entity(lava::app* app, size_t const index,
@@ -107,9 +107,9 @@ struct entities {
     }
   }
 
-  void free(size_t index) {}
+  // void free(size_t index) {}
 
-  void allocate(size_t amount) {
+  void allocate(size_t const amount) {
     current_size += amount;
 
     meshes.resize(current_size);
@@ -119,10 +119,18 @@ struct entities {
     desc_sets_list.resize(current_size);
     desc_layouts.resize(current_size);
   }
+
+  auto get_world_position(size_t const index) -> glm::vec3 const {
+    glm::vec3 result(0);
+    result.x = transforms_data[index][3][0];
+    result.y = transforms_data[index][3][1];
+    result.z = transforms_data[index][3][2];
+    return result;
+  }
 };
 
 // NOLINTNEXTLINE
-enum class entity2 {
+enum class entity {
   WORKER = 0,
   SPHYNX = 1,
 };
