@@ -7,9 +7,7 @@ namespace crow {
 
 void game_manager::draw_main_menu() {
   glm::vec2 wh = app->window.get_size();
-  // first things first, let's set the size of the main menu. it covers
-  // the
-  // whole screen tho, so...
+  // setting menu size
   ImVec2 mm_window_xy = {0, 0};
   ImGui::SetNextWindowPos(mm_window_xy, ImGuiCond_Always);
   ImGui::SetNextWindowSize(ImVec2{wh.x, wh.y}, ImGuiCond_Always);
@@ -82,6 +80,7 @@ void game_manager::draw_pause_button() {
   ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
   // finally create the pause button
   ImGui::Begin("Pause", nullptr, texture_flag);
+
   if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
                          pause_button_wh)) {
     crow::audio::play_sfx(crow::audio::MENU_OK);
@@ -138,6 +137,60 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
     // doesn't even go "are you sure?", it's just like x_x
     app->shut_down();
     crow::audio::play_sfx(crow::audio::MENU_OK);
+  }
+
+  ImGui::End();
+}
+
+void game_manager::draw_control_message() {
+  glm::vec2 wh = app->window.get_size();
+
+  ImVec2 info_window_xy = {wh.x * 0.75f, wh.y * 0.65f};
+  ImVec2 info_window_wh = {wh.x * 0.25f, wh.y * 0.35f};
+  ImGui::SetNextWindowPos(info_window_xy, ImGuiCond_Always);
+  ImGui::SetNextWindowSize(info_window_wh, ImGuiCond_Always);
+  ImGui::Begin("control window", 0,
+               ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                   ImGuiWindowFlags_NoResize);
+  ImGui::SetWindowFontScale(2.0f);
+  {
+    std::string ptext = "Controls:";
+    float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+    ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+                    (text_size / 2.0f));
+    ImGui::Text(ptext.c_str());
+  }
+  ImGui::SetWindowFontScale(1.5f);
+  ImGui::NewLine();
+  {
+    std::string ptext = "L click to move";
+    float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+    ImGui::SameLine();
+    ImGui::Text(ptext.c_str());
+  }
+  ImGui::NewLine();
+  {
+    std::string ptext = "R click to Interact";
+    float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+    ImGui::SameLine();
+    ImGui::Text(ptext.c_str());
+  }
+  ImGui::SetWindowFontScale(1.4f);
+  ImGui::NewLine();
+  ImGui::NewLine();
+  {
+    std::string ptext = "Click on minimap boxes";
+    float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+    ImGui::SameLine();
+    ImGui::Text(ptext.c_str());
+  }
+  ImGui::NewLine();
+  {
+    std::string ptext = "To switch room view";
+    float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+    ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+                    (text_size / 2.0f));
+    ImGui::Text(ptext.c_str());
   }
 
   ImGui::End();

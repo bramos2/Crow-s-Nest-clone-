@@ -90,7 +90,7 @@ class game_manager {
   void draw_main_menu();
   void draw_pause_button();
   void draw_pause_menu();
-
+  void draw_control_message();
 };
 
 }  // namespace crow

@@ -5,14 +5,13 @@
 void ai_manager::update_position(crow::entities objects) {
   position = glm::vec2(
       objects.transforms_data[static_cast<size_t>(crow::entity::SPHYNX)][3][0],
-      objects
-          .transforms_data[static_cast<size_t>(crow::entity::SPHYNX)][3][2]);
+      objects.transforms_data[static_cast<size_t>(crow::entity::SPHYNX)][3][2]);
 }
 
 void ai_manager::update_target_position(crow::entities objects,
                                         crow::entity target_index) {
-  current_target_position =
-      glm::vec2(objects.transforms_data[static_cast<size_t>(target_index)][3][0],
+  current_target_position = glm::vec2(
+      objects.transforms_data[static_cast<size_t>(target_index)][3][0],
       objects.transforms_data[static_cast<size_t>(target_index)][3][2]);
 }
 

@@ -5,15 +5,13 @@
 #include <vector>
 
 #include "../hpp/behavior_tree.hpp"
+#include "../hpp/entities.hpp"
 #include "../hpp/interactible.hpp"
 #include "../hpp/map.hpp"
-#include "../hpp/entities.hpp"
 
 // The behavior nodes used by the ai will be defined here
 // for behavior will need a refence to the ai entity
 // will need a reference to the active room for pathing
-
-
 
 // updated
 struct has_target : public behavior_tree::node {
@@ -79,7 +77,7 @@ struct has_target_changed : public behavior_tree::node {
   glm::vec2* current_target_position;
 };
 
-// 
+//
 struct move_to_target : public behavior_tree::node {
   virtual status run() override;
   float speed;

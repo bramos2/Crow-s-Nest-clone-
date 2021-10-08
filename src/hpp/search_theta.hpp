@@ -9,7 +9,7 @@ namespace crow {
 
 class theta_star {
   bool finished = false;  // unused at the moment
-  float weight = 1.2f;   // heuristic weight
+  float weight = 1.2f;    // heuristic weight
 
   struct node {
     tile* tileptr = nullptr;

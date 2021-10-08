@@ -28,10 +28,10 @@ struct minimap {
   glm::vec2 minimap_center_position = {0, 0};
 
   // offset at which rooms will be apart from each other in minimap
-  float offset = 10.f;
+  float offset = 5.f;
   // the dimmensions at which the room buttons will be desplayed
-  float r_width = 50.f;
-  float r_height = 50.f;
+  float r_width = 45.f;
+  float r_height = 45.f;
 
   void draw_call(lava::app* app);
 
@@ -62,20 +62,19 @@ struct minimap {
 
 }  // namespace crow
 
-
-
 //#pragma once
 //#include <liblava/lava.hpp>
 //
 //#include "map.hpp"
 //
-//namespace crow {
+// namespace crow {
 //
 //// TODO: REMOVE app*
-//struct item_window {
+// struct item_window {
 //  // lava::app* app;
 //  lava::camera& camera;
-//  // the ratio for the x,y coordinates of the min point of the gui on the screen
+//  // the ratio for the x,y coordinates of the min point of the gui on the
+//  screen
 //  // (top left)
 //  glm::vec2 screen_minr;
 //  //  the ratio for the x,y coordinates of the max point of the gui on the
@@ -86,7 +85,7 @@ struct minimap {
 //  glm::vec2 window_size;
 //};
 //
-//struct minimap {
+// struct minimap {
 //  // lava::app* app;
 //  lava::camera* camera = nullptr;
 //  // the minimun coordinates of the map
@@ -95,7 +94,8 @@ struct minimap {
 //  glm::vec2 map_maxc = {0, 0};
 //  // draw scale of objects in the minimap
 //  glm::vec2 scale = {0, 0};
-//  // the ratio for the x,y coordinates of the min point of the gui on the screen
+//  // the ratio for the x,y coordinates of the min point of the gui on the
+//  screen
 //  // (top left)
 //  glm::vec2 screen_minr = {0, 0};
 //  //  the ratio for the x,y coordinates of the max point of the gui on the
@@ -115,9 +115,10 @@ struct minimap {
 //  //std::vector<std::shared_ptr<room>> room_ptr_list2;
 //  //std::shared_ptr<room> active_room2 = nullptr;
 //  //crow::level* current_level = nullptr;
-//  
 //
-//  // cpos = current position of the minimap. this gets added to the position of
+//
+//  // cpos = current position of the minimap. this gets added to the position
+//  of
 //  // the rooms in the map when drawing the map
 //  glm::vec2 minimap_center_position = {0, 0};
 //  // position of the mouse when you click
@@ -159,6 +160,6 @@ struct minimap {
 //  void draw_call(lava::app* app, lava::mesh::ptr& room_mesh_ptr);
 //};
 //
-//struct gui_container {};
+// struct gui_container {};
 //
 //}  // namespace crow

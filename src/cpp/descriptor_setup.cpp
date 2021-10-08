@@ -79,6 +79,8 @@ void update_desc_sets(crow::descriptor_sets& desc_sets, lava::app* app,
       .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
       .pBufferInfo = matrix_buffer.get_descriptor_info(),
   };
+
+  // TODO: throws error on second time of new game in release mode
   app->device->vkUpdateDescriptorSets(
       {write_ubo_global, write_ubo_pass, write_ubo_material, write_ubo_object});
   //}

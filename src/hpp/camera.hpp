@@ -33,7 +33,7 @@ glm::vec3 ray_to_floor(glm::vec3 ray_direction, glm::vec3 ray_position);
 
 void initialize_debug_camera(lava::camera& camera);
 
-//void update_room_camera(crow::map_room* active_room, lava::camera& camera);
+// void update_room_camera(crow::map_room* active_room, lava::camera& camera);
 
 void update_room_camera(crow::room* active_room, lava::camera& camera);
 

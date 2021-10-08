@@ -20,7 +20,7 @@
 #define SOUND_MAX_VOLUME 1.5f
 
 namespace crow {
-//struct game_state;
+// struct game_state;
 }
 
 namespace crow::audio {

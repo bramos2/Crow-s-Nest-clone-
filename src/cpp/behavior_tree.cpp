@@ -4,7 +4,8 @@ void behavior_tree::composite_node::add_child(node* n) {
   children.push_back(n);
 }
 
-const std::vector<behavior_tree::node*>& behavior_tree::composite_node::get_children() const {
+const std::vector<behavior_tree::node*>&
+behavior_tree::composite_node::get_children() const {
   return children;
 }
 

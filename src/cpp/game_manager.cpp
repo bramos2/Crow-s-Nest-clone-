@@ -50,13 +50,13 @@ void game_manager::new_game() {
   minimap.map_minc = {-300, -300};
   minimap.map_maxc = {300, 300};
   minimap.screen_minr = {0.0f, 0.65f};
-  minimap.screen_maxr = {0.4f, 0.35f};
+  minimap.screen_maxr = {0.25f, 0.35f};
   minimap.resolution = {1920, 1080};
   minimap.set_window_size(app->window.get_size());
   minimap.current_level = &test_level;
 
   // must always start on the starting room
-  //player_data.current_room = test_level.starting_room;
+  // player_data.current_room = test_level.starting_room;
 
   current_state = crow::game_manager::game_state::PLAYING;
 }
@@ -135,8 +135,7 @@ void game_manager::render_game() {
 auto game_manager::l_click_update() -> bool {
   // processing for left clicks while you are currently playing the game
   if (current_state == crow::game_manager::game_state::PLAYING &&
-      test_level.selected_room &&
-      test_level.selected_room->has_player) {
+      test_level.selected_room && test_level.selected_room->has_player) {
     // crow::audio::play_sfx(0);
     glm::vec3 mouse_point = crow::mouse_to_floor(app);
     // y = -1 out of bound
@@ -201,6 +200,10 @@ auto game_manager::r_click_update() -> bool {
     const crow::tile* clicked_tile =
         selected_room->get_tile_at(glm::vec2(mouse_point.x, mouse_point.z));
 
+    if (!clicked_tile) {
+      return true;
+    }
+
     for (auto& i : selected_room->objects) {
       if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
         player_data.interacting = true;
@@ -212,6 +215,10 @@ auto game_manager::r_click_update() -> bool {
         const crow::tile* p_tile =
             selected_room->get_tile_at({p_pos.x, p_pos.z});
 
+        if (!p_tile) {
+          return true;
+        }
+
         if (p_tile == clicked_tile) {
           player_data.path_result.clear();
           break;
@@ -222,8 +229,6 @@ auto game_manager::r_click_update() -> bool {
                           static_cast<float>(clicked_tile->col),
                       static_cast<float>(p_tile->row) -
                           static_cast<float>(clicked_tile->row)};
-
-        
 
         adjacent_tile = glm::normalize(adjacent_tile);
         for (size_t i = 0; i < 2; i++) {

@@ -7,12 +7,11 @@
 
 #include "../hpp/entities.hpp"
 #include "../hpp/game_objects.hpp"
+#include "../hpp/interactible.hpp"
 #include "../hpp/search_theta.hpp"
 #include "../hpp/tile.hpp"
-#include "../hpp/interactible.hpp"
 
 namespace crow {
-
 
 struct room {
   unsigned int width = 15;
@@ -54,7 +53,7 @@ struct room {
   auto get_path(glm::vec2 start, glm::vec2 goal) -> std::vector<glm::vec2>;
 };
 
-//struct door {
+// struct door {
 //  // the rooms this door is connected to
 //  std::vector<std::shared_ptr<room>> rooms;
 //

@@ -98,9 +98,9 @@ void add_footstep_sound(glm::mat4* worker_position, float interval) {
     crow::audio::audio_timers.erase(crow::audio::audio_timers.begin() + index);
   }
 
-  crow::audio::audio_timers.push_back(crow::audio::timed_audio(
-      crow::audio::worker_isnt_moving, worker_position,
-      crow::audio::FOOTSTEP_WORKER, interval, -1));
+  crow::audio::audio_timers.push_back(
+      crow::audio::timed_audio(crow::audio::worker_isnt_moving, worker_position,
+                               crow::audio::FOOTSTEP_WORKER, interval, -1));
 }
 
 bool audio_timers_includes(bool (*_escape_clause)(crow::game_manager* state)) {
@@ -149,9 +149,10 @@ void update_audio_timers(crow::game_manager* state, lava::delta dt) {
 }
 
 bool worker_isnt_moving(crow::game_manager* state) {
-  if (state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].x == 0 &&
-      state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)]
-              .z == 0)
+  if (state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].x ==
+          0 &&
+      state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].z ==
+          0)
     return true;
   return false;
 }

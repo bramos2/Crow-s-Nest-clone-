@@ -167,7 +167,8 @@ auto game_manager::on_update() -> lava::app::update_func {
         memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
                sizeof(camera_buffer_data));
 
-        crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
+        crow::path_through(player_data, entities,
+                           static_cast<size_t>(crow::entity::WORKER), dt);
 
         for (size_t i = 0; i < entities.current_size; i++) {
           entities.update_transform_data(i, dt);
@@ -210,6 +211,7 @@ auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
       }
       case crow::game_manager::game_state::PLAYING: {
         draw_pause_button();
+        draw_control_message();
         minimap.draw_call(app);
         break;
       }
