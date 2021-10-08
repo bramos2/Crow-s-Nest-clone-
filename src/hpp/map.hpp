@@ -19,6 +19,7 @@ struct room {
   unsigned int height = 50;
   bool has_player = false;
   glm::vec2 minimap_pos = {0.f, 0.f};
+  glm::vec2 minimap_wh = {50.f, 50.f};
   int id = 0;
   crow::tile_map tiles;
   crow::theta_star pather;

@@ -176,6 +176,7 @@ auto game_manager::on_update() -> lava::app::update_func {
         }
 
         render_game();
+        crow::audio::update_audio_timers(this, dt);
         break;
       }
       case crow::game_manager::game_state::PAUSED: {
@@ -204,6 +205,9 @@ auto game_manager::on_update() -> lava::app::update_func {
 // TODO: Clean up and reorganize how menus are drawn and selected
 auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
   return [&] {
+    const int popup_flag = ImGuiWindowFlags_NoDecoration |
+                           ImGuiWindowFlags_NoCollapse |
+                           ImGuiWindowFlags_NoResize;
     switch (current_state) {
       case crow::game_manager::game_state::MAIN_MENU: {
         draw_main_menu();
@@ -220,6 +224,18 @@ auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
         break;
       }
       case crow::game_manager::game_state::SETTINGS: {
+        if (menu_position == 20) {
+          glm::vec2 _wh = app->window.get_size();
+          ImVec2 wh = {_wh.x, _wh.y};
+          // set size parameters for the options menu
+          ImVec2 options_window_xy = {wh.x * 0.15f, wh.y * 0.225f};
+          ImVec2 options_window_wh = {wh.x * 0.7f, wh.y * 0.55f};
+          ImGui::SetNextWindowPos(options_window_xy, ImGuiCond_Always);
+          ImGui::SetNextWindowSize(options_window_wh, ImGuiCond_Always);
+          ImGui::Begin("Options", 0, popup_flag);
+
+          imgui_centertext(std::string("Options"), 2.0f, wh);
+        }
         break;
       }
       case crow::game_manager::game_state::CREDITS: {

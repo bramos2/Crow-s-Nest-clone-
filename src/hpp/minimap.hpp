@@ -33,11 +33,21 @@ struct minimap {
   float r_width = 45.f;
   float r_height = 45.f;
 
+  // how zoomed in the minimap is
+  float zoom = 3;
+
+  //void load_room();
   void draw_call(lava::app* app);
 
   minimap();
   minimap(glm::vec2 _min, glm::vec2 _max);
   void set_window_size(glm::vec2 window_size);
+
+  // updates map_minc and map_maxc based on the rooms inside the minimap.
+  // additionally centers the minimap
+  void calculate_extents();
+
+  auto inside_minimap(lava::mouse_position_ref& mouse_pos) -> bool;
 
  private:
   bool is_dragging = false;
@@ -49,8 +59,6 @@ struct minimap {
 
   void set_rooms_pos();
 
-  auto inside_minimap(lava::mouse_position_ref& mouse_pos) -> bool;
-
   void calculate_mouse_position(lava::mouse_position_ref mouse_pos);
 
   void calculate_mouse_drag(lava::mouse_position_ref mouse_pos);
@@ -58,8 +66,8 @@ struct minimap {
   auto room_off_view(crow::room const& room) const -> bool;
 
   void reset_state();
-};
 
+};
 }  // namespace crow
 
 //#pragma once

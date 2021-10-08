@@ -15,6 +15,10 @@ void crow::minimap::draw_call(lava::app* app) {
                    ImGuiWindowFlags_NoTitleBar |
                    ImGuiWindowFlags_NoBringToFrontOnFocus);
 
+  // keeps the minimap properly sized for the game window
+  glm::vec2 wh = app->window.get_size();
+  set_window_size(wh);
+
   lava::mouse_position_ref _mouse_pos = app->input.get_mouse_position();
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
     // first, check to see if the mouse click began inside of the minimap
@@ -26,7 +30,6 @@ void crow::minimap::draw_call(lava::app* app) {
   is_dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
   // processing for dragging the minimap around all goes in here
   if (is_dragging) {
-    int debug = 1;
     // first check to see that we have "grabbed" the minimap with the mouse.
     // if it has been grabbed, then minimap.mouse_position.x should have been
     // set to a float between 0:1
@@ -34,37 +37,70 @@ void crow::minimap::draw_call(lava::app* app) {
       calculate_mouse_drag(_mouse_pos);
     }
   }
-  set_rooms_pos();
-  int hold = 0;
+
   // glm::vec2 starting_r_pos = {0.f, 0.f};
   if (current_level) {
     for (auto& current_row : current_level->rooms) {
       for (auto& current_room : current_row) {
         // Check for out of bounds rooms to skip adding them to draw calls.
-        if (room_off_view(current_room)) {
+        if (current_room.id == 0 || room_off_view(current_room)) {
           continue;
         }
+
+        // this readjusts the room for the screen
+        ImVec2 room_xy = {
+            (static_cast<float>(current_room.minimap_pos.x) +
+             minimap_center_position.x) *
+                scale.x,
+            (static_cast<float>(current_room.minimap_pos.y) +
+             minimap_center_position.y) *
+                scale.y,
+        };
+        ImVec2 room_wh = {
+            // Set the width and height:
+            ((current_room.minimap_wh.x)) * scale.x,
+            ((current_room.minimap_wh.y)) * scale.y,
+        };
+
+        /*
+        // proof of concept room outlining. works out of the box if you
+        // uncomment, but atm unnecessary, so it will be left commented until
+        // its time has come
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(window_pos.x + room_xy.x, window_pos.y + room_xy.y),
+            ImVec2(window_pos.x + room_xy.x + room_wh.x,
+                   window_pos.y + room_xy.y),
+            IM_COL32(255, 255, 255, 255), 1.0f);
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(window_pos.x + room_xy.x, window_pos.y + room_xy.y),
+            ImVec2(window_pos.x + room_xy.x,
+                   window_pos.y + room_xy.y + room_wh.y),
+            IM_COL32(255, 255, 255, 255), 1.0f);
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(window_pos.x + room_xy.x + room_wh.x,
+                   window_pos.y + room_xy.y + room_wh.y),
+            ImVec2(window_pos.x + room_xy.x + room_wh.x,
+                   window_pos.y + room_xy.y),
+            IM_COL32(255, 255, 255, 255), 1.0f);
+        ImGui::GetWindowDrawList()->AddLine(
+            ImVec2(window_pos.x + room_xy.x + room_wh.x,
+                   window_pos.y + room_xy.y + room_wh.y),
+            ImVec2(window_pos.x + room_xy.x,
+                   room_xy.y + window_pos.y + room_wh.y),
+            IM_COL32(255, 255, 255, 255), 1.0f);
+        //*/
+
         // Set the x, y position of the room:
-        ImGui::SetCursorPos({
-            current_room.minimap_pos.x + minimap_center_position.x,
-            current_room.minimap_pos.y + minimap_center_position.y,
-        });
-        if (current_room.id != 0) {
-          if (ImGui::Button(std::to_string(current_room.id).c_str(),
-                            {
-                                // Set the width and height:
-                                static_cast<float>(r_width),
-                                static_cast<float>(r_height),
-                            })) {
-            if (!is_dragging) {
-              /* processing for room switch goes here */
-              // active_room->set_active(app, room_mesh_ptr, *camera);
-              fmt::print("\nclicked on room: ");
-              fmt::print(std::to_string(current_room.id).c_str());
-              current_level->selected_room = &current_room;
-              crow::update_room_cam(current_room.cam_pos,
-                                    current_room.cam_rotation, app->camera);
-            }
+        ImGui::SetCursorPos(room_xy);
+        if (ImGui::Button(std::to_string(current_room.id).c_str(), room_wh)) {
+          if (!is_dragging) {
+            /* processing for room switch goes here */
+            // active_room->set_active(app, room_mesh_ptr, *camera);
+            fmt::print("\nclicked on room: ");
+            fmt::print(std::to_string(current_room.id).c_str());
+            current_level->selected_room = &current_room;
+            crow::update_room_cam(current_room.cam_pos,
+                                  current_room.cam_rotation, app->camera);
           }
         }
         // starting_r_pos.x += r_width + offset;
@@ -97,8 +133,9 @@ crow::minimap::minimap(glm::vec2 _min, glm::vec2 _max)
 void crow::minimap::set_window_size(glm::vec2 window_size) {
   window_pos = {window_size.x * screen_minr.x, window_size.y * screen_minr.y};
   window_ext = {window_size.x * screen_maxr.x, window_size.y * screen_maxr.y};
-  scale = {window_size.x / resolution.x, window_size.y / resolution.y};
-  minimap_center_position = {0, 0};
+  scale = {window_size.x / resolution.x * zoom,
+           window_size.y / resolution.y * zoom};
+  // minimap_center_position = {0, 0};
 }
 
 void crow::minimap::set_rooms_pos() {
@@ -147,7 +184,7 @@ void crow::minimap::calculate_mouse_drag(
   // for no reason at all, so we need to convert it to a range that the
   // minimap understands
   mouse_pos_diff.x *= resolution.x * screen_maxr.x;
-  mouse_pos_diff.y *= resolution.y * screen_minr.y;
+  mouse_pos_diff.y *= resolution.y * screen_maxr.y;
   // add this difference to the position of the minimap
   minimap_center_position.x += mouse_pos_diff.x;
   minimap_center_position.y += mouse_pos_diff.y;
@@ -165,6 +202,65 @@ void crow::minimap::calculate_mouse_drag(
       std::clamp(minimap_center_position.x, map_minc.x, map_maxc.x);
   minimap_center_position.y =
       std::clamp(minimap_center_position.y, map_minc.y, map_maxc.y);
+}
+
+void crow::minimap::calculate_extents() {
+  set_rooms_pos();
+
+  glm::vec2 min = {0, 0};
+  glm::vec2 max = {0, 0};
+
+  int rooms_checked = 0;
+  for (auto& current_row : current_level->rooms) {
+    for (auto& current_room : current_row) {
+      if (current_room.id == 0) continue;
+      if (rooms_checked) {
+        // check to see if this room is further out than the other rooms we have
+        // already checked
+        // clang-format off
+        if (current_room.minimap_pos.x < min.x) min.x = current_room.minimap_pos.x;
+        if (current_room.minimap_pos.y < min.y) min.y = current_room.minimap_pos.y;
+        if (current_room.minimap_pos.x + current_room.minimap_wh.x  > max.x) max.x = current_room.minimap_pos.x + current_room.minimap_wh.x ;
+        if (current_room.minimap_pos.y + current_room.minimap_wh.y > max.y) max.y = current_room.minimap_pos.y + current_room.minimap_wh.y;
+        // clang-format on
+      } else {
+        // this is the first room in the list, so it's the standard to check all
+        // other rooms to (we need SOMETHING as a basic to check with)
+        min = glm::vec2(current_room.minimap_pos.x, current_room.minimap_pos.y);
+        max = glm::vec2(current_room.minimap_pos.x + current_room.minimap_wh.x,
+                        current_room.minimap_pos.y + current_room.minimap_wh.y);
+      }
+      rooms_checked++;
+    }
+  }
+
+  // correctly set the extents based on the size of the map that we just
+  // calculated
+  map_minc = {-max.x, -max.y};
+  map_maxc = {-min.x, -min.y};
+
+  // don't ask why any of this works. it just does :P
+  glm::vec2 diff = {max.x - min.x, max.y - min.y};
+  glm::vec2 ext = {(screen_maxr.x) * resolution.x,
+                   (screen_maxr.y) * resolution.y};
+  map_maxc.x += ext.x / zoom;
+  map_maxc.y += ext.y / zoom;
+
+  // essentially a "how much of the map do you want to allow offscreen?"
+  // variable
+  // going below 0 is a great way to make the game crash. 0 itself
+  // comically locks the map in place
+  float dist = 0.35f;
+  glm::vec2 mid = {(map_maxc.x + map_minc.x) / 2,
+                   (map_maxc.y + map_minc.y) / 2};
+  map_minc = {mid.x - diff.x * dist, mid.y - diff.y * dist};
+  map_maxc = {mid.x + diff.x * dist, mid.y + diff.y * dist};
+  // possible todo: the map looks great at 0.2f, but values lower than 0.5f
+  // cause the map to grow larger than the viewable area when a combination of
+  // zoom and map size grows too big this may never be fixed if we end up never
+  // making a map big enough for this
+
+  minimap_center_position = mid;
 }
 
 auto crow::minimap::room_off_view(crow::room const& room) const -> bool {
@@ -201,11 +297,11 @@ void crow::minimap::reset_state() {
 //  // 2) check to see if the room is wholly above the map
 //  // 3) check to see if the room is wholly right of the map
 //  // 4) check to see if the room is wholly under the map
-//  return (proom->world_x + minimap_center_position.x < -proom->width ||
-//          proom->world_y + minimap_center_position.y < -proom->height ||
-//          proom->world_x + proom->width + minimap_center_position.x >
+//  return (proom.minimap_pos.x + minimap_center_position.x < -proom->width ||
+//          proom.minimap_pos.y + minimap_center_position.y < -proom->height ||
+//          proom.minimap_pos.x + proom->width + minimap_center_position.x >
 //              resolution.x * screen_maxr.x ||
-//          proom->world_y + proom->height + minimap_center_position.y >
+//          proom.minimap_pos.y + proom->height + minimap_center_position.y >
 //              resolution.y * screen_maxr.y);
 //}
 //
@@ -371,8 +467,10 @@ void crow::minimap::reset_state() {
 //    }
 //    // Set the x, y position of the room:
 //    ImGui::SetCursorPos({
-//        static_cast<float>(current_room->world_x) + minimap_center_position.x,
-//        static_cast<float>(current_room->world_y) + minimap_center_position.y,
+//        static_cast<float>(current_room.minimap_pos.x) +
+//        minimap_center_position.x,
+//        static_cast<float>(current_room.minimap_pos.y) +
+//        minimap_center_position.y,
 //    });
 //    if (ImGui::Button(std::to_string(id++).c_str(),
 //                      {

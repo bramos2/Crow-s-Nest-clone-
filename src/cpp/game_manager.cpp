@@ -54,6 +54,7 @@ void game_manager::new_game() {
   minimap.resolution = {1920, 1080};
   minimap.set_window_size(app->window.get_size());
   minimap.current_level = &test_level;
+  minimap.calculate_extents();
 
   // must always start on the starting room
   // player_data.current_room = test_level.starting_room;
@@ -136,49 +137,54 @@ auto game_manager::l_click_update() -> bool {
   // processing for left clicks while you are currently playing the game
   if (current_state == crow::game_manager::game_state::PLAYING &&
       test_level.selected_room && test_level.selected_room->has_player) {
-    // crow::audio::play_sfx(0);
-    glm::vec3 mouse_point = crow::mouse_to_floor(app);
-    // y = -1 out of bound
-    if (mouse_point.y != -1) {
-      const glm::vec3 player_pos = entities.get_world_position(
-          static_cast<size_t>(crow::entity::WORKER));
-      std::vector<glm::vec2> temporary_results =
-          test_level.selected_room->get_path(
-              glm::vec2(player_pos.x, player_pos.z),
-              glm::vec2(mouse_point.x, mouse_point.z));
+    // these next two lines prevents the player from moving when you click on
+    // the minimap
+    lava::mouse_position_ref _mouse_pos = app->input.get_mouse_position();
+    if (!minimap.inside_minimap(_mouse_pos)) {
+      // crow::audio::play_sfx(0);
+      glm::vec3 mouse_point = crow::mouse_to_floor(app);
+      // y = -1 out of bound
+      if (mouse_point.y != -1) {
+        const glm::vec3 player_pos = entities.get_world_position(
+            static_cast<size_t>(crow::entity::WORKER));
+        std::vector<glm::vec2> temporary_results =
+            test_level.selected_room->get_path(
+                glm::vec2(player_pos.x, player_pos.z),
+                glm::vec2(mouse_point.x, mouse_point.z));
 
-      if (temporary_results.size()) {
-        // if the clicked position is the same as the previous position,
-        // then we can assume that you've double clicked. thus, the
-        // worker should run instead of walk
-        if (player_data.path_result.size() &&
-            player_data.path_result[0] == temporary_results[0]) {
-          // check to ensure that the clicks were close enough to each
-          // other to count as a double click.
-          if (left_click_time < 0.5f) {
-            // worker starts running to destination
-            player_data.worker_speed = player_data.worker_run_speed;
+        if (temporary_results.size()) {
+          // if the clicked position is the same as the previous position,
+          // then we can assume that you've double clicked. thus, the
+          // worker should run instead of walk
+          if (player_data.path_result.size() &&
+              player_data.path_result[0] == temporary_results[0]) {
+            // check to ensure that the clicks were close enough to each
+            // other to count as a double click.
+            if (left_click_time < 0.5f) {
+              // worker starts running to destination
+              player_data.worker_speed = player_data.worker_run_speed;
+
+              // plays footstep sound when worker moves
+              crow::audio::add_footstep_sound(
+                  &entities.transforms_data[static_cast<size_t>(
+                      crow::entity::WORKER)],
+                  0.285f);
+            }
+          } else {
+            // worker starts walking to destination
+            player_data.worker_speed = player_data.worker_walk_speed;
 
             // plays footstep sound when worker moves
             crow::audio::add_footstep_sound(
                 &entities.transforms_data[static_cast<size_t>(
                     crow::entity::WORKER)],
-                0.285f);
+                0.5f);
           }
-        } else {
-          // worker starts walking to destination
-          player_data.worker_speed = player_data.worker_walk_speed;
-
-          // plays footstep sound when worker moves
-          crow::audio::add_footstep_sound(
-              &entities
-                   .transforms_data[static_cast<size_t>(crow::entity::WORKER)],
-              0.5f);
         }
-      }
 
-      // set the worker's path
-      player_data.path_result = temporary_results;
+        // set the worker's path
+        player_data.path_result = temporary_results;
+      }
     }
   }
   left_click_time = 0;
@@ -289,6 +295,14 @@ void game_manager::cleanup() {
   unload_game();
   app->shut_down();
   delete app;
+}
+
+void game_manager::imgui_centertext(std::string text, float scale, ImVec2 wh) {
+  ImGui::SetWindowFontScale(wh.x / 960.f * 2.0f);
+  float text_size = ImGui::GetFontSize() * text.size() / 2;
+  ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+                  (text_size / 2.0f));
+  ImGui::Text(text.c_str());
 }
 
 }  // namespace crow

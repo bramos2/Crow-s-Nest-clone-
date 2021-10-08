@@ -1,6 +1,7 @@
 #pragma once
 #include <liblava/lava.hpp>
 
+#include <imgui.h>
 #include <vector>
 
 #include "../hpp/camera.hpp"
@@ -61,6 +62,7 @@ class game_manager {
 
   float left_click_time = 0.f;
   float right_click_time = 0.f;
+  int menu_position = 0;
 
   game_manager();
   game_manager(int _argc, char* _argv[]);
@@ -91,6 +93,11 @@ class game_manager {
   void draw_pause_button();
   void draw_pause_menu();
   void draw_control_message();
+
+  // helper functions
+
+  // draws some imgui text in the center of the current window
+  void imgui_centertext(std::string text, float scale, ImVec2 wh);
 };
 
 }  // namespace crow
