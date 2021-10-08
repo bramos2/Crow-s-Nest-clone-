@@ -2,9 +2,11 @@
 
 #include <liblava-extras/fbx.hpp>
 
+#include "../hpp/map.hpp"
+
 namespace crow {
 
-void pg_console::interact() {
+void pg_console::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
     fmt::print("\n*****interacted with pg_console*****\n");
   } else {
@@ -16,14 +18,20 @@ void pg_console::interact() {
 
 pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
 
-void interactible::interact() {
+void interactible::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
     fmt::print("\n*****interacted with interactible*****\n");
   } else {
     fmt::print("\n*****fixing interactible*****\n");
     is_broken = false;
   }
-  is_active = true;
+  is_active = !is_active;
+
+  if (is_active) {
+    fmt::print("*****power generator online*****");
+  } else {
+    fmt::print("*****power generator offline*****");
+  }
 }
 
 void interactible::dissable() {
@@ -39,11 +47,11 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
 
 interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
 
-void door_panel::interact() {}
+void door_panel::interact(size_t const index, crow::entities& entity) {}
 
 door_panel::door_panel() { type = crow::object_type::DOOR_PANEL; }
 
-void sd_console::interact() {
+void sd_console::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
     fmt::print("\n*****interacted with sd_console*****\n");
   } else {
@@ -62,7 +70,38 @@ void player_interact::dissable() {
 
 player_interact::player_interact() { is_active = true; }
 
-void door::interact() {}
+void door::interact(size_t const index, crow::entities& entity) {
+  fmt::print("\ninteracted with door, congrats!");
+
+  // we will be moving the index out of this room
+  if (!roomptr || !neighbor) {
+    return;
+  }
+
+  if (!roomptr->object_indices.empty()) {
+    if (roomptr->object_indices.back() != index) {
+      const size_t temp = roomptr->object_indices.back();
+
+      for (auto& i : roomptr->object_indices) {
+        if (i == index) {
+          i = temp;
+          break;
+        }
+      }
+
+      roomptr->object_indices.back() = index;
+    }
+
+    roomptr->object_indices.pop_back();
+
+    neighbor->roomptr->object_indices.push_back(index);
+    glm::vec2 npos = neighbor->roomptr->get_tile_wpos(neighbor->x, neighbor->y);
+
+    entity.set_world_position(index, npos.x, 0.f, npos.y);
+    roomptr->has_player = false;
+    neighbor->roomptr->has_player = true;
+  }
+}
 
 door::door() { type = crow::object_type::DOOR; }
 

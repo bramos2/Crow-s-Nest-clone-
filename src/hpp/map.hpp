@@ -13,10 +13,12 @@
 
 namespace crow {
 
+
 struct room {
   unsigned int width = 15;
   unsigned int length = 15;
   unsigned int height = 50;
+  bool has_player = false;
   glm::vec2 minimap_pos = {0.f, 0.f};
   int id = 0;
   crow::tile_map tiles;

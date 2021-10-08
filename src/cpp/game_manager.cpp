@@ -6,6 +6,7 @@
 #include "../hpp/cross.hpp"
 #include "../hpp/game_objects.hpp"
 #include "../hpp/player_behavior.hpp"
+#include "../hpp/tile.hpp"
 
 namespace crow {
 game_manager::game_manager() {}
@@ -55,7 +56,7 @@ void game_manager::new_game() {
   minimap.current_level = &test_level;
 
   // must always start on the starting room
-  player_data.current_room = test_level.starting_room;
+  //player_data.current_room = test_level.starting_room;
 
   current_state = crow::game_manager::game_state::PLAYING;
 }
@@ -92,7 +93,7 @@ void game_manager::load_mesh_data() {
   // power console mesh
   mesh_models.push_back(get_cube_mesh(2.f, 5.f, 2.f));
   // door mesh
-  mesh_models.push_back(get_cube_mesh(1.f, 10.f, 3.f));
+  mesh_models.push_back(get_cube_mesh(0.5f, 10.f, 2.f));
   // door panel mesh
 }
 
@@ -135,7 +136,7 @@ auto game_manager::l_click_update() -> bool {
   // processing for left clicks while you are currently playing the game
   if (current_state == crow::game_manager::game_state::PLAYING &&
       test_level.selected_room &&
-      player_data.current_room == test_level.selected_room->id) {
+      test_level.selected_room->has_player) {
     // crow::audio::play_sfx(0);
     glm::vec3 mouse_point = crow::mouse_to_floor(app);
     // y = -1 out of bound
@@ -187,18 +188,96 @@ auto game_manager::l_click_update() -> bool {
 }
 
 auto game_manager::r_click_update() -> bool {
+  crow::room* selected_room = test_level.selected_room;
   if (current_state == crow::game_manager::game_state::PLAYING &&
-      test_level.selected_room &&
-      player_data.current_room == test_level.selected_room->id) {
-    glm::vec3 mouse_point = crow::mouse_to_floor(app);
+      selected_room && selected_room->has_player) {
+    player_data.interacting = false;
+    player_data.target = nullptr;
 
-    if (mouse_point.y != -1) {
-      const glm::vec3 player_pos = entities.get_world_position(
-          static_cast<size_t>(crow::entity::WORKER));
+    glm::vec3 mouse_point = crow::mouse_to_floor(app);
+    if (mouse_point.y == -1) {
+      return true;
+    }
+    const crow::tile* clicked_tile =
+        selected_room->get_tile_at(glm::vec2(mouse_point.x, mouse_point.z));
+
+    for (auto& i : selected_room->objects) {
+      if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
+        player_data.interacting = true;
+        player_data.target = i;
+
+        const glm::vec3 p_pos = entities.get_world_position(
+            static_cast<size_t>(crow::entity::WORKER));
+
+        const crow::tile* p_tile =
+            selected_room->get_tile_at({p_pos.x, p_pos.z});
+
+        if (p_tile == clicked_tile) {
+          player_data.path_result.clear();
+          break;
+        }
+
+        glm::vec2 adjacent_tile =
+            glm::vec2{static_cast<float>(p_tile->col) -
+                          static_cast<float>(clicked_tile->col),
+                      static_cast<float>(p_tile->row) -
+                          static_cast<float>(clicked_tile->row)};
+
+        
+
+        adjacent_tile = glm::normalize(adjacent_tile);
+        for (size_t i = 0; i < 2; i++) {
+          if (adjacent_tile[i] >= 0.5f) {
+            adjacent_tile[i] = 1.f;
+            continue;
+          } else if (adjacent_tile[i] <= -0.5f) {
+            adjacent_tile[i] = -1.f;
+          }
+        }
+
+        adjacent_tile = {
+            adjacent_tile.x + static_cast<float>(clicked_tile->col),
+            adjacent_tile.y + static_cast<float>(clicked_tile->row)};
+
+        adjacent_tile =
+            selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
+                                         static_cast<int>(adjacent_tile.y));
+
+        std::vector<glm::vec2> temporary_results =
+            selected_room->get_path(glm::vec2(p_pos.x, p_pos.z), adjacent_tile);
+
+        if (!temporary_results.empty() && !player_data.path_result.empty()) {
+          // check for double click on same tile
+          if (player_data.path_result[0] == temporary_results[0] &&
+              right_click_time < 0.5f) {
+            player_data.worker_speed = player_data.worker_run_speed;
+
+            // plays footstep sound when worker moves
+            crow::audio::add_footstep_sound(
+                &entities.transforms_data[static_cast<size_t>(
+                    crow::entity::WORKER)],
+                0.285f);
+
+          } else {
+            player_data.worker_speed = player_data.worker_walk_speed;
+
+            crow::audio::add_footstep_sound(
+                &entities.transforms_data[static_cast<size_t>(
+                    crow::entity::WORKER)],
+                0.5f);
+          }
+        }
+
+        // set the worker's path
+        player_data.path_result = temporary_results;
+
+        break;
+      }
     }
   }
 
-  return false;
+  right_click_time = 0;
+  return true;
 }
 
 void game_manager::cleanup() {
@@ -667,6 +746,7 @@ void game_manager::cleanup() {
 //  return true;
 //}
 //
+// we are here
 // auto right_click_update(game_state& state) -> bool {
 //  // processing for left clicks while you are currently playing the game
 //  if (state.current_state == state.PLAYING) {

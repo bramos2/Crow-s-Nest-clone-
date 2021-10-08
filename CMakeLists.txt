@@ -96,4 +96,5 @@ target_sources(
   src/cpp/descriptor_setup.cpp
   src/hpp/entities.hpp
   src/hpp/game_objects.hpp
+  src/cpp/gui.cpp
 )

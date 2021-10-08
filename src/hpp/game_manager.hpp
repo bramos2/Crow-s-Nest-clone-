@@ -60,6 +60,7 @@ class game_manager {
   crow::player_behavior_data player_data;
 
   float left_click_time = 0.f;
+  float right_click_time = 0.f;
 
   game_manager();
   game_manager(int _argc, char* _argv[]);
@@ -84,6 +85,12 @@ class game_manager {
   auto l_click_update() -> bool;
   auto r_click_update() -> bool;
   void cleanup();
+
+  // gui functions
+  void draw_main_menu();
+  void draw_pause_button();
+  void draw_pause_menu();
+
 };
 
 }  // namespace crow
