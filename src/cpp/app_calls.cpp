@@ -41,7 +41,7 @@ void game_manager::init_app() {
                               {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
                           },
-                          180);
+                          360);
 
   app->on_create = on_create();
 
