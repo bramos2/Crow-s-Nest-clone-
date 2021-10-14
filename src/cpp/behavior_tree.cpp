@@ -65,28 +65,40 @@ behavior_tree::~behavior_tree() { delete root; }
 
 void behavior_tree::build_tree() {
   // allocating nodes for the tree
-  lnodes.resize(12);
+  lnodes.resize(15);
   // 0 - 11 child nodes (12)
-  for (size_t i = 0; i < 12; i++) {
-    lnodes[i] = new leaf_node();
+  for (auto& n : lnodes) {
+    // lnodes[i]
+    n = new leaf_node();
   }
 
-  seqn.resize(3);
+  seqn.resize(4);
   // 12 - 14 sequence nodes (3)
-  for (size_t i = 0; i < 3; i++) {
-    seqn[i] = new sequence_node();
+  for (auto& n : seqn) {
+    // seqn[i]
+    n = new sequence_node();
   }
 
-  seln.resize(4);
+  seln.resize(5);
   // 15 - 18 selector nodes (4)
-  for (size_t i = 0; i < 4; i++) {
-    seln[i] = new selector_node();
+  for (auto& n : seln) {
+    // seln[i]
+    n = new selector_node();
+  }
+
+  invn.resize(1);
+  for (auto& n : invn) {
+    n = new inverter_node();
   }
 
   // assigning behaviors to leaf nodes
   {
     unsigned int c = 0;
-    lnodes[c++]->r = &crow::has_path;
+    lnodes[c++]->r = &crow::roam_check;
+    lnodes[c++]->r = &crow::roam_path;
+    lnodes[c++]->r = &crow::move;
+
+    lnodes[c++]->r = &crow::has_target;
     lnodes[c++]->r = &crow::target_player;
     lnodes[c++]->r = &crow::target_console;
     lnodes[c++]->r = &crow::target_door;
@@ -108,32 +120,42 @@ void behavior_tree::build_tree() {
   // vector index = num - 1
   //           root
   //             |
-  //            (13)seq
-  //    |        |        |        |
-  // (16)sel  (17)sel  (18)sel  (19)sel
-  // | | | |    |    |   | |    |      |
-  // 1 2 3 4 (14)seq 7   8 9   (15)seq 12
-  //            | |             | |
-  //            5 6             10 11
+  //            (16)seq
+  //    |       |        |        |        |
+  //  20sel   (21)sel  (22)sel  (23)sel  (24)sel
+  //   | |    | | | |    |    |   | |    |      |
+  // inv 17seq 4 5 6 7 (18)seq 10 11 12   (19)seq 15
+  //  |  | |          | |                  | |
+  //  1   2 3         8 9                 13 14
 
   {
     unsigned int c = 0;
     unsigned int sel = 0;
     unsigned int seq = 0;
+    unsigned int inv = 0;
 
     set_root_child(seqn[seq]);
-    for (size_t i = 0; i < 4; i++) {
+    for (size_t i = 0; i < 5; i++) {
       seqn[seq]->add_child(seln[i]);
     }
     seq++;
 
-    // first selector
+    // 1st selector
+    seln[sel]->add_child(invn[inv]);
+    invn[inv]->set_child(lnodes[c++]);
+    for (size_t i = 0; i < 2; i++) {
+      seqn[seq]->add_child(lnodes[c++]);
+    }
+    seln[sel]->add_child(seqn[seq++]);
+    sel++;
+
+    // 2nd selector
     for (size_t i = 0; i < 4; i++) {
       seln[sel]->add_child(lnodes[c++]);
     }
     sel++;
 
-    // second selector
+    // 3rd selector
     seln[sel]->add_child(seqn[seq]);
     for (size_t i = 0; i < 2; i++) {
       seqn[seq]->add_child(lnodes[c++]);
@@ -141,13 +163,13 @@ void behavior_tree::build_tree() {
     seq++;
     seln[sel++]->add_child(lnodes[c++]);
 
-    // 3rd selector
+    // 4th selector
     for (size_t i = 0; i < 2; i++) {
       seln[sel]->add_child(lnodes[c++]);
     }
     sel++;
 
-    // 4th selector
+    // 5th selector
     seln[sel]->add_child(seqn[seq]);
     for (size_t i = 0; i < 2; i++) {
       seqn[seq]->add_child(lnodes[c++]);
@@ -171,6 +193,12 @@ void behavior_tree::clean_tree() {
   }
 
   for (auto& n : seqn) {
+    if (n) {
+      delete n;
+    }
+  }
+
+  for (auto& n : invn) {
     if (n) {
       delete n;
     }

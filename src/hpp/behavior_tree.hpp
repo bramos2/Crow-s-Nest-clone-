@@ -70,6 +70,7 @@ struct behavior_tree {
   std::vector<leaf_node*> lnodes;
   std::vector<selector_node*> seln;
   std::vector<sequence_node*> seqn;
+  std::vector<inverter_node*> invn;
 
  public:
   void set_root_child(behavior_tree::node* n) const;

@@ -39,17 +39,52 @@ namespace crow {
 //   nodes.clear();*/
 //}
 
+status roam_check(float dt, crow::ai_manager& m) {
+  status result = crow::status::FAILED;
+  m.roam_timer += dt;
+  if (m.roam_timer >= m.roam_total || m.curr_room->has_player) {
+    m.is_roaming = false;
+  }
+
+  if (m.is_roaming) {
+    result = crow::status::PASSED;
+  }
+
+  return result;
+}
+
+status roam_path(float dt, crow::ai_manager& m) {
+  status result = crow::status::FAILED;
+
+  // we must get a ramdom path in this room if empty
+  if (m.path.empty()) {
+    std::srand(std::time(0));
+    const unsigned int x = std::rand() % m.curr_room->width;
+    const unsigned int y = std::rand() % m.curr_room->length;
+    glm::vec2 goal = m.curr_room->get_tile_wpos(x, y);
+    glm::vec3 temp_ai_pos = m.entities->get_world_position(
+        static_cast<size_t>(crow::entity::SPHYNX));
+    glm::vec2 start = glm::vec2(temp_ai_pos.x, temp_ai_pos.z);
+
+    m.path = m.curr_room->get_path(start, goal);
+  }
+  // must always pass in this instance
+  result = crow::status::PASSED;
+  return result;
+}
+
 // target branch
 status has_target(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
   if (m.target && !m.curr_room->has_player) {
-    if (m.curr_room && m.target->roomptr == m.curr_room) {
+    if (m.target->roomptr == m.curr_room) {
       result = crow::status::PASSED;
     } else {
       m.target = nullptr;
       m.interacting = false;
     }
-  } else if (m.target && m.target->type == crow::object_type::PLAYER && m.curr_room->has_player) {
+  } else if (m.target && m.target->type == crow::object_type::PLAYER &&
+             m.curr_room->has_player) {
     result = crow::status::PASSED;
   }
 
@@ -142,7 +177,7 @@ status target_door(float dt, crow::ai_manager& m) {
   //  m.interacting = true;
 
   // we should probably do this after interacting with a target
-  //m.prev_target = m.target;
+  // m.prev_target = m.target;
 
   return result;
 }
@@ -219,19 +254,20 @@ status get_path(float dt, crow::ai_manager& m) {
 status reached_target(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
 
- /* size_t index = static_cast<size_t>(crow::entity::SPHYNX);
-  glm::vec3 curr_pos = m.entities->get_world_position(index);
-  glm::vec2 target_pos;
-  if (m.target->type == crow::object_type::PLAYER) {
-    glm::vec3 p_pos = m.entities->get_world_position(
-        static_cast<size_t>(crow::entity::WORKER));
-    target_pos = {p_pos.x, p_pos.z};
-  } else {
-    target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
-  }*/
+  /* size_t index = static_cast<size_t>(crow::entity::SPHYNX);
+   glm::vec3 curr_pos = m.entities->get_world_position(index);
+   glm::vec2 target_pos;
+   if (m.target->type == crow::object_type::PLAYER) {
+     glm::vec3 p_pos = m.entities->get_world_position(
+         static_cast<size_t>(crow::entity::WORKER));
+     target_pos = {p_pos.x, p_pos.z};
+   } else {
+     target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+   }*/
 
-  // || crow::reached_destination({0.f, 0.f}, {curr_pos.x, curr_pos.z}, target_pos)
-  if (m.path.empty() ) {
+  // || crow::reached_destination({0.f, 0.f}, {curr_pos.x, curr_pos.z},
+  // target_pos)
+  if (m.path.empty()) {
     result = crow::status::PASSED;
     m.entities->velocities[static_cast<size_t>(crow::entity::SPHYNX)] = {
         0.f, 0.f, 0.f};
@@ -321,6 +357,8 @@ status handle_door(float dt, crow::ai_manager& m) {
 
   m.room_check();
   m.interacting = false;
+  m.is_roaming = true;
+  m.roam_timer = 0.f;
   result = crow::status::PASSED;
 
   return result;

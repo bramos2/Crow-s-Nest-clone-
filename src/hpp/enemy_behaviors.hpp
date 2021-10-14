@@ -39,6 +39,11 @@ class ai_manager {
   //  std::vector<crow::behavior_tree::node*> nodes;
   bool interacting = false;
   bool checking_room = false;
+  bool is_roaming = true;
+  // used to check for how long we have roammed
+  float roam_timer = 0.f;
+  // the total amount of time we will be roaming
+  float roam_total = 10.f;
 
   // init/creation methods
   // TODO: all methods to initialize and prepare the manager and behavior tree
@@ -99,12 +104,16 @@ class ai_manager {
   // void clean_tree();
 };
 
+// roam branch
+status roam_check(float dt, crow::ai_manager &m);
+status roam_path(float dt, crow::ai_manager &m);
+
 // target branch
 status has_target(float dt, crow::ai_manager &m);
 status target_player(float dt, crow::ai_manager &m);
 status target_console(float dt, crow::ai_manager &m);
 status target_door(float dt, crow::ai_manager &m);
-status target_floor(float dt, crow::ai_manager &m); // new
+status target_floor(float dt, crow::ai_manager &m);  // new
 
 // path branch
 status has_path(float dt, crow::ai_manager &m);
@@ -116,7 +125,7 @@ status reached_target(float dt, crow::ai_manager &m);
 status move(float dt, crow::ai_manager &m);
 
 // interaction branch
-status check_room(float dt, crow::ai_manager &m); // new
+status check_room(float dt, crow::ai_manager &m);  // new
 status is_target_door(float dt, crow::ai_manager &m);
 status handle_door(float dt, crow::ai_manager &m);
 status destroy_target(float dt, crow::ai_manager &m);
