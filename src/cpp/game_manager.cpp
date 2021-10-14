@@ -304,7 +304,7 @@ void game_manager::cleanup() {
 }
 
 void game_manager::imgui_centertext(std::string text, float scale, ImVec2 wh) {
-  ImGui::SetWindowFontScale(wh.x / 960.f * 2.0f);
+  ImGui::SetWindowFontScale(wh.x / 960.f * scale);
   float text_size = ImGui::GetFontSize() * text.size() / 2;
   ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
                   (text_size / 2.0f));

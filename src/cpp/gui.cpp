@@ -184,6 +184,52 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
   }
 }
 
+void game_manager::draw_game_over() {
+  glm::vec2 _wh = app->window.get_size();
+  ImVec2 wh = {_wh.x, _wh.y};
+  // first things first, let's set the size of the main menu. it covers
+  // the
+  // whole screen tho, so...
+  ImVec2 mm_window_xy = {0, 0};
+  ImGui::SetNextWindowPos(mm_window_xy, ImGuiCond_Always);
+  ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+  // black background so you can't tell that there is anything going on
+  // behind it, borderless so you can't tell it's just an imgui window
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+  ImGui::SetNextWindowBgAlpha(1);
+  // main menu drawing starts here
+  ImGui::Begin("Game Over", 0,
+               ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                   ImGuiWindowFlags_NoResize);
+  ImGui::NewLine();
+  ImGui::NewLine();
+  ImGui::NewLine();
+  ImGui::NewLine();
+  ImGui::NewLine();
+  imgui_centertext(std::string("GAME OVER"), 8.0f, wh);
+  ImGui::NewLine();
+  imgui_centertext(std::string("The worker has died."), 2.0f, wh);
+  ImGui::NewLine();
+
+  if (state_time > 1) {
+    // game over menu options
+    ImVec2 game_over_button_wh = {wh.x * 0.15f, wh.y * 0.065f};
+    ImGui::SetCursorPos({wh.x * 0.25f, wh.y * 0.65f});
+    if (ImGui::Button("Retry", game_over_button_wh)) {
+      crow::audio::play_sfx(crow::audio::MENU_OK);
+      // TODO::selecting this option is the same as hitting the continue button
+      // on the main menu
+    }
+    ImGui::SetCursorPos({wh.x * 0.6f, wh.y * 0.65f});
+    if (ImGui::Button("Give up", game_over_button_wh)) {
+      crow::audio::play_sfx(crow::audio::MENU_OK);
+      app->shut_down();
+    }
+  }
+  ImGui::End();
+  ImGui::PopStyleVar(1);
+}
+
 void game_manager::draw_control_message() {
   glm::vec2 wh = app->window.get_size();
 

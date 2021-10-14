@@ -177,6 +177,12 @@ auto game_manager::on_update() -> lava::app::update_func {
           entities.update_transform_buffer(i);
         }
 
+        // check for worker alive to end the game if he is dead
+        if (!player_data.player_interact.is_active) {
+          prev_state = current_state = game_state::GAME_OVER;
+          state_time = 0;
+        }
+
         render_game();
         crow::audio::update_audio_timers(this, dt);
         break;
@@ -200,6 +206,12 @@ auto game_manager::on_update() -> lava::app::update_func {
       }
     }
 
+    // state frame timer update
+    state_time += dt;
+    if (prev_state != current_state) {
+      prev_state = current_state;
+      state_time = 0;
+    }
     return true;
   };
 }
@@ -244,6 +256,10 @@ auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
         break;
       }
       case crow::game_manager::game_state::EXIT: {
+        break;
+      }
+      case crow::game_manager::game_state::GAME_OVER: {
+        draw_game_over();
         break;
       }
       default: {

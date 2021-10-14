@@ -22,8 +22,13 @@ class game_manager {
     SETTINGS = 3,
     CREDITS = 4,
     LOADING = 5,
-    EXIT = 6
+    EXIT = 6,
+    GAME_OVER,
+    GAME_OVER_PRE
   } current_state = game_state::MAIN_MENU;
+
+  game_state prev_state = game_state::MAIN_MENU;
+  float state_time = 0;
 
   int argc = -1;
   char** argv = nullptr;
@@ -32,7 +37,7 @@ class game_manager {
 
   lava::buffer camera_buffer;
   crow::camera_device_data camera_buffer_data = {glm::identity<lava::mat4>()};
-
+   
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
   lava::buffer world_matrix_buffer;
 
@@ -97,6 +102,7 @@ class game_manager {
   void draw_pause_button();
   void draw_pause_menu();
   void draw_control_message();
+  void draw_game_over();
 
   // helper functions
 
