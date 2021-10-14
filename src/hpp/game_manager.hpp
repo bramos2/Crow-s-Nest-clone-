@@ -7,6 +7,7 @@
 #include "../hpp/camera.hpp"
 #include "../hpp/entities.hpp"
 #include "../hpp/geometry.hpp"
+#include "../hpp/message.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/player_behavior.hpp"
 
@@ -21,7 +22,8 @@ class game_manager {
     SETTINGS = 3,
     CREDITS = 4,
     LOADING = 5,
-    EXIT = 6
+    EXIT = 6,
+    GAME_WIN
   } current_state = game_state::MAIN_MENU;
 
   int argc = -1;
@@ -56,9 +58,11 @@ class game_manager {
 
   crow::minimap minimap;
 
-  crow::level test_level;
+  crow::level current_level;
 
   crow::player_behavior_data player_data;
+  
+  crow::message current_message;
 
   float left_click_time = 0.f;
   float right_click_time = 0.f;

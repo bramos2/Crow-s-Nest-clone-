@@ -58,8 +58,8 @@ void crow::minimap::draw_call(lava::app* app) {
         };
         ImVec2 room_wh = {
             // Set the width and height:
-            ((current_room.minimap_wh.x)) * scale.x,
-            ((current_room.minimap_wh.y)) * scale.y,
+            ((current_room.width * current_room.minimap_scale)) * scale.x,
+            ((current_room.length * current_room.minimap_scale)) * scale.y,
         };
 
         /*
@@ -220,15 +220,15 @@ void crow::minimap::calculate_extents() {
         // clang-format off
         if (current_room.minimap_pos.x < min.x) min.x = current_room.minimap_pos.x;
         if (current_room.minimap_pos.y < min.y) min.y = current_room.minimap_pos.y;
-        if (current_room.minimap_pos.x + current_room.minimap_wh.x  > max.x) max.x = current_room.minimap_pos.x + current_room.minimap_wh.x ;
-        if (current_room.minimap_pos.y + current_room.minimap_wh.y > max.y) max.y = current_room.minimap_pos.y + current_room.minimap_wh.y;
+        if (current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale  > max.x) max.x = current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale ;
+        if (current_room.minimap_pos.y + current_room.length * current_room.minimap_scale > max.y) max.y = current_room.minimap_pos.y + current_room .height * current_room.minimap_scale;
         // clang-format on
       } else {
         // this is the first room in the list, so it's the standard to check all
         // other rooms to (we need SOMETHING as a basic to check with)
         min = glm::vec2(current_room.minimap_pos.x, current_room.minimap_pos.y);
-        max = glm::vec2(current_room.minimap_pos.x + current_room.minimap_wh.x,
-                        current_room.minimap_pos.y + current_room.minimap_wh.y);
+        max = glm::vec2(current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale,
+                        current_room.minimap_pos.y + current_room.length * current_room.minimap_scale);
       }
       rooms_checked++;
     }

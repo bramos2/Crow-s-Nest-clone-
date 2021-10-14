@@ -97,4 +97,7 @@ target_sources(
   src/hpp/entities.hpp
   src/hpp/game_objects.hpp
   src/cpp/gui.cpp
+  src/cpp/levels.cpp
+  src/hpp/message.hpp
+  src/cpp/message.cpp
 )

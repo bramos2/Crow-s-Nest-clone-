@@ -182,6 +182,8 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
     ImGui::SetWindowFocus();
     ImGui::End();
   }
+
+  current_message.display(2, wh);
 }
 
 void game_manager::draw_control_message() {
