@@ -251,11 +251,22 @@ void level::test_level(lava::app* app) {
 
   // setting the player bool on the starting room, should be done when loading
   // any level
+  bool found_ai = false;
   for (auto& i : rooms) {
     for (auto& j : i) {
       if (static_cast<unsigned int>(j.id) == this->starting_room) {
         j.has_player = true;
-        return;
+        //return;
+      }
+
+      // initially will need to find where the ai is at
+      if (!found_ai) {
+        for (auto& inx : j.object_indices) {
+          if (inx == static_cast<size_t>(crow::entity::SPHYNX)) {
+            found_ai = true;
+            j.has_ai = true;
+          }
+        }
       }
     }
   }

@@ -41,7 +41,7 @@ void game_manager::new_game() {
   test_level.test_level(app);
   test_level.load_entities(app, entities, mesh_models, &descriptor_writes,
                            descriptor_pool, camera_buffer);
-
+  test_level.p_inter = &player_data.player_interact;
   // now crashing after new game more than once
   crow::update_descriptor_writes(app, &descriptor_writes);
 
@@ -58,6 +58,10 @@ void game_manager::new_game() {
 
   // must always start on the starting room
   // player_data.current_room = test_level.starting_room;
+
+  ai_m.init_manager(&entities, &test_level);
+  ai_bt.aim = &ai_m;
+  ai_bt.build_tree();
 
   current_state = crow::game_manager::game_state::PLAYING;
 }
@@ -115,6 +119,8 @@ void game_manager::unload_game() {
   }
 
   test_level.clean_level(mesh_models_trash);
+
+  ai_bt.clean_tree();
 }
 
 void game_manager::render_game() {

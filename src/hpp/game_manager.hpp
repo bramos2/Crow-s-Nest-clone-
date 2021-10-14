@@ -9,6 +9,7 @@
 #include "../hpp/geometry.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/player_behavior.hpp"
+#include "../hpp/behavior_tree.hpp"
 
 namespace crow {
 
@@ -59,6 +60,9 @@ class game_manager {
   crow::level test_level;
 
   crow::player_behavior_data player_data;
+
+  crow::behavior_tree ai_bt;
+  crow::ai_manager ai_m;
 
   float left_click_time = 0.f;
   float right_click_time = 0.f;

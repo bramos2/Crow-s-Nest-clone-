@@ -18,6 +18,7 @@ struct room {
   unsigned int length = 15;
   unsigned int height = 50;
   bool has_player = false;
+  bool has_ai = false;
   glm::vec2 minimap_pos = {0.f, 0.f};
   glm::vec2 minimap_wh = {50.f, 50.f};
   int id = 0;
@@ -67,6 +68,7 @@ struct level {
   unsigned int id = 0;
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
+  player_interact* p_inter = nullptr;
   crow::room* selected_room = nullptr;
   std::vector<std::vector<room>> rooms;
   std::vector<door> doors;

@@ -167,6 +167,8 @@ auto game_manager::on_update() -> lava::app::update_func {
         memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
                sizeof(camera_buffer_data));
 
+        ai_bt.run(dt);
+
         crow::path_through(player_data, entities,
                            static_cast<size_t>(crow::entity::WORKER), dt);
 
