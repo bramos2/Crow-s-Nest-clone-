@@ -41,7 +41,9 @@ void game_manager::init_app() {
                               {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50},
                               {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 40},
                           },
-                          1800);
+                          360);
+
+  std::srand(std::time(NULL));
 
   app->on_create = on_create();
 
@@ -178,12 +180,20 @@ auto game_manager::on_update() -> lava::app::update_func {
         memcpy(camera_buffer.get_mapped_data(), &camera_buffer_data,
                sizeof(camera_buffer_data));
 
+        ai_bt.run(dt);
+
         crow::path_through(player_data, entities,
                            static_cast<size_t>(crow::entity::WORKER), dt);
 
         for (size_t i = 0; i < entities.current_size; i++) {
           entities.update_transform_data(i, dt);
           entities.update_transform_buffer(i);
+        }
+
+        // check for worker alive to end the game if he is dead
+        if (!player_data.player_interact.is_active) {
+          prev_state = current_state = game_state::GAME_OVER;
+          state_time = 0;
         }
 
         render_game();
@@ -220,6 +230,12 @@ auto game_manager::on_update() -> lava::app::update_func {
     static int frame = 0;
     frame++;
 
+    // state frame timer update
+    state_time += dt;
+    if (prev_state != current_state) {
+      prev_state = current_state;
+      state_time = 0;
+    }
     return true;
   };
 }
@@ -267,6 +283,10 @@ auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
         break;
       }
       case crow::game_manager::game_state::EXIT: {
+        break;
+      }
+      case crow::game_manager::game_state::GAME_OVER: {
+        draw_game_over();
         break;
       }
       default: {

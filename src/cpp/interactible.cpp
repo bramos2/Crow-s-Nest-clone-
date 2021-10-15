@@ -131,7 +131,10 @@ void player_interact::dissable() {
   interactible::dissable();
 }
 
-player_interact::player_interact() { is_active = true; }
+player_interact::player_interact() {
+  type = crow::object_type::PLAYER;
+  is_active = true;
+}
 
 void door::interact(size_t const index, crow::entities& entity) {
   fmt::print("\ninteracted with door, congrats!");
@@ -204,12 +207,27 @@ void door::interact(size_t const index, crow::entities& entity) {
     glm::vec2 npos = neighbor->roomptr->get_tile_wpos(neighbor->x, neighbor->y);
 
     entity.set_world_position(index, npos.x, 0.f, npos.y);
-    roomptr->has_player = false;
-    neighbor->roomptr->has_player = true;
+    if (index == static_cast<size_t>(crow::entity::WORKER)) {
+      roomptr->has_player = false;
+      neighbor->roomptr->has_player = true;
+      heat++;
+      neighbor->heat++;
+    } else {
+      roomptr->has_ai = false;
+      neighbor->roomptr->has_ai = true;
+      heat--;
+      neighbor->heat--;
+    }
   }
+
+
 }
 
-door::door() { type = crow::object_type::DOOR; }
+door::door() {
+  type = crow::object_type::DOOR;
+  is_active = true;
+  is_broken = false;
+}
 door::door(crow::level* _lv) {
   type = crow::object_type::DOOR;
   current_level = _lv;

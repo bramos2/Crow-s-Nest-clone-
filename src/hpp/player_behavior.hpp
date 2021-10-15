@@ -16,6 +16,7 @@ struct player_behavior_data {
   bool interacting = false;
   // unsigned int current_room = 0;
   interactible* target = nullptr;
+  player_interact player_interact;
   player_behavior_data();
   ~player_behavior_data();
 };

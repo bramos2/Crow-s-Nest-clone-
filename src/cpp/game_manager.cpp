@@ -47,6 +47,8 @@ void game_manager::new_game() {
   crow::update_room_cam(current_level.selected_room->cam_pos,
                         current_level.selected_room->cam_rotation, app->camera);
 
+
+  current_level.p_inter = &player_data.player_interact;
   // now crashing after new game more than once
   crow::update_descriptor_writes(app, &descriptor_writes);
 
@@ -63,6 +65,10 @@ void game_manager::new_game() {
 
   // must always start on the starting room
   // player_data.current_room = current_level.starting_room;
+
+  ai_m.init_manager(&entities, &current_level);
+  ai_bt.aim = &ai_m;
+  ai_bt.build_tree();
 
   current_state = crow::game_manager::game_state::PLAYING;
 }
@@ -123,6 +129,8 @@ void game_manager::unload_game() {
   }
 
   current_level.clean_level(mesh_models_trash);
+
+  ai_bt.clean_tree();
 }
 
 void game_manager::render_game() {

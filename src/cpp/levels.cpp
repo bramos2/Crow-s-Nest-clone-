@@ -311,6 +311,12 @@ void level::load_level(lava::app* app, int lv) {
         rooms[1][1].objects.push_back(door3);
         rooms[1][1].objects.push_back(door3_2);
         rooms[1][1].make_room_meshes(app);
+
+        // build level design (invisible)
+        for (int i = 4; i < 11; i++) {
+          rooms[1][1].tiles.map[i][4]->is_open = false;
+          rooms[1][1].tiles.map[i][9]->is_open = false;
+        }
       }
 
       rooms[2][1].id = 4;
@@ -378,6 +384,11 @@ void level::load_level(lava::app* app, int lv) {
         rooms[2][2].objects.push_back(door7);
         rooms[2][2].objects.push_back(door7_2);
         rooms[2][2].make_room_meshes(app);
+
+        // build level design (invisible)
+        for (int i = 2; i < 13; i++) {
+          rooms[2][2].tiles.map[7][i]->is_open = false;
+        }
       }
 
       rooms[2][3].id = 8;
@@ -399,13 +410,25 @@ void level::load_level(lava::app* app, int lv) {
 
       break;
   }
-  // setting the player bool on the starting room, should be done when
-  // loading any level
+
+  // setting the player bool on the starting room, should be done when loading
+  // any level
+  bool found_ai = false;
   for (auto& i : rooms) {
     for (auto& j : i) {
       if (static_cast<unsigned int>(j.id) == this->starting_room) {
         j.has_player = true;
-        return;
+        //return;
+      }
+
+      // initially will need to find where the ai is at
+      if (!found_ai) {
+        for (auto& inx : j.object_indices) {
+          if (inx == static_cast<size_t>(crow::entity::SPHYNX)) {
+            found_ai = true;
+            j.has_ai = true;
+          }
+        }
       }
     }
   }

@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include <vector>
+#include <time.h>
 
 #include "../hpp/camera.hpp"
 #include "../hpp/entities.hpp"
@@ -10,6 +11,7 @@
 #include "../hpp/message.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/player_behavior.hpp"
+#include "../hpp/behavior_tree.hpp"
 
 namespace crow {
 
@@ -23,8 +25,13 @@ class game_manager {
     CREDITS = 4,
     LOADING = 5,
     EXIT = 6,
+    GAME_OVER,
+    GAME_OVER_PRE,
     GAME_WIN
   } current_state = game_state::MAIN_MENU;
+
+  game_state prev_state = game_state::MAIN_MENU;
+  float state_time = 0;
 
   int argc = -1;
   char** argv = nullptr;
@@ -33,7 +40,7 @@ class game_manager {
 
   lava::buffer camera_buffer;
   crow::camera_device_data camera_buffer_data = {glm::identity<lava::mat4>()};
-
+   
   lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
   lava::buffer world_matrix_buffer;
 
@@ -63,6 +70,9 @@ class game_manager {
   crow::player_behavior_data player_data;
   
   crow::message current_message;
+
+  crow::behavior_tree ai_bt;
+  crow::ai_manager ai_m;
 
   float left_click_time = 0.f;
   float right_click_time = 0.f;
@@ -97,6 +107,7 @@ class game_manager {
   void draw_pause_button();
   void draw_pause_menu();
   void draw_control_message();
+  void draw_game_over();
 
   // helper functions
 

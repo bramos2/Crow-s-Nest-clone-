@@ -62,7 +62,7 @@ void crow::minimap::draw_call(lava::app* app) {
             ((current_room.length * current_room.minimap_scale)) * scale.y,
         };
 
-        /*
+        
         // proof of concept room outlining. works out of the box if you
         // uncomment, but atm unnecessary, so it will be left commented until
         // its time has come
@@ -88,7 +88,7 @@ void crow::minimap::draw_call(lava::app* app) {
             ImVec2(window_pos.x + room_xy.x,
                    room_xy.y + window_pos.y + room_wh.y),
             IM_COL32(255, 255, 255, 255), 1.0f);
-        //*/
+        //
 
         // Set the x, y position of the room:
         ImGui::SetCursorPos(room_xy);
