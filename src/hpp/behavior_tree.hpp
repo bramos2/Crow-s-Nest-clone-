@@ -1,14 +1,25 @@
 #pragma once
 
 #include <vector>
+#include "../hpp/enemy_behaviors.hpp"
 
-enum class status { FAILED = 0, PASSED, RUNNING };
+namespace crow {
+
+//class ai_manager;
 
 // a basic behavior tree
 // TODO: ADD DECORATOR NODES
 struct behavior_tree {
+
+    crow::ai_manager* aim = nullptr;
+
   struct node {
-    virtual status run() = 0;
+    virtual status run(float dt, crow::ai_manager& m) = 0;
+    status (*r)(float, crow::ai_manager&){nullptr};
+  };
+
+   struct leaf_node : public crow::behavior_tree::node {
+    virtual status run(float dt, crow::ai_manager& m) override;
   };
 
   struct composite_node : public behavior_tree::node {
@@ -20,11 +31,11 @@ struct behavior_tree {
   };
 
   struct selector_node : public behavior_tree::composite_node {
-    virtual status run() override;
+    virtual status run(float dt, crow::ai_manager& m) override;
   };
 
   struct sequence_node : public behavior_tree::composite_node {
-    virtual status run() override;
+    virtual status run(float dt, crow::ai_manager& m) override;
   };
 
   class decorator_node : public behavior_tree::node {
@@ -39,20 +50,31 @@ struct behavior_tree {
 
   class root_node : public behavior_tree::decorator_node {
     friend class behavior_tree;
-    virtual status run();
+    virtual status run(float dt, crow::ai_manager& m);
   };
 
   class inverter_node : public behavior_tree::decorator_node {
-    virtual status run() override;
+    virtual status run(float dt, crow::ai_manager& m) override;
   };
+
+
 
   behavior_tree();
   ~behavior_tree();
+  
+  void build_tree();
+  void clean_tree();
 
  private:
   behavior_tree::root_node* root;
+  std::vector<leaf_node*> lnodes;
+  std::vector<selector_node*> seln;
+  std::vector<sequence_node*> seqn;
+  std::vector<inverter_node*> invn;
 
  public:
   void set_root_child(behavior_tree::node* n) const;
-  status run() const;
+  status run(float dt) const;
 };
+
+}  // namespace crow
