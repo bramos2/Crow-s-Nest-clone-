@@ -34,6 +34,8 @@ void interactible::interact(size_t const index, crow::entities& entity) {
   }
 }
 
+void interactible::activate() { fmt::print("something was activated.\n"); }
+
 void interactible::dissable() {
   fmt::print("\n*****interactible has been destroyed*****");
   is_broken = true;
@@ -47,9 +49,70 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
 
 interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
 
-void door_panel::interact(size_t const index, crow::entities& entity) {}
+void door_panel::interact(size_t const index, crow::entities& entity) {
+  std::string text;
+  switch (panel_type) {
+      // hackable door
+    case 0:
+      // if the door is unusable, make it useable. otherwise, toggle between
+      // open and closed.
+      switch (panel_status) {
+        case 0:
+          text = "ACTIVATING...";
+          break;
+        case 1:
+          text = "LOCKING...";
+          break;
+        case 2:
+          text = "UNLOCKING...";
+          break;
+      }
+      break;
+      // repairable door
+    case 1:
+      if (panel_status == 1) {
+        current_level->msg = message("This door panel is already repaired!");
+        return;
+      } else
+        text = "REPAIRING...";
+      break;
+  }
+  current_level->interacting = this;
+  current_level->msg = message(text, crow::default_message_time - 1.0f,
+                               crow::default_interact_wait);
+}
 
-door_panel::door_panel() { type = crow::object_type::DOOR_PANEL; }
+void door_panel::activate() {
+  switch (panel_type) {
+      // hackable door
+    case 0:
+      // if the door is unusable, make it useable. otherwise, toggle between
+      // open and closed.
+      switch (panel_status) {
+        case 0:
+          panel_status = 1;
+          break;
+        case 1:
+          panel_status = 2;
+          break;
+        case 2:
+          panel_status = 1;
+          break;
+      }
+      break;
+    case 1:
+      // repairable doors can be repaired only. there is nothing to do to it
+      // other than repair it. it shouldn't be able to be activated if it's
+      // already repaired, but if it does get activated nothing will happen
+      panel_status = 1;
+      break;
+  }
+}
+
+door_panel::door_panel(crow::level* _lv) {
+  type = crow::object_type::DOOR_PANEL;
+  current_level = _lv;
+}
 
 void sd_console::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
@@ -75,6 +138,49 @@ player_interact::player_interact() {
 
 void door::interact(size_t const index, crow::entities& entity) {
   fmt::print("\ninteracted with door, congrats!");
+
+  // panel to look at
+  // if this door doesn't have a panel attached, it will check to see if the
+  // neighboring door has a panel
+  crow::door_panel* _panel = panel;
+  if (!_panel) _panel = neighbor->panel;
+
+  // notifs are passed up via a "bubble up" method
+  if (_panel != nullptr) {
+    // door is unuseable, open up!
+    if (_panel->panel_status == 0) {
+      if (current_level) {
+        // door can't open, give message to warn that the door is unusable
+        current_level->msg = message(
+            "The door is broken and needs to be repaired before it can be "
+            "used.");
+        if (_panel->panel_type == 0) {
+          current_level->msg = message(
+              "The door isn't working and needs to be reprogrammed before it "
+              "can be used.");
+        }
+      } else {
+        fmt::print(
+            "\nerror! tried to display a message, but the door doesn't have a "
+            "reference to the current level!");
+      }
+
+      return;
+      // door has been hacked shut by the player. give message to alert the
+      // player of this.
+    } else if (_panel->panel_status == 2) {
+      if (current_level) {
+        current_level->msg = message(
+            "You've hacked this door shut. You need to unlock it before you "
+            "can use it.");
+      } else {
+        fmt::print(
+            "\nerror! tried to display a message, but the door doesn't have a "
+            "reference to the current level!");
+      }
+      return;
+    }
+  }
 
   // we will be moving the index out of this room
   if (!roomptr || !neighbor) {
@@ -121,6 +227,23 @@ door::door() {
   type = crow::object_type::DOOR;
   is_active = true;
   is_broken = false;
+}
+door::door(crow::level* _lv) {
+  type = crow::object_type::DOOR;
+  current_level = _lv;
+}
+
+void exit::interact(size_t const index, crow::entities& entity) {
+  current_level->change_level(app, level_num + 1);
+  fmt::print("\ninteracted with exit, congrats! loaded level: %i",
+             level_num + 1);
+}
+
+exit::exit(lava::app* _app, crow::level* _lv, int _level_num) {
+  type = crow::object_type::EXIT;
+  current_level = _lv;
+  app = _app;
+  level_num = _level_num;
 }
 
 }  // namespace crow

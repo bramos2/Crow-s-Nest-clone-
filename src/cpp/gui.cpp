@@ -171,6 +171,7 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
       current_state = game_state::MAIN_MENU;
       crow::audio::play_sfx(crow::audio::MENU_OK);
       menu_position = 0;
+      unload_game();
     }
     ImGui::SetCursorPos(
         {confirm_window_wh.x * 0.6f, confirm_window_wh.y * 0.65f});
@@ -182,6 +183,8 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
     ImGui::SetWindowFocus();
     ImGui::End();
   }
+
+  current_message.display(2, wh);
 }
 
 void game_manager::draw_game_over() {
@@ -217,6 +220,8 @@ void game_manager::draw_game_over() {
     ImGui::SetCursorPos({wh.x * 0.25f, wh.y * 0.65f});
     if (ImGui::Button("Retry", game_over_button_wh)) {
       crow::audio::play_sfx(crow::audio::MENU_OK);
+      unload_game();
+      current_state = game_state::MAIN_MENU;
       // TODO::selecting this option is the same as hitting the continue button
       // on the main menu
     }

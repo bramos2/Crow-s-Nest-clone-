@@ -12,11 +12,16 @@ enum class object_type {
   SD_CONSOLE,
   POWER_CONSOLE,
   DOOR,
+  EXIT,
   DOOR_PANEL,
   FLOOR,
   WALL,
   SHORT_WALL,
   COUNT,
 };
+
+// when current_level == final_level, we will skip to the win screen instead of
+// attempting to advance to the next level
+static const int final_level = 10;
 
 }  // namespace crow

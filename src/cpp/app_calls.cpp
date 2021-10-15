@@ -159,6 +159,17 @@ auto game_manager::on_destroy() -> lava::app::destroy_func {
 
 auto game_manager::on_update() -> lava::app::update_func {
   return [&](lava::delta dt) {
+    // updates that run irregardless of the game state
+    current_message.update(dt);
+    if (current_level.interacting && current_message.progress_max &&
+        current_message.progress_max == current_message.progress) {
+      current_level.interacting->activate();
+      current_level.interacting = nullptr;
+    }
+    left_click_time += dt;
+    right_click_time += dt;
+
+    // game state updates
     switch (current_state) {
       case crow::game_manager::game_state::MAIN_MENU: {
         break;
@@ -187,6 +198,15 @@ auto game_manager::on_update() -> lava::app::update_func {
 
         render_game();
         crow::audio::update_audio_timers(this, dt);
+
+        // fetch any message that might have been summoned by the player object
+        if (current_level.msg.time_remaining > 0) {
+          // steal the info
+          current_message = current_level.msg;
+          // mark as read
+          current_level.msg.time_remaining = 0;
+          // read: 2:11 PM
+        }
         break;
       }
       case crow::game_manager::game_state::PAUSED: {
@@ -207,6 +227,8 @@ auto game_manager::on_update() -> lava::app::update_func {
         break;
       }
     }
+    static int frame = 0;
+    frame++;
 
     // state frame timer update
     state_time += dt;
@@ -233,6 +255,9 @@ auto game_manager::imgui_on_draw() -> lava::imgui::draw_func {
         draw_pause_button();
         draw_control_message();
         minimap.draw_call(app);
+        glm::vec2 _wh = app->window.get_size();
+        ImVec2 wh = {_wh.x, _wh.y};
+        current_message.display(1, wh);
         break;
       }
       case crow::game_manager::game_state::PAUSED: {

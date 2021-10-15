@@ -8,6 +8,7 @@
 #include "../hpp/camera.hpp"
 #include "../hpp/entities.hpp"
 #include "../hpp/geometry.hpp"
+#include "../hpp/message.hpp"
 #include "../hpp/minimap.hpp"
 #include "../hpp/player_behavior.hpp"
 #include "../hpp/behavior_tree.hpp"
@@ -25,7 +26,8 @@ class game_manager {
     LOADING = 5,
     EXIT = 6,
     GAME_OVER,
-    GAME_OVER_PRE
+    GAME_OVER_PRE,
+    GAME_WIN
   } current_state = game_state::MAIN_MENU;
 
   game_state prev_state = game_state::MAIN_MENU;
@@ -63,9 +65,11 @@ class game_manager {
 
   crow::minimap minimap;
 
-  crow::level test_level;
+  crow::level current_level;
 
   crow::player_behavior_data player_data;
+  
+  crow::message current_message;
 
   crow::behavior_tree ai_bt;
   crow::ai_manager ai_m;

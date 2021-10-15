@@ -38,10 +38,17 @@ void game_manager::new_game() {
   entities.set_world_position(static_cast<size_t>(entity::SPHYNX), 0.f, 0.f,
                               0.f);
 
-  test_level.test_level(app);
-  test_level.load_entities(app, entities, mesh_models, &descriptor_writes,
-                           descriptor_pool, camera_buffer);
-  test_level.p_inter = &player_data.player_interact;
+  current_level.load_level(app, 0);
+  current_level.load_entities(app, entities, mesh_models, &descriptor_writes,
+                              descriptor_pool, camera_buffer);
+
+  // auto-load the first room
+  current_level.select_default_room();
+  crow::update_room_cam(current_level.selected_room->cam_pos,
+                        current_level.selected_room->cam_rotation, app->camera);
+
+
+  current_level.p_inter = &player_data.player_interact;
   // now crashing after new game more than once
   crow::update_descriptor_writes(app, &descriptor_writes);
 
@@ -53,13 +60,13 @@ void game_manager::new_game() {
   minimap.screen_maxr = {0.25f, 0.35f};
   minimap.resolution = {1920, 1080};
   minimap.set_window_size(app->window.get_size());
-  minimap.current_level = &test_level;
+  minimap.current_level = &current_level;
   minimap.calculate_extents();
 
   // must always start on the starting room
-  // player_data.current_room = test_level.starting_room;
+  // player_data.current_room = current_level.starting_room;
 
-  ai_m.init_manager(&entities, &test_level);
+  ai_m.init_manager(&entities, &current_level);
   ai_bt.aim = &ai_m;
   ai_bt.build_tree();
 
@@ -99,7 +106,10 @@ void game_manager::load_mesh_data() {
   mesh_models.push_back(get_cube_mesh(2.f, 5.f, 2.f));
   // door mesh
   mesh_models.push_back(get_cube_mesh(0.5f, 10.f, 2.f));
+  // exit door mesh
+  mesh_models.push_back(get_cube_mesh(0.5f, 10.f, 3.5f));
   // door panel mesh
+  mesh_models.push_back(get_cube_mesh(0.5f, 7.f, 1.8f));
 }
 
 void game_manager::unload_game() {
@@ -118,17 +128,17 @@ void game_manager::unload_game() {
     mesh_models.pop_back();
   }
 
-  test_level.clean_level(mesh_models_trash);
+  current_level.clean_level(mesh_models_trash);
 
   ai_bt.clean_tree();
 }
 
 void game_manager::render_game() {
   environment_pipeline->on_process = [&](VkCommandBuffer cmd_buf) {
-    if (test_level.selected_room && entities.current_size > 0) {
-      for (size_t i = 0; i < test_level.selected_room->object_indices.size();
+    if (current_level.selected_room && entities.current_size > 0) {
+      for (size_t i = 0; i < current_level.selected_room->object_indices.size();
            ++i) {
-        const size_t j = test_level.selected_room->object_indices[i];
+        const size_t j = current_level.selected_room->object_indices[i];
         app->device->call().vkCmdBindDescriptorSets(
             cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
             environment_pipeline_layout->get(), 0, 4,
@@ -142,7 +152,7 @@ void game_manager::render_game() {
 auto game_manager::l_click_update() -> bool {
   // processing for left clicks while you are currently playing the game
   if (current_state == crow::game_manager::game_state::PLAYING &&
-      test_level.selected_room && test_level.selected_room->has_player) {
+      current_level.selected_room && current_level.selected_room->has_player) {
     // these next two lines prevents the player from moving when you click on
     // the minimap
     lava::mouse_position_ref _mouse_pos = app->input.get_mouse_position();
@@ -154,7 +164,7 @@ auto game_manager::l_click_update() -> bool {
         const glm::vec3 player_pos = entities.get_world_position(
             static_cast<size_t>(crow::entity::WORKER));
         std::vector<glm::vec2> temporary_results =
-            test_level.selected_room->get_path(
+            current_level.selected_room->get_path(
                 glm::vec2(player_pos.x, player_pos.z),
                 glm::vec2(mouse_point.x, mouse_point.z));
 
@@ -190,6 +200,11 @@ auto game_manager::l_click_update() -> bool {
 
         // set the worker's path
         player_data.path_result = temporary_results;
+        // disable interaction with object
+        if (current_level.interacting) {
+          current_level.interacting = nullptr;
+          current_message = message();
+        }
       }
     }
   }
@@ -199,7 +214,7 @@ auto game_manager::l_click_update() -> bool {
 }
 
 auto game_manager::r_click_update() -> bool {
-  crow::room* selected_room = test_level.selected_room;
+  crow::room* selected_room = current_level.selected_room;
   if (current_state == crow::game_manager::game_state::PLAYING &&
       selected_room && selected_room->has_player) {
     player_data.interacting = false;
@@ -265,16 +280,19 @@ auto game_manager::r_click_update() -> bool {
 
         if (!temporary_results.empty() && !player_data.path_result.empty()) {
           // check for double click on same tile
-          if (player_data.path_result[0] == temporary_results[0] &&
-              right_click_time < 0.5f) {
-            player_data.worker_speed = player_data.worker_run_speed;
+          if (player_data.path_result.size() &&
+              player_data.path_result[0] == temporary_results[0]) {
+            // check to ensure that the clicks were close enough to each
+            // other to count as a double click.
+            if (right_click_time < 0.5f) {
+              player_data.worker_speed = player_data.worker_run_speed;
 
-            // plays footstep sound when worker moves
-            crow::audio::add_footstep_sound(
-                &entities.transforms_data[static_cast<size_t>(
-                    crow::entity::WORKER)],
-                0.285f);
-
+              // plays footstep sound when worker moves
+              crow::audio::add_footstep_sound(
+                  &entities.transforms_data[static_cast<size_t>(
+                      crow::entity::WORKER)],
+                  0.285f);
+            }
           } else {
             player_data.worker_speed = player_data.worker_walk_speed;
 

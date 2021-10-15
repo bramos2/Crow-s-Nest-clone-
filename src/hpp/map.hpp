@@ -8,19 +8,22 @@
 #include "../hpp/entities.hpp"
 #include "../hpp/game_objects.hpp"
 #include "../hpp/interactible.hpp"
+#include "../hpp/message.hpp"
 #include "../hpp/search_theta.hpp"
 #include "../hpp/tile.hpp"
 
 namespace crow {
 
 struct room {
+  // how much to scale the width and length variables of the room when drawing
+  // the minimap
+  const float minimap_scale = 3.3f;
   unsigned int width = 15;
   unsigned int length = 15;
   unsigned int height = 50;
   bool has_player = false;
   bool has_ai = false;
   glm::vec2 minimap_pos = {0.f, 0.f};
-  glm::vec2 minimap_wh = {50.f, 50.f};
   int id = 0;
   crow::tile_map tiles;
   crow::theta_star pather;
@@ -72,6 +75,12 @@ struct level {
   crow::room* selected_room = nullptr;
   std::vector<std::vector<room>> rooms;
   std::vector<door> doors;
+  // message to display on the screen. will be read by the game manager to
+  // display a message on the top of the screen
+  crow::message msg;
+  // pointer to object that you are currently interacting with; only used for
+  // objects that take time to interact with. do NOT use with anything instant
+  crow::interactible* interacting;
 
   void load_entities(lava::app* app, crow::entities& entities,
                      std::vector<lava::mesh::ptr>& meshes,
@@ -79,11 +88,23 @@ struct level {
                      lava::descriptor::pool::ptr descriptor_pool,
                      lava::buffer& camera_buffer);
 
+  // loads a level from file
   void load_level(std::string filepath);
 
-  void test_level(lava::app* app);
+  // loads the hardcoded level with the specified id
+  void load_level(lava::app* app, int lv);
+
+  // cleans up the currently loaded level, and then proceeds to load the level
+  // with the specified id
+  // int lv = level to load (NOT the level we are already in)
+  void change_level(lava::app* app, int lv);
 
   void clean_level(std::vector<lava::mesh::ptr>& trash);
+
+  // locates the default room and sets it
+  // call this when loading a new level AFTER loading entities and BEFORE
+  // updating the camera
+  void select_default_room();
 };
 
 }  // namespace crow
