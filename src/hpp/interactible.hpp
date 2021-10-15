@@ -16,6 +16,7 @@ struct interactible {
   unsigned int y = 0;
   bool is_active = false;
   bool is_broken = false;
+  int heat = 0;
   crow::object_type type = crow::object_type::COUNT;
   crow::room* roomptr = nullptr;
   interactible(unsigned int x, unsigned int y);

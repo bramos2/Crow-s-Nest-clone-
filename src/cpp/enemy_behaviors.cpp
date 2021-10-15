@@ -57,8 +57,7 @@ status roam_path(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
 
   // we must get a ramdom path in this room if empty
-  if (m.path.empty()) {
-    std::srand(std::time(0));
+  while (m.path.empty()){
     const unsigned int x = std::rand() % m.curr_room->width;
     const unsigned int y = std::rand() % m.curr_room->length;
     glm::vec2 goal = m.curr_room->get_tile_wpos(x, y);
@@ -135,6 +134,7 @@ status target_console(float dt, crow::ai_manager& m) {
   return result;
 }
 
+// TODO: CHANGE DOOR TARGETING
 status target_door(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
   // we will store a pointer to all doors in this room
@@ -150,30 +150,48 @@ status target_door(float dt, crow::ai_manager& m) {
     return result;
   }
 
-  crow::interactible* selected_door = nullptr;
+  //crow::interactible* selected_door = room_doors.back();
 
   // we will eliminate any previously used doors to avoid just going back and
   // forth, currently won't work as pre_t is in another room
-  if (room_doors.size() > 1) {
-    for (auto& d : room_doors) {
-      if (d == m.prev_target) {
-        d = nullptr;
+  // if (room_doors.size() > 1) {
+  //  for (auto& d : room_doors) {
+  //    if (d == m.prev_target) {
+  //      d = nullptr;
+  //    }
+  //  }
+  //} else {
+  //  selected_door = room_doors.back();
+  //}
+
+  // std::srand(std::time(0));
+
+  //// time to select a new door
+  // while (!selected_door) {
+  //  size_t i = static_cast<size_t>((rand() % room_doors.size()));
+  //  selected_door = room_doors[i];
+  //}
+
+  std::vector<size_t> tinx;
+  tinx.push_back(0);
+
+  for (size_t i = 0; i < room_doors.size(); i++) {
+    if (i != tinx.back()) {
+      if (room_doors[i]->heat > room_doors[tinx.back()]->heat) {
+        tinx.clear();
+        tinx.push_back(i);
+      } else if (room_doors[i]->heat == room_doors[tinx.back()]->heat) {
+        tinx.push_back(i);
       }
     }
-  } else {
-    selected_door = room_doors.back();
   }
 
-  std::srand(std::time(0));
+  size_t choice = rand() % tinx.size();
 
-  // time to select a new door
-  while (!selected_door) {
-    size_t i = static_cast<size_t>((rand() % room_doors.size()));
-    selected_door = room_doors[i];
-  }
+ // selected_door = 
 
   result = crow::status::PASSED;
-  m.target = selected_door;
+  m.target = room_doors[tinx[choice]];
   //  m.interacting = true;
 
   // we should probably do this after interacting with a target
@@ -308,6 +326,7 @@ status is_target_door(float dt, crow::ai_manager& m) {
   return result;
 }
 
+// TODO: Improve door handling
 status handle_door(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
   size_t index = static_cast<size_t>(crow::entity::SPHYNX);

@@ -43,6 +43,8 @@ void game_manager::init_app() {
                           },
                           360);
 
+  std::srand(std::time(NULL));
+
   app->on_create = on_create();
 
   app->on_destroy = on_destroy();

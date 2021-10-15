@@ -104,11 +104,17 @@ void door::interact(size_t const index, crow::entities& entity) {
     if (index == static_cast<size_t>(crow::entity::WORKER)) {
       roomptr->has_player = false;
       neighbor->roomptr->has_player = true;
+      heat++;
+      neighbor->heat++;
     } else {
       roomptr->has_ai = false;
       neighbor->roomptr->has_ai = true;
+      heat--;
+      neighbor->heat--;
     }
   }
+
+
 }
 
 door::door() {

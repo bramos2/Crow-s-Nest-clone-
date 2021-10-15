@@ -3,6 +3,7 @@
 
 #include <imgui.h>
 #include <vector>
+#include <time.h>
 
 #include "../hpp/camera.hpp"
 #include "../hpp/entities.hpp"
