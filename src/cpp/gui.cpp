@@ -171,6 +171,7 @@ void game_manager::draw_pause_menu() {  // set size parameters for the pause
       current_state = game_state::MAIN_MENU;
       crow::audio::play_sfx(crow::audio::MENU_OK);
       menu_position = 0;
+      unload_game();
     }
     ImGui::SetCursorPos(
         {confirm_window_wh.x * 0.6f, confirm_window_wh.y * 0.65f});

@@ -159,11 +159,10 @@ auto game_manager::on_update() -> lava::app::update_func {
   return [&](lava::delta dt) {
     // updates that run irregardless of the game state
     current_message.update(dt);
-    if (current_message.progress_max &&
+    if (current_level.interacting && current_message.progress_max &&
         current_message.progress_max == current_message.progress) {
       current_level.interacting->activate();
       current_level.interacting = nullptr;
-      current_message = message();
     }
     left_click_time += dt;
     right_click_time += dt;

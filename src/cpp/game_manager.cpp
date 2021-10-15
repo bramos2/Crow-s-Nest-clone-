@@ -103,7 +103,7 @@ void game_manager::load_mesh_data() {
   // exit door mesh
   mesh_models.push_back(get_cube_mesh(0.5f, 10.f, 3.5f));
   // door panel mesh
-  mesh_models.push_back(get_cube_mesh(0.5f, 7.f, 2.f));
+  mesh_models.push_back(get_cube_mesh(0.5f, 7.f, 1.8f));
 }
 
 void game_manager::unload_game() {

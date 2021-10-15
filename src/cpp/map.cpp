@@ -83,6 +83,8 @@ auto room::get_path(glm::vec2 start, glm::vec2 goal) -> std::vector<glm::vec2> {
   // converting given positions into tiles
   tile* s = get_tile_at(start);
   tile* g = get_tile_at(goal);
+  // prevents player from pathing to tiles that don't exist
+  if (!g || !g->is_open) return result;
   // crow::theta_star path_finder;
   // pather.set_weight(1.2f);
   // initializing the path finder, returns false if s or g are null

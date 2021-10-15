@@ -38,6 +38,12 @@ void level::load_level(lava::app* app, int lv) {
         rooms[2][1].make_room_meshes(app);
         // spawn the worker here
         rooms[2][1].object_indices.push_back(0);
+
+        // build level design (invisible)
+        for (int i = 4; i < 11; i++) {
+          rooms[2][1].tiles.map[i][4]->is_open = false;
+          rooms[2][1].tiles.map[i][9]->is_open = false;
+        }
       }
 
       rooms[1][1].id = 2;
@@ -163,7 +169,7 @@ void level::load_level(lava::app* app, int lv) {
         rooms[1][2].objects.push_back(lv1_door8_d);
         rooms[1][2].make_room_meshes(app);
       }
-      
+
       rooms[0][2].id = 9;
       crow::door* lv1_door9_l = new door();
       crow::door* lv1_door9_d = new door();
@@ -226,7 +232,6 @@ void level::load_level(lava::app* app, int lv) {
         lv1_door12_u->neighbor = lv1_door11_d;
         lv1_door11_d->neighbor = lv1_door12_u;
 
-
         rooms[1][0].objects.push_back(lv1_door12_u);
         floor1_exit->set_tile(0, 7);
         rooms[1][0].objects.push_back(floor1_exit);
@@ -234,7 +239,7 @@ void level::load_level(lava::app* app, int lv) {
       }
 
       break;
-    } // END OF FLOOR 1
+    }  // END OF FLOOR 1
     case 0:
     default:
       x = y = 5;
@@ -251,7 +256,7 @@ void level::load_level(lava::app* app, int lv) {
       crow::door_panel* door1p = new door_panel(this);
       {
         door1->set_tile(14, 7);
-        door1p->set_tile(14, 9);
+        door1p->set_tile(14, 8);
         door1->roomptr = &rooms[0][0];
         rooms[0][0].objects.push_back(door1p);
         rooms[0][0].objects.push_back(door1);
@@ -262,6 +267,12 @@ void level::load_level(lava::app* app, int lv) {
         rooms[0][0].make_room_meshes(app);
         // worker start position
         rooms[0][0].object_indices.push_back(0);
+
+        // build level design (invisible)
+        for (int i = 5; i < 14; i++) {
+          rooms[0][0].tiles.map[i][0]->is_open = false;
+          rooms[0][0].tiles.map[i][10]->is_open = false;
+        }
       }
 
       rooms[0][1].id = 2;
@@ -278,6 +289,12 @@ void level::load_level(lava::app* app, int lv) {
         rooms[0][1].objects.push_back(door2);
         rooms[0][1].objects.push_back(door2_2);
         rooms[0][1].make_room_meshes(app);
+
+        // build level design (invisible)
+        for (int i = 5; i < 10; i++) {
+          rooms[0][0].tiles.map[i][7]->is_open = false;
+          rooms[0][0].tiles.map[7][i]->is_open = false;
+        }
       }
 
       rooms[1][1].id = 3;
@@ -299,22 +316,22 @@ void level::load_level(lava::app* app, int lv) {
       rooms[2][1].id = 4;
       crow::door* door4 = new door();
       crow::door* door4_2 = new door();
-      //crow::door* door4_3 = new door();
+      // crow::door* door4_3 = new door();
       crow::door* door4_4 = new door();
       {
         door4->set_tile(7, 0);
         door4_2->set_tile(0, 7);
-        //door4_3->set_tile(7, 14);
+        // door4_3->set_tile(7, 14);
         door4_4->set_tile(14, 7);
 
         door4->neighbor = door3_2;
         door3_2->neighbor = door4;
 
-        door4->roomptr = door4_2->roomptr = //door4_3->roomptr =
+        door4->roomptr = door4_2->roomptr =  // door4_3->roomptr =
             door4_4->roomptr = &rooms[2][1];
         rooms[2][1].objects.push_back(door4);
         rooms[2][1].objects.push_back(door4_2);
-        //rooms[2][1].objects.push_back(door4_3);
+        // rooms[2][1].objects.push_back(door4_3);
         rooms[2][1].objects.push_back(door4_4);
         rooms[2][1].make_room_meshes(app);
       }
@@ -334,8 +351,8 @@ void level::load_level(lava::app* app, int lv) {
         rooms[2][0].object_indices.push_back(1);
       }
 
-      //rooms[3][1].id = 6;
-      //crow::door* door6 = new door();
+      // rooms[3][1].id = 6;
+      // crow::door* door6 = new door();
       //{
       //  door6->set_tile(7, 0);
       //
