@@ -13,9 +13,9 @@ namespace crow {
 			//LoadData(); //terrain for engine dev
 			//exporting and loading data from our fbx using our library
 			//export_fbx_mesh("../Renderer/Assets/Run.fbx");
-			LoadAnimData("Assets/Run.anim", animationClip);
-			LoadBinData( "Assets/Run.bin", meshInds, meshVerts);
-			LoadMatData( "Assets/Run.mat", filePaths, materials);
+			load_anim_data("Assets/Run.anim", animationClip);
+			load_bin_data( "Assets/Run.bin", meshInds, meshVerts);
+			load_mat_data( "Assets/Run.mat", filePaths, materials);
 			//modifying file paths for textures/materials
 			std::string folPath = "Assets/";
 			for (int i = 0; i < filePaths.size(); ++i)
@@ -82,7 +82,7 @@ namespace crow {
 		}
 	}
 
-	void impl_t::LoadMatData(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials)
+	void impl_t::load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials)
 	{
 		uint32_t materialsCount;
 		uint32_t pathCount;
@@ -114,7 +114,7 @@ namespace crow {
 		file.close();
 	}
 
-	void impl_t::LoadBinData(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts)
+	void impl_t::load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts)
 	{
 		uint32_t indexCount;
 		uint32_t vertexCount;
@@ -141,7 +141,7 @@ namespace crow {
 		file.close();
 	}
 
-	void impl_t::LoadAnimData(const char* file_path, aClip& animationClip)
+	void impl_t::load_anim_data(const char* file_path, aClip& animationClip)
 	{
 		uint32_t frameCount;
 
@@ -837,7 +837,7 @@ namespace crow {
 		// TODO: CREATE VERTEX PIXEL SHADER FOR STATIC MESH
 		{
 			binary_blob_t vs_mesh_vertex_blob = load_binary_blob("vs_smeshvertex.cso");
-			binary_blob_t ps_mesh_vertex_blob = load_binary_blob("ps_simple.cso");
+			binary_blob_t ps_mesh_vertex_blob = load_binary_blob("ps_smeshvertex.cso");
 
 			hr = device->CreateVertexShader(vs_mesh_vertex_blob.data(), vs_mesh_vertex_blob.size(), NULL, &vertex_shader[VERTEX_SHADER::STATIC_MESH]);
 			assert(!FAILED(hr));

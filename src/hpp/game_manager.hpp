@@ -42,6 +42,9 @@ namespace crow {
 		entities entities;
 		view_t view;
 
+		anim_clip anim1;
+		float d = 0.f;
+
 		void init_app(void* window_handle);
 
 		void update();
