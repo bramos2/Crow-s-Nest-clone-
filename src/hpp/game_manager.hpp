@@ -52,7 +52,7 @@ namespace crow {
 		void set_bitmap(std::bitset<256>& bitmap);
 
 		// timing variables
-		double time_elapsed;
+		double time_elapsed = 0;
 
 		game_manager();
 		~game_manager();
