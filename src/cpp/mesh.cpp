@@ -82,7 +82,7 @@ namespace crow {
 
 		file.close();
 
-		std::string folPath = "../Assets/";
+		std::string folPath = "../res/textures/";
 		for (int i = 0; i < filePaths.size(); ++i)
 		{
 			size_t spos = filePaths[i].find_first_of('\\');

@@ -17,13 +17,13 @@ namespace crow {
 
 		mesh_a temp;
 		entities.a_meshes[1] = new mesh_a();
-		load_bin_data("Assets/Run.bin", temp);
-		load_bin_data("Assets/Run.bin", *entities.a_meshes[1]);
+		load_bin_data("res/meshes/Run.bin", temp);
+		load_bin_data("res/meshes/Run.bin", *entities.a_meshes[1]);
 		std::vector<std::string> paths;
 		std::vector<material_a> mats;
-		load_mat_data("Assets/Run.mat", paths, mats);
+		load_mat_data("res/textures/Run.mat", paths, mats);
 		//anim_clip animc;
-		load_anim_data("Assets/Run.anim", anim1);
+		load_anim_data("res/animations/Run.anim", anim1);
 		invert_bind_pose(anim1);
 		d = anim1.frames[1].time;
 
