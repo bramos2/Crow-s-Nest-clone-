@@ -247,6 +247,10 @@ namespace crow {
 
 	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat)
 	{
+		// deletes old version of this matrix, if applicable (prevents memory leaks)
+		if (ent_mat != nullptr) delete ent_mat;
+		ent_mat = nullptr;
+
 		if (!tween_frame.joints.empty()) {
 			ent_mat = new DirectX::XMMATRIX[tween_frame.joints.size()];
 			for (int i = 0; i < tween_frame.joints.size(); ++i)

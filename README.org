@@ -1,1 +1,11 @@
 #+TITLE: 2108 GDBS LogicVisions CrowsNest
+
+
+Debug Mode Controls:
+F1 - Enable
+WASD - basic movement
+ARROW KEYS - rotate camera
+Z/X - does a barrel roll
+LSHIFT/SPACE - move up/down
+RSHIFT (hold) - move absolute position instead of relative position
+R - reset camera

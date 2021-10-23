@@ -13,11 +13,11 @@ namespace crow {
 			//LoadData(); //terrain for engine dev
 			//exporting and loading data from our fbx using our library
 			//export_fbx_mesh("../Renderer/Assets/Run.fbx");
-			load_anim_data("Assets/Run.anim", animationClip);
-			load_bin_data( "Assets/Run.bin", meshInds, meshVerts);
-			load_mat_data( "Assets/Run.mat", filePaths, materials);
+			load_anim_data("res/animations/Run.anim", animationClip);
+			load_bin_data( "res/meshes/Run.bin", meshInds, meshVerts);
+			load_mat_data( "res/textures/Run.mat", filePaths, materials);
 			//modifying file paths for textures/materials
-			std::string folPath = "Assets/";
+			std::string folPath = "res/textures/";
 			for (int i = 0; i < filePaths.size(); ++i)
 			{
 				size_t spos = filePaths[i].find_first_of('\\');
@@ -70,7 +70,7 @@ namespace crow {
 			default_view.init();
 			default_view.position.y = 5.f;
 			default_view.position.z = -10.f;
-			default_view.rotation.x = -20.f;
+			default_view.rotation.x = -20.f; // degrees
 			default_view.update_rotation_matrix();
 			default_view.update();
 		}
@@ -377,7 +377,7 @@ namespace crow {
 
 	}
 
-	void impl_t::draw_entities(crow::entities& entities, std::vector<uint32_t> inds, view_t view)
+	void impl_t::draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view)
 	{
 		MCB_s s_buff;
 		MCB_t a_buff;
@@ -385,15 +385,15 @@ namespace crow {
 		a_buff.projection = s_buff.projection = view.proj_final;
 		a_buff.view = s_buff.view = view.view_final;
 
-		for (auto& i : inds) {
-			bool animated = (entities.mesh_ptrs[inds[i]]->framexbind != nullptr);
+		for (int i = 0; i < inds.size(); i++) {
+			bool animated = (entities.mesh_ptrs[inds[i]]->a_mesh != nullptr);
 			UINT offset = 0;
 			UINT stride = 0;
 			if (!animated) {
 				// binding
 				stride = sizeof(crow::vert_s);
 				context->IASetVertexBuffers(0, 1, &entities.mesh_ptrs[inds[i]]->vertex_buffer, &stride, &offset);
-				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->s_mesh->vertices.data(), 0, 0);
+ 				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->s_mesh->vertices.data(), 0, 0);
 
 				context->IASetInputLayout(input_layout[INPUT_LAYOUT::STATIC_MESH]);
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::STATIC_MESH], nullptr, 0);
@@ -447,7 +447,7 @@ namespace crow {
 
 				// TODO: adjust this index to accomodate for future animations
 				for (size_t j = 0; j < 28; ++j) {
-					a_buff.matrices[j] = entities.mesh_ptrs[inds[i]]->framexbind[j];
+					a_buff.matrices[j] = entities.framexbind[inds[i]][j];
 				}
 				context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 				context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &a_buff, 0, 0);
@@ -501,8 +501,8 @@ namespace crow {
 			aTime = animationClip.frames[1].time;
 
 		//keyFrame tweenFrame = animationClip.frames[keyframeIndex];
-		kFrame tweenFrame = GetTweenFrame(animationClip, aTime);
-		drawKeyFrame(tweenFrame, float3e(5, 0, 0));
+		//kFrame tweenFrame = GetTweenFrame(animationClip, aTime);
+		//drawKeyFrame(tweenFrame, float3e(5, 0, 0));
 
 		meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
 		meshCB.lightPos = float3(0.0f, 0.0f, 0.0f);
@@ -511,11 +511,11 @@ namespace crow {
 
 		meshCB.matrices;
 
-		for (int i = 0; i < tweenFrame.joints.size(); ++i)
-		{
-			XMMATRIX cMatrix = XMMatrixMultiply(InvBindPose[i], XMLoadFloat4x4(&tweenFrame.joints[i].transform));
-			meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
-		}
+		//for (int i = 0; i < tweenFrame.joints.size(); ++i)
+		//{
+		//	XMMATRIX cMatrix = XMMatrixMultiply(InvBindPose[i], XMLoadFloat4x4(&tweenFrame.joints[i].transform));
+		//	meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
+		//}
 
 		DrawGrid();
 	}
@@ -956,7 +956,7 @@ namespace crow {
 		iDesc.Usage = D3D11_USAGE_DEFAULT;
 		iDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		iDesc.CPUAccessFlags = 0;
-		iDesc.ByteWidth = sizeof(uint32_t) * (int)meshInds.size();
+		iDesc.ByteWidth = sizeof(uint32_t) * (int)mesh.indicies.size();
 
 		hr = device->CreateBuffer(&iDesc, &iData, &index_buffer);
 	}
@@ -980,7 +980,7 @@ namespace crow {
 		iDesc.Usage = D3D11_USAGE_DEFAULT;
 		iDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		iDesc.CPUAccessFlags = 0;
-		iDesc.ByteWidth = sizeof(uint32_t) * (int)meshInds.size();
+		iDesc.ByteWidth = sizeof(uint32_t) * (int)mesh.indicies.size();
 
 		hr = device->CreateBuffer(&iDesc, &iData, &index_buffer);
 	}

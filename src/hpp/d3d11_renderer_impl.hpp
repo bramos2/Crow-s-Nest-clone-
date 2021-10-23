@@ -261,7 +261,7 @@ namespace crow
 
 		void draw_mesh(view_t& view);
 
-		void draw_entities(crow::entities& entities, std::vector<uint32_t> inds, view_t view);
+		void draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view);
 
 		/*Update functions
 		* *******

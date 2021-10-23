@@ -94,7 +94,7 @@ void set_velocity(float2e position, float2e destination,
 }
 
 void path_through(player_behavior_data& p_data, crow::entities& entities,
-                  size_t index, float const dt) {
+                  size_t index, double const dt) {
   if (is_pathing(p_data.path_result)) {
     set_velocity(p_data.path_result.back(), entities, index,
                  p_data.worker_speed);

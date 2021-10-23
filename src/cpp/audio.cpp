@@ -36,9 +36,9 @@ namespace crow {
         int play_sfx3d(int id, float4x4_a& sfx_pos, view_t& camera,
                        float max_volume) {
           // figure out the distance between the camera and object
-          float dist_x = sfx_pos[3][0] - camera.view_mat[4].x;
-          float dist_y = sfx_pos[3][1] - camera.view_mat[4].y;
-          float dist_z = sfx_pos[3][2] - camera.view_mat[4].z;
+          float dist_x = sfx_pos[3][0] - camera.view_mat[3].x;
+          float dist_y = sfx_pos[3][1] - camera.view_mat[3].y;
+          float dist_z = sfx_pos[3][2] - camera.view_mat[3].z;
           float volume = (dist_x * dist_x) + (dist_y * dist_y) + (dist_z * dist_z);
           volume = crow::clampf(VOLUME_MAXDIST_SQUARED / volume, 0.0f, max_volume);
           float pan = crow::clampf(dist_x / PAN_MAXDIST, -1.0f, 1.0f);
@@ -51,7 +51,7 @@ namespace crow {
         }
 
         void load_all_sounds() {
-          // initialize the string that we use to load sfx
+          // initialize the string that we use to load stuff
           std::string sound_path;
 
           // loading sounds one by one
@@ -61,8 +61,8 @@ namespace crow {
           sound_path = "res/sfx/bong_001.ogg";
           load_sfx(sound_path, 1);
 
-          // loading bgm one by one (doesn't exist)
-          printf("\nsounds loaded!\n");
+          // loading bgm one by one (doesn't exist yet)
+
           sound_loaded = true;
         }
 

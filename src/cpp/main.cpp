@@ -225,7 +225,6 @@ MSG begin_main_loop()
 				py = my;
 			}*/
 
-			manager.set_bitmap(bmap);
 			manager.update();	// pass delta time
 			manager.render();
 		}

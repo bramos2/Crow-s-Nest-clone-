@@ -3,6 +3,7 @@
 #include <bitset>
 
 #include "audio.hpp"
+#include "behavior_tree.hpp"
 #include "d3d11_renderer_impl.hpp"
 #include "mesh.hpp"
 #include "XTime.hpp"
@@ -36,7 +37,7 @@ namespace crow {
 		game_state prev_state = game_state::MAIN_MENU;
 		float state_time = 0;
 
-		bool debug_mode = false;
+		bool debug_mode = 0;
 		
 		float left_click_time = 0.f;
 		float right_click_time = 0.f;
@@ -49,18 +50,35 @@ namespace crow {
 		view_t view;
 		level current_level;
 		crow::minimap minimap;
-		crow::player_behavior_data player_data;
+		crow::message current_message;
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
-		anim_clip anim1;
-		float d = 0.f;
 
+		// all ai components
+		crow::behavior_tree ai_bt;
+		crow::ai_manager ai_m;
+		crow::player_behavior_data player_data;
+
+		// s_bin = filepath to model file to load (mandatory)
+		// s_mat = filepath to mat file to load (optional)
+		// s_anim = filepath to anim file to load (optional)
+		// if s_anim is provided, the model will be loaded as an animated mesh
+		// pass in "" for either s_mat or s_anim if they aren't to be used
 		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
+		void load_mesh_data(std::string filename, int index);
 		void init_app(void* window_handle);
 
+		// all update functions
 		void update();
+		void poll_controls(double dt);
+		void update_animations(double dt);
+		bool l_click_update();
+		bool r_click_update();
+		// updates room metadata such as oxygen remaining, pressure, etc
+		void room_updates(double dt);
+
 		void render();
-		void set_bitmap(std::bitset<256>& bitmap);
+		void render_game();
 
 		// timing variables
 		double time_elapsed = 0;
@@ -69,20 +87,12 @@ namespace crow {
 		~game_manager();
 
 		// game state data functions
-		void change_level(int lv);
+		void new_game();
+		void end_game();
 		void load_level(int lv);
-		// todo::the method body for these functions go in game_manager.cpp
-		void new_game() {}
-		void load_mesh_data() {}
-		void unload_game() {}
-		void render_game() {}
-		bool l_click_update() { return false; }
-		bool r_click_update() { return false; }
-		void cleanup() {}
-		void unload_all_meshes();
-		// updates room metadata such as oxygen remaining, pressure, etc
-		void room_updates(float dt);
-
+		void change_level(int lv);
+		void unload_level();
+		void cleanup();
 
 		// ImGui draw calls
 		void imgui_on_draw();
@@ -92,8 +102,8 @@ namespace crow {
 		void draw_pause_menu(ImVec2 wh);
 		void draw_control_message(ImVec2 wh);
 		void draw_game_over(ImVec2 wh);
+		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
-
 
 		// various helper functions
 
@@ -104,8 +114,16 @@ namespace crow {
 		ImVec2 get_window_size();
 
 	private:
-		std::bitset<256> bmap;
+		std::vector<double> buttons;
+		std::vector<unsigned int> buttons_frame;
+		const int button_mappings[2] = {
+			VK_LBUTTON, VK_RBUTTON
+		};
 
+		enum controls {
+			l_mouse = 0,
+			r_mouse = 1
+		};
 	};
 
 }

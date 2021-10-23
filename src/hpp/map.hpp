@@ -31,7 +31,7 @@ struct room {
   crow::theta_star pather;
   // 0 = floor, 1-4 walls
 
-  float3e cam_pos = float3e(0.f, 50.f, 3.f);
+  float3e cam_pos = float3e(0.f, 25.f, 0.f);
   float3e cam_rotation = float3e(-85.f, 0.f, 0.f);
 
   // contains the entity index of every object that is in this room
@@ -44,6 +44,7 @@ struct room {
   // may not be needed as doors will handle ajacencies
   // std::vector<std::shared_ptr<room>> neighbors;
 
+  void load_entities(game_manager& state);
   void generate_tilemap();
 
   float2e get_tile_wpos(unsigned int const x, unsigned int const y);
@@ -65,6 +66,7 @@ struct level {
   unsigned int id = 0;
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
+  bool found_ai = false;
   player_interact* p_inter = nullptr;
   crow::room* selected_room = nullptr;
   std::vector<std::vector<room>> rooms;
@@ -84,6 +86,8 @@ struct level {
 
   // loads the hardcoded level with the specified id
   void load_level(crow::game_manager* state, int lv);
+
+  void clean_level();
 
   // locates the default room and sets it
   // call this when loading a new level AFTER loading entities and BEFORE

@@ -21,18 +21,30 @@ namespace crow {
 		ImVec2 wh = get_window_size();
 
         switch (current_state) {
+        case game_state::MAIN_MENU:
+            draw_main_menu(wh);
+            break;
         case game_state::PLAYING:
             minimap.draw_call(*this);
+            current_message.display(1, wh);
+            draw_pause_button(wh);
+            draw_control_message(wh);
+            break;
+        case game_state::PAUSED:
+            draw_pause_menu(wh);
+            break;
+        case game_state::GAME_OVER:
+            draw_game_over(wh);
             break;
         }
 
-		// this is just here to prove to you that yes, it does in fact work. it will be gone in the next commit.
-		ImVec2 s = get_window_size();
-		float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
-		ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
-		ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
-		ImGui::Text("wpos: %f, %f", wh.x, wh.y);
-		if (ImGui::Button("click me")) audio::play_sfx(0);
+        if (debug_mode) {
+		    float3e p = mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+		    ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
+		    ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
+		    ImGui::Text("wpos: %f, %f", wh.x, wh.y);
+		    if (ImGui::Button("click me")) audio::play_sfx(0);
+        }
 
 		//draw_main_menu(wh);
 
@@ -67,14 +79,12 @@ namespace crow {
 
       ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.45f});
       if (ImGui::Button("New Game", mm_button_wh)) {
-        // end_game();
         new_game();
         crow::audio::play_sfx(crow::audio::MENU_OK);
       }
 
       ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.55f});
       if (ImGui::Button("Continue", mm_button_wh)) {
-        // end_game();
         new_game();
         crow::audio::play_sfx(crow::audio::MENU_OK);
       }
@@ -201,7 +211,7 @@ namespace crow {
           current_state = game_state::MAIN_MENU;
           crow::audio::play_sfx(crow::audio::MENU_OK);
           menu_position = 0;
-          unload_game();
+          end_game();
         }
         ImGui::SetCursorPos(
             {confirm_window_wh.x * 0.6f, confirm_window_wh.y * 0.65f});
@@ -213,6 +223,22 @@ namespace crow {
         ImGui::SetWindowFocus();
         ImGui::End();
       }
+    }
+
+    void game_manager::draw_options_menu(ImVec2 wh) {
+        const int popup_flag = ImGuiWindowFlags_NoDecoration |
+                           ImGuiWindowFlags_NoCollapse |
+                           ImGuiWindowFlags_NoResize;
+        if (menu_position == 20) {
+          // set size parameters for the options menu
+          ImVec2 options_window_xy = {wh.x * 0.15f, wh.y * 0.225f};
+          ImVec2 options_window_wh = {wh.x * 0.7f, wh.y * 0.55f};
+          ImGui::SetNextWindowPos(options_window_xy, ImGuiCond_Always);
+          ImGui::SetNextWindowSize(options_window_wh, ImGuiCond_Always);
+          ImGui::Begin("Options", 0, popup_flag);
+
+          imgui_centertext(std::string("Options"), 2.0f, wh);
+        }
     }
 
     void game_manager::draw_game_over(ImVec2 wh) {
@@ -246,8 +272,9 @@ namespace crow {
         ImGui::SetCursorPos({wh.x * 0.25f, wh.y * 0.65f});
         if (ImGui::Button("Retry", game_over_button_wh)) {
           crow::audio::play_sfx(crow::audio::MENU_OK);
-          unload_game();
-          current_state = game_state::MAIN_MENU;
+          end_game();
+          new_game();
+          current_state = game_state::PLAYING;
           // TODO::selecting this option is the same as hitting the continue button
           // on the main menu
         }

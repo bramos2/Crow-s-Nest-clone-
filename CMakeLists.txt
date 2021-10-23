@@ -163,13 +163,8 @@ set_source_files_properties( ${PIXEL_SHADERS} PROPERTIES
 )
 # uncommenting these above lines will cause .h versions of the shaders to spawn
 
-# this copies the assets folder into the build folder when cmaking
+# this copies the res folder into the build folder when cmaking
 # kind of a hacky solution (not a good idea for big projects) but should be sufficient for us
-#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-#                       ${CMAKE_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Assets)
-
-# ditto for the res folder
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
                        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:${PROJECT_NAME}>/../res)

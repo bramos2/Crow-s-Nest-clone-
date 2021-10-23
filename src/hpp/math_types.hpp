@@ -52,6 +52,19 @@ namespace crow
 		}
 
 		inline const float length() const { return sqrtf(x*x + y*y);  }
+		
+
+		inline float2e normalize()
+		{
+			float length = this->length();
+			if (length == 0.0f)
+			{
+				float2e value = { 0.0f, 0.0f };
+				return value;
+			}
+			float2e value = { x / length, y / length };
+			return value;
+		}
 
 	};
 

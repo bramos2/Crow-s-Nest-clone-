@@ -34,6 +34,6 @@ void set_velocity(float2e position, float2e destination,
                   float3e& velocity, float speed);
 
 void path_through(player_behavior_data& p_data, crow::entities& entity,
-                  size_t index, float const dt);
+                  size_t index, double const dt);
 
 }  // namespace crow

@@ -3,92 +3,87 @@
 
 namespace crow {
 	void game_manager::load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index) {
-		mesh_a temp;
-		LoadBinData(s_bin.c_str(), temp);
-		std::vector<std::string> paths;
-		std::vector<material_a> mats;
-		LoadMatData(s_mat.c_str(), paths, mats);
-		animClip animc;
-		LoadAnimData(s_anim.c_str(), animc);
+		// load either as static mesh or as animated mesh based on whether or not we have an .anim file
+		if (s_anim.length()) {
+			all_meshes[index].a_mesh = new mesh_a();
+			load_bin_data(s_bin.c_str(), *all_meshes[index].a_mesh);
 
-		all_meshes.resize(1);
-		all_meshes[0].s_mesh = new mesh_s(clip_a_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[0].vertex_buffer, all_meshes[0].index_buffer, *all_meshes[0].s_mesh);
-		p_impl->create_text_sresources(paths, all_meshes[0]);
+			anim_clip animc;
+			load_anim_data(s_anim.c_str(), animc);
+			invert_bind_pose(animc);
+			all_meshes[index].anim = animc;
+
+			// create vertex buffer
+			p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].a_mesh);
+		} else {
+			// static mesh
+			mesh_a temp;
+			load_bin_data(s_bin.c_str(), temp);
+			all_meshes[index].s_mesh = new mesh_s(clip_mesh(temp));
+
+			// create vertex buffer
+			p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].s_mesh);
+		}
+		
+		// load textures if textures are provided
+		if (s_mat.length()) {
+			std::vector<std::string> paths;
+			std::vector<material_a> mats;
+			load_mat_data(s_mat.c_str(), paths, mats);
+
+			// load textures
+			p_impl->create_text_sresources(paths, all_meshes[index]);
+		}
+	}
+
+	void game_manager::load_mesh_data(std::string filename, int index) {
+		std::string s_bin = "res/meshes/" + filename + ".bin";
+		std::string s_mat = "res/textures/" + filename + ".mat";
+		std::string s_anim = "res/animations/" + filename + ".anim";
+		load_mesh_data(s_bin, s_mat, s_anim, index);
 	}
 
 	void game_manager::init_app(void* window_handle)
 	{
+		// initialize audio
+		audio::sound_loaded = false;
 		audio::initialize();
+
+		// initialize the renderer
 		p_impl = new impl_t(window_handle, view);
+
+		// initialize the timer
 		timer.Restart();
 		time_elapsed = 0;
 
-		all_meshes.resize(1);
-		load_mesh_data("Assets/Run.bin", "Assets/Run.mat", "Assets/Run.anim", 0);
-
-		entities.allocate(2);
-		for (size_t i = 0; i < entities.current_size; i++)
-		{
-			entities.init_entity(i);
-			entities.mesh_ptrs[i] = &all_meshes[0];
+		// initialize the controls
+		buttons.resize(2);
+		buttons_frame.resize(2);
+		for (int i = 0; i < buttons.size(); i++) {
+			buttons[i] = 0;
+			buttons_frame[i] = 0;
 		}
 
-		// WARNING: DANGER
-		mesh_a temp;
-		entities.a_meshes[1] = new mesh_a();
-		load_bin_data("res/meshes/Run.bin", temp);
-		load_bin_data("res/meshes/Run.bin", *entities.a_meshes[1]);
-		std::vector<std::string> paths;
-		std::vector<material_a> mats;
-		load_mat_data("res/textures/Run.mat", paths, mats);
-		//anim_clip animc;
-		load_anim_data("res/animations/Run.anim", anim1);
-		invert_bind_pose(anim1);
-		d = anim1.frames[1].time;
-
-
-		entities.s_meshes[0] = new mesh_s(clip_mesh(temp));
-		//entities.s_meshes[1] = new mesh_s(clip_mesh(temp));
-
-		for (size_t i = 0; i < 1; i++)
-		{
-			p_impl->create_vertex_buffer(entities.vertex_buffer[i], entities.index_buffer[i], *entities.s_meshes[i]);
-			p_impl->create_text_sresources(paths, entities, i);
-		}
-
-		p_impl->create_vertex_buffer(entities.vertex_buffer[1], entities.index_buffer[1], *entities.a_meshes[1]);
-		p_impl->create_text_sresources(paths, entities, 1);
-		// WARNING: DANGER
-
-
-		DirectX::XMFLOAT4X4 w1;
-		DirectX::XMStoreFloat4x4(&w1, entities.world_matrix[0]);
-		w1.m[3][0] = -5.f;
-		entities.world_matrix[0] = DirectX::XMLoadFloat4x4(&w1);
-		int stop = 0;
-
-		load_level(0);
+		// load main menu
+		current_state = game_state::MAIN_MENU;
 	}
 
 	void game_manager::update()
 	{
-		timer.Signal();
-		time_elapsed += timer.Delta();
-		d += static_cast<float>(timer.Delta());
-		if (d >= anim1.duration) {
-			d = anim1.frames[1].time;
-		}
-
-		key_frame kf = get_tween_frame(anim1, d);
-		mult_invbp_tframe(anim1, kf, entities.framexbind[1]);
-
-		p_impl->update(static_cast<float>(timer.Delta()));
-		// WARNING: DANGER!
-
 		timer.Signal(); double dt = timer.Delta();
 		time_elapsed += dt;
 		p_impl->update(static_cast<float>(dt));
+
+		
+		// updates that run irregardless of the game state
+		current_message.update(dt);
+		if (current_level.interacting && current_message.progress_max &&
+			current_message.progress_max == current_message.progress) {
+		  current_level.interacting->activate();
+		  current_level.interacting = nullptr;
+		}
+		left_click_time += dt;
+		right_click_time += dt;
 
 		// capture mouse position
 		POINT p;
@@ -101,6 +96,44 @@ namespace crow {
 		if (!debug_mode && (GetKeyState(VK_F1))) {
 			printf("\nDEBUG MODE ENABLED\n");
 			debug_mode = true;
+		}
+
+		// game state update
+		switch (current_state) {
+		case game_state::PLAYING:
+			// the last thing that happens in update should always be player controls
+			poll_controls(dt);
+			l_click_update();
+			r_click_update();
+			
+			// all ai updates (player and enemy) here
+			if (current_level.found_ai) ai_bt.run(dt);
+			crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
+			entities.update_transform_data(dt);
+
+			// check for worker alive to end the game if he is dead
+			if (!player_data.player_interact.is_active) {
+				prev_state = current_state = game_state::GAME_OVER;
+				state_time = 0;
+				break;
+			}
+
+			// TODO::room_updates(dt)
+			// room_updates(dt);
+			audio::update_audio_timers(this, dt);
+
+			// fetch any message that might have been summoned by the player object
+			if (current_level.msg.time_remaining > 0) {
+				// steal the info
+				current_message = current_level.msg;
+				// mark as read
+				current_level.msg.time_remaining = 0;
+				// read: 2:11 PM
+			}
+
+			// this should be the last thing that is updated in the state
+			update_animations(dt);
+			break;
 		}
 
 		// debug mode updates
@@ -147,18 +180,212 @@ namespace crow {
 			// VERY LAST thing to do should be to update the camera
 			view.update();
 		}
+
+		state_time += dt;
+		// band-aid for re-setting state_time and prev_state
+		if (prev_state != current_state) {
+			prev_state = current_state;
+			state_time = 0;
+		}
 	}
+
+	void game_manager::update_animations(double dt) {
+		// update all animations for all animated entities
+		for (int i = 0; i < entities.current_size; i++) {
+			if (entities.mesh_ptrs[i]->a_mesh) {
+				// timer increment
+				entities.anim_time[i] += dt;
+				if (entities.anim_time[i] > entities.mesh_ptrs[i]->anim.duration) {
+					entities.anim_time[i] = entities.mesh_ptrs[i]->anim.frames[1].time;
+				}
+				// update keyframe/bindpose
+				key_frame kf = get_tween_frame(entities.mesh_ptrs[i]->anim, entities.anim_time[i]);
+				mult_invbp_tframe(entities.mesh_ptrs[i]->anim, kf, entities.framexbind[i]);
+			}
+		}
+	}
+
+	
+	bool game_manager::l_click_update() {
+		if (buttons_frame[controls::l_mouse] != 1) return false;
+
+	  // processing for left clicks while you are currently playing the game
+	  if (current_level.selected_room && current_level.selected_room->has_player) {
+		// these next two lines prevents the player from moving when you click on
+		// the minimap
+		if (!minimap.inside_minimap(mouse_pos)) {
+		ImVec2 wh = get_window_size();
+
+		  // crow::audio::play_sfx(0);
+		  float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+		  // y = -1 out of bound
+		  if (mouse_point.y != -1) {
+			const float3e player_pos = entities.get_world_position(
+				static_cast<size_t>(crow::entity::WORKER));
+			std::vector<float2e> temporary_results =
+				current_level.selected_room->get_path(
+					float2e(player_pos.x, player_pos.z),
+					float2e(mouse_point.x, mouse_point.z));
+
+			if (temporary_results.size()) {
+			  // if the clicked position is the same as the previous position,
+			  // then we can assume that you've double clicked. thus, the
+			  // worker should run instead of walk
+			  if (player_data.path_result.size() &&
+				  player_data.path_result[0] == temporary_results[0]) {
+				// check to ensure that the clicks were close enough to each
+				// other to count as a double click.
+				if (left_click_time < 0.5f) {
+				  // worker starts running to destination
+				  player_data.worker_speed = player_data.worker_run_speed;
+
+				  // plays footstep sound when worker moves
+				  crow::audio::add_footstep_sound(
+					  (float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+						  crow::entity::WORKER)],
+					  0.285f);
+				}
+			  } else {
+				// worker starts walking to destination
+				player_data.worker_speed = player_data.worker_walk_speed;
+
+				// plays footstep sound when worker moves
+				crow::audio::add_footstep_sound(
+					  (float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+						  crow::entity::WORKER)], 0.5f);
+			  }
+			}
+
+			// set the worker's path
+			player_data.path_result = temporary_results;
+			// disable interaction with object
+			if (current_level.interacting) {
+			  current_level.interacting = nullptr;
+			  current_message = message();
+			}
+		  }
+		}
+	  }
+	  left_click_time = 0;
+	  return true;
+	}
+
+	bool game_manager::r_click_update() {
+		if (buttons_frame[controls::r_mouse] != 1) return false;
+
+		crow::room* selected_room = current_level.selected_room;
+		if (selected_room && selected_room->has_player) {
+		player_data.interacting = false;
+		player_data.target = nullptr;
+		ImVec2 wh = get_window_size();
+
+		float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+		if (mouse_point.y == -1) {
+			return true;
+		}
+		const crow::tile* clicked_tile =
+			selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
+
+		if (!clicked_tile) {
+			return true;
+		}
+
+		for (auto& i : selected_room->objects) {
+			if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
+			player_data.interacting = true;
+			player_data.target = i;
+
+			const float3e p_pos = entities.get_world_position(
+				static_cast<size_t>(crow::entity::WORKER));
+
+			const crow::tile* p_tile =
+				selected_room->get_tile_at({p_pos.x, p_pos.z});
+
+			if (!p_tile) {
+				return true;
+			}
+
+			if (p_tile == clicked_tile) {
+				player_data.path_result.clear();
+				break;
+			}
+
+			float2e adjacent_tile =
+				float2e{static_cast<float>(p_tile->col) -
+								static_cast<float>(clicked_tile->col),
+							static_cast<float>(p_tile->row) -
+								static_cast<float>(clicked_tile->row)};
+
+			adjacent_tile = adjacent_tile.normalize();
+			for (size_t i = 0; i < 2; i++) {
+				if (adjacent_tile[i] >= 0.5f) {
+				adjacent_tile[i] = 1.f;
+				continue;
+				} else if (adjacent_tile[i] <= -0.5f) {
+				adjacent_tile[i] = -1.f;
+				}
+			}
+
+			adjacent_tile = {
+				adjacent_tile.x + static_cast<float>(clicked_tile->col),
+				adjacent_tile.y + static_cast<float>(clicked_tile->row)};
+
+			adjacent_tile =
+				selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
+												static_cast<int>(adjacent_tile.y));
+
+
+			std::vector<float2e> temporary_results =
+				selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
+
+			if (!temporary_results.empty() && !player_data.path_result.empty()) {
+				// check for double click on same tile
+				if (player_data.path_result.size() &&
+						player_data.path_result[0] == temporary_results[0]) {
+					// check to ensure that the clicks were close enough to each
+					// other to count as a double click.
+					if (right_click_time < 0.5f) {
+						player_data.worker_speed = player_data.worker_run_speed;
+
+						// plays footstep sound when worker moves
+						crow::audio::add_footstep_sound(
+							(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+								crow::entity::WORKER)],
+							0.285f);
+					}
+				} else {
+					player_data.worker_speed = player_data.worker_walk_speed;
+				
+					crow::audio::add_footstep_sound(
+						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+							crow::entity::WORKER)],
+						0.5f);
+				}
+			}
+
+			// set the worker's path
+			player_data.path_result = temporary_results;
+
+			break;
+			}
+		}
+		}
+
+		right_click_time = 0;
+		return true;
+	}
+
 
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
 
-		p_impl->draw_debug_lines(view);
-		//p_impl->draw_mesh(view);
-		std::vector<uint32_t> temp_inds;
-		temp_inds.push_back(0);
-		temp_inds.push_back(1);
-		p_impl->draw_entities(entities, temp_inds, view);
+		switch (current_state) {
+		case game_state::PLAYING: // falling case
+		case game_state::PAUSED:
+			render_game();
+			break;
+		}
 
 		// second last thing before presenting screen is all ImGui draw calls
 		imgui_on_draw();
@@ -167,23 +394,27 @@ namespace crow {
 		p_impl->present(1);
 	}
 
-	void game_manager::set_bitmap(std::bitset<256>& bitmap)
-	{
-		bmap = bitmap;
+	void game_manager::render_game() {
+		p_impl->draw_debug_lines(view);
+		//p_impl->draw_mesh(view);
+
+		if (current_level.selected_room && entities.current_size > 0) {
+			for (size_t i = 0; i < current_level.selected_room->object_indices.size(); ++i) {
+				p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
+			}
+		}
 	}
 
-	void game_manager::unload_all_meshes() {
+	void game_manager::cleanup() {
 		for (int i = 0; i < all_meshes.size(); i++) {
-			delete all_meshes[i].framexbind;
 			delete all_meshes[i].a_mesh;
 			delete all_meshes[i].s_mesh;
-			all_meshes[i].vertex_buffer->Release();
-			all_meshes[i].index_buffer->Release();
+			if (all_meshes[i].vertex_buffer != nullptr)   all_meshes[i].vertex_buffer->Release();
+			if (all_meshes[i].index_buffer != nullptr)    all_meshes[i].index_buffer->Release();
 			if (all_meshes[i].s_resource_view != nullptr) all_meshes[i].s_resource_view->Release();
 			if (all_meshes[i].emissive != nullptr)        all_meshes[i].emissive->Release();
 			if (all_meshes[i].specular != nullptr)        all_meshes[i].specular->Release();
 
-			all_meshes[i].framexbind = nullptr;
 			all_meshes[i].a_mesh = nullptr;
 			all_meshes[i].s_mesh = nullptr;
 			all_meshes[i].vertex_buffer = nullptr;
@@ -201,32 +432,65 @@ namespace crow {
 
 	game_manager::~game_manager()
 	{
-		unload_all_meshes();
+		cleanup();
 		audio::cleanup();
 		delete p_impl;
 	}
 
-	
+	void game_manager::new_game() {
+		// load all the meshes that we are going to need
+		all_meshes.resize(3);
+		load_mesh_data("Run", 0);
+		//load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
+		load_mesh_data("slasher_run", 1);
+		load_mesh_data("res/meshes/Cube.bin", "", "", 2);
+
+		// initialize the first two entities
+		entities.allocate_and_init(2);
+		entities.mesh_ptrs[0] = &all_meshes[0];
+		entities.mesh_ptrs[1] = &all_meshes[1];
+
+		load_level(0);
+	}
+
+	void game_manager::end_game() {
+		current_level.clean_level();
+		cleanup();
+		entities.pop_all();
+		ai_bt.clean_tree();
+	}
 
 	void game_manager::change_level(int lv) {
-		// TODO::clean the level
-
 		// after all clean up is done, it's time to start loading the next level
 		if (lv - 1 == crow::final_level) {
-			// we beat the game, so send us to the endgame sequence, whatever that may
-			// be
-
-			// todo::this
+			// we beat the game, so send us to the endgame sequence, whatever that may be
+			end_game();
+			current_state = prev_state = game_state::CREDITS;
+			state_time = 0;
 		} else {
+			// unload the previous level
+			unload_level();
+
 			// load the next level
 			load_level(lv);
 		}
 	}
 
 	void game_manager::load_level(int lv) {
+		// reset any variables that may need resetting
+		player_data.player_interact.is_active = true;
+
+		// load the level data first
 		current_level.load_level(this, lv);
-		// todo::call the load_entities method somehow (this must be before the lines
-		// that load the camera)
+
+		// load additional entities that are in the level
+		for (auto& row : current_level.rooms) {
+			for (auto& r : row) {
+				if (r.id != 0) {
+					r.load_entities(*this);
+				}
+			}
+		}
 
 		// auto-load the first room
 		current_level.select_default_room();
@@ -244,10 +508,47 @@ namespace crow {
 		minimap.current_level = &current_level;
 		minimap.calculate_extents();
 
-		// TODO::ai init
-
+		// initialize ai
+		ai_m.init_manager(&entities, &current_level);
+		ai_bt.aim = &ai_m;
+		ai_bt.build_tree();
 
 		current_state = crow::game_manager::game_state::PLAYING;
+	}
+
+	void game_manager::unload_level() {
+		// remove all entities except for the sphynx and worker
+		while (entities.current_size > 2) {
+			entities.pop_back();
+		}
+
+		// reset the sphynx and worker entity data
+		delete entities.framexbind[0];
+		delete entities.framexbind[1];
+		entities.init_entity(0);
+		entities.init_entity(1);
+		entities.mesh_ptrs[0] = &all_meshes[0];
+		entities.mesh_ptrs[1] = &all_meshes[0];
+
+		
+		current_level.clean_level();
+		ai_bt.clean_tree();
+	}
+	
+	void game_manager::poll_controls(double dt) {
+		for (int i = 0; i < 2; i++) {
+			if ((GetKeyState(button_mappings[i]) & 0x8000) != 0) {
+				// prevent underflow
+				if (buttons[i] + dt < 0) buttons[i] = 0;
+				// button is pressed
+				buttons[i] += dt;
+				buttons_frame[i]++;
+			} else {
+				// reset button
+				buttons[i] = 0;
+				buttons_frame[i] = 0;
+			}
+		}
 	}
 
 	void game_manager::imgui_centertext(std::string text, float scale, ImVec2 wh) {
