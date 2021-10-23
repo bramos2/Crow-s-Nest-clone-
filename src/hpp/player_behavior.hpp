@@ -1,17 +1,16 @@
 #pragma once
-#include <liblava/lava.hpp>
-
 #include <vector>
 
 #include "../hpp/entities.hpp"
 #include "../hpp/interactible.hpp"
+#include "../hpp/math_types.hpp"
 
 namespace crow {
 
 struct player_behavior_data {
   const float worker_walk_speed = 2.0f;
   const float worker_run_speed = 3.5f;
-  std::vector<glm::vec2> path_result;
+  std::vector<float2e> path_result;
   float worker_speed = 0.f;
   bool interacting = false;
   // unsigned int current_room = 0;
@@ -21,20 +20,20 @@ struct player_behavior_data {
   ~player_behavior_data();
 };
 
-auto reached_destination(glm::vec2 const velocity, glm::vec2 const position,
-                         glm::vec2 const destination) -> bool;
+auto reached_destination(float2e const velocity, float2e const position,
+                         float2e const destination) -> bool;
 
-auto get_angle(glm::vec2 const pos_from, glm::vec2 const pos_to) -> float;
+auto get_angle(float2e const pos_from, float2e const pos_to) -> float;
 
-auto is_pathing(std::vector<glm::vec2> const curr_path) -> bool;
+auto is_pathing(std::vector<float2e> const curr_path) -> bool;
 
-void set_velocity(glm::vec2 destination, crow::entities& entities, size_t index,
+void set_velocity(float2e destination, crow::entities& entities, size_t index,
                   float speed);
 
-void set_velocity(glm::vec2 position, glm::vec2 destination,
-                  glm::vec3& velocity, float speed);
+void set_velocity(float2e position, float2e destination,
+                  float3e& velocity, float speed);
 
 void path_through(player_behavior_data& p_data, crow::entities& entity,
-                  size_t index, float const dt);
+                  size_t index, double const dt);
 
 }  // namespace crow

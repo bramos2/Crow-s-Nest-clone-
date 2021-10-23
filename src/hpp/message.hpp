@@ -1,7 +1,6 @@
 #pragma once
 
-#include <liblava/lava.hpp>
-
+#include <string>
 #include <imgui.h>
 
 namespace crow {
@@ -41,4 +40,5 @@ struct message {
   // interaction
   void display_bar(float scale, ImVec2 wh);
 };
+
 }  // namespace crow

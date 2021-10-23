@@ -41,8 +41,8 @@ tile_map::tile_map(std::uint_fast16_t w, std::uint_fast16_t h)
       height(h),
       tile_w(1.0f),
       tile_h(1.0f),
-      max_room_pos(glm::vec2(-w / 2.0f, -h / 2.0f)),
-      min_room_pos(glm::vec2(w / 2.0f, h / 2.0f)) {
+      max_room_pos(float2e(-w / 2.0f, -h / 2.0f)),
+      min_room_pos(float2e(w / 2.0f, h / 2.0f)) {
   map.resize(height);
   for (auto& column : map) {
     column.resize(width);
@@ -93,20 +93,20 @@ void tile_map::create_map() {
   }
 }
 
-auto tile_map::get_tile_wpos(std::int_fast32_t const x,
-                             std::int_fast32_t const y) -> glm::vec2 {
-  glm::vec2 result;
+float2e tile_map::get_tile_wpos(std::int_fast32_t const x,
+                             std::int_fast32_t const y) {
+  float2e result;
   result.y = std::floor(y - (((height * tile_h) - 1) / 2.0f));
   result.x = std::floor(x - (((width * tile_w) - 1) / 2.0f));
 
   return result;
 }
 
-auto tile_map::get_tile_wpos(tile* const tile) -> glm::vec2 {
+float2e tile_map::get_tile_wpos(tile* const tile) {
   return get_tile_wpos(tile->col, tile->row);
 }
 
-auto tile_map::get_tile_at(glm::vec2 const pos) -> tile* {
+tile* tile_map::get_tile_at(float2e const pos) {
   const float fy = (height * tile_h) / 2.0f + pos.y;
   const float fx = (width * tile_w) / 2.0f + pos.x;
 

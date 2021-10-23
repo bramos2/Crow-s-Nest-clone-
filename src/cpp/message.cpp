@@ -43,7 +43,7 @@ void message::display(float scale, ImVec2 wh) {
                    ImGuiWindowFlags_NoResize);
 
   ImGui::SetWindowFontScale(wh.x / 960.f * scale);
-  ImGui::SetCursorPosX(popup_window_wh.x * 0.05f);
+  ImGui::SetCursorPosX(wh.x * 0.025f);
   ImGui::Text(text.c_str());
   ImGui::End();
 }
@@ -64,7 +64,7 @@ void message::display_bar(float scale, ImVec2 wh) {
                    ImGuiWindowFlags_NoResize);
 
   ImGui::SetWindowFontScale(wh.x / 960.f * scale);
-  ImGui::SetCursorPosX(popup_window_wh.x * 0.05f);
+  ImGui::SetCursorPosX(wh.x * 0.05f);
   ImGui::Text(text.c_str());
 
   // draw the bar using a button, just because we can

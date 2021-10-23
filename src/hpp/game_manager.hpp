@@ -1,206 +1,130 @@
 #pragma once
-#include <liblava/lava.hpp>
 
-#include <imgui.h>
-#include <vector>
-#include <time.h>
+#include <bitset>
 
-#include "../hpp/camera.hpp"
-#include "../hpp/entities.hpp"
-#include "../hpp/geometry.hpp"
-#include "../hpp/message.hpp"
-#include "../hpp/minimap.hpp"
-#include "../hpp/player_behavior.hpp"
-#include "../hpp/behavior_tree.hpp"
+#include "audio.hpp"
+#include "behavior_tree.hpp"
+#include "d3d11_renderer_impl.hpp"
+#include "mesh.hpp"
+#include "XTime.hpp"
+#include "view.hpp"
+#include "minimap.hpp"
+#include "map.hpp"
+#include "player_behavior.hpp"
 
 namespace crow {
+	//using native_handle_type = void*;
 
-class game_manager {
- public:
-  enum class game_state {
-    MAIN_MENU = 0,
-    PLAYING = 1,
-    PAUSED = 2,
-    SETTINGS = 3,
-    CREDITS = 4,
-    LOADING = 5,
-    EXIT = 6,
-    GAME_OVER,
-    GAME_OVER_PRE,
-    GAME_WIN
-  } current_state = game_state::MAIN_MENU;
+	class game_manager
+	{
+	public:
+		//end::renderer_t* renderer = nullptr;
 
-  game_state prev_state = game_state::MAIN_MENU;
-  float state_time = 0;
+		// 
+		enum class game_state {
+			MAIN_MENU = 0,
+			PLAYING = 1,
+			PAUSED = 2,
+			SETTINGS = 3,
+			CREDITS = 4,
+			LOADING = 5,
+			EXIT = 6,
+			GAME_OVER,
+			GAME_OVER_PRE,
+			GAME_WIN
+		} current_state = game_state::MAIN_MENU;
 
-  int argc = -1;
-  char** argv = nullptr;
-  lava::frame_config config;
-  lava::app* app = nullptr;
+		game_state prev_state = game_state::MAIN_MENU;
+		float state_time = 0;
 
-  lava::buffer camera_buffer;
-  crow::camera_device_data camera_buffer_data = {glm::identity<lava::mat4>()};
-   
-  lava::mat4 world_matrix_buffer_data = glm::identity<lava::mat4>();
-  lava::buffer world_matrix_buffer;
+		bool debug_mode = 0;
+		
+		float left_click_time = 0.f;
+		float right_click_time = 0.f;
+		int menu_position = 0;
+		float2e mouse_pos;
+		
+		impl_t* p_impl = nullptr;
+		XTime timer;
+		entities entities;
+		view_t view;
+		level current_level;
+		crow::minimap minimap;
+		crow::message current_message;
+		// list of every single drawable mesh that is currently loaded
+		std::vector<mesh_info> all_meshes;
 
-  lava::descriptor::pool::ptr descriptor_pool;
+		// all ai components
+		crow::behavior_tree ai_bt;
+		crow::ai_manager ai_m;
+		crow::player_behavior_data player_data;
 
-  lava::graphics_pipeline::ptr environment_pipeline;
-  lava::pipeline_layout::ptr environment_pipeline_layout;
+		// s_bin = filepath to model file to load (mandatory)
+		// s_mat = filepath to mat file to load (optional)
+		// s_anim = filepath to anim file to load (optional)
+		// if s_anim is provided, the model will be loaded as an animated mesh
+		// pass in "" for either s_mat or s_anim if they aren't to be used
+		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
+		void load_mesh_data(std::string filename, int index);
+		void init_app(void* window_handle);
 
-  crow::descriptor_layouts environment_descriptor_layouts;
-  crow::descriptor_sets environment_descriptor_sets = {};
-  crow::descriptor_writes_stack descriptor_writes;
+		// all update functions
+		void update();
+		void poll_controls(double dt);
+		void update_animations(double dt);
+		bool l_click_update();
+		bool r_click_update();
+		// updates room metadata such as oxygen remaining, pressure, etc
+		void room_updates(double dt);
 
-  // this container will have a mesh of every model tht will be used in game
-  std::vector<lava::mesh::ptr> mesh_models;
+		void render();
+		void render_game();
 
-  // since destroy crashes program just move the pointers somewhere else
-  // TODO: Find a way to clean out the ptrs without consuming more and more
-  // memory
-  std::vector<lava::mesh::ptr> mesh_models_trash;
+		// timing variables
+		double time_elapsed = 0;
 
-  crow::entities entities;
+		game_manager();
+		~game_manager();
 
-  crow::minimap minimap;
+		// game state data functions
+		void new_game();
+		void end_game();
+		void load_level(int lv);
+		void change_level(int lv);
+		void unload_level();
+		void cleanup();
 
-  crow::level current_level;
+		// ImGui draw calls
+		void imgui_on_draw();
 
-  crow::player_behavior_data player_data;
-  
-  crow::message current_message;
+		void draw_main_menu(ImVec2 wh);
+		void draw_pause_button(ImVec2 wh);
+		void draw_pause_menu(ImVec2 wh);
+		void draw_control_message(ImVec2 wh);
+		void draw_game_over(ImVec2 wh);
+		void draw_options_menu(ImVec2 wh);
+		void draw_oxygen_remaining(ImVec2 wh);
 
-  crow::behavior_tree ai_bt;
-  crow::ai_manager ai_m;
+		// various helper functions
 
-  float left_click_time = 0.f;
-  float right_click_time = 0.f;
-  int menu_position = 0;
+		// draws some imgui text in the center of the current window
+		void imgui_centertext(std::string text, float scale, ImVec2 wh);
 
-  game_manager();
-  game_manager(int _argc, char* _argv[]);
-  ~game_manager();
+		// gets the size of the game window
+		ImVec2 get_window_size();
 
-  void init_app();
+	private:
+		std::vector<double> buttons;
+		std::vector<unsigned int> buttons_frame;
+		const int button_mappings[2] = {
+			VK_LBUTTON, VK_RBUTTON
+		};
 
- private:
-  // app functions
-  auto on_create() -> lava::app::create_func;
-  auto on_destroy() -> lava::app::destroy_func;
-  auto on_update() -> lava::app::update_func;
-  auto imgui_on_draw() -> lava::imgui::draw_func;
-  auto mouse_events() -> lava::mouse_button_event::func;
-  auto run_end() -> lava::frame::run_end_func_ref;
+		enum controls {
+			l_mouse = 0,
+			r_mouse = 1
+		};
+	};
 
-  // game state data functions
-  void new_game();
-  void load_mesh_data();
-  void unload_game();
-  void render_game();
-  auto l_click_update() -> bool;
-  auto r_click_update() -> bool;
-  void cleanup();
+}
 
-  // gui functions
-  void draw_main_menu();
-  void draw_pause_button();
-  void draw_pause_menu();
-  void draw_control_message();
-  void draw_game_over();
-
-  // helper functions
-
-  // draws some imgui text in the center of the current window
-  void imgui_centertext(std::string text, float scale, ImVec2 wh);
-};
-
-}  // namespace crow
-
-//#pragma once  // kek
-//
-//#include <liblava/lava.hpp>
-//
-//#include <imgui.h>
-//#include <vector>
-//
-//#include "../hpp/camera.hpp"
-//#include "../hpp/enemy_behaviors.hpp"
-//#include "../hpp/geometry.hpp"
-//#include "../hpp/map.hpp"
-//#include "../hpp/minimap.hpp"
-//#include "../hpp/object.hpp"
-//#include "../hpp/pipeline.hpp"
-//#include "../hpp/player_behavior.hpp"
-//
-// namespace crow {
-//// a struct that holds overarching game data to help with things such as scene
-//// switching (main menu, cutscenes, playing, etc)
-//// any random game related variable should be stored here so it can be
-/// accessed / anywhere
-// struct game_state {
-//  // current game state. are we in the main menu? playing? paused? end
-//  credits?
-//  // etc
-//  enum state : int { MAIN_MENU = 0, PLAYING = 1, PAUSED = 2 } current_state;
-//
-//  // pointers to important game data so they can be easily accessed
-//  // crow::descriptor_sets* environment_descriptor_sets;  // to be replaced
-//  // crow::descriptor_sets* enemy_descriptor_sets;        // to be replaced
-//
-//  std::vector<crow::descriptor_sets> desc_sets_list;
-//  crow::descriptor_writes_stack* descriptor_writes = nullptr;
-//  crow::minimap minimap;
-//  crow::entities entities;
-//  crow::world_map<5, 5> world_map;
-//  crow::player_behavior_data player_data;
-//  ai_manager enemy_manager;
-//  lava::app* app = nullptr;
-//  lava::buffer camera_buffer;
-//  crow::camera_device_data camera_buffer_data;
-//  std::shared_ptr<crow::map_room> active_room;
-//
-//  // simple variables to check for win condition
-//  unsigned int win_condition = 0;
-//  const unsigned int win_goal = 1;
-//  // ai_manager enemy_manager;
-//
-//  // time the left click was last pressed
-//  float left_click_time = 0.f;
-//  float right_click_time = 0.f;
-//
-//  // TODO: remove this line
-//  bool map_created = false;
-//};
-//
-///* all imgui rendering of menus(such as pause menu, options, main menu, etc)
-// will go in here
-//
-// lava::app& app = reference to the liblava app object, used for callbacks such
-// as the close game function lol
-//
-// Game_State& game_state = game state object, declared in main and passed
-// through by reference very important as it holds a lot of relevant data for
-// drawing the menu
-//
-// ImVec2& wh = passed in from main imgui rendering function so that it doesnt
-// have to be recalculated
-// */
-// void draw_menus(game_state& state, ImVec2 wh);
-//
-//// start the ENTIRE GAME from the VERY BEGINNING
-//// should only be called in main() or from the main menu
-// void new_game(crow::game_state& state);
-//
-//// cleanup for any game-related objects, called when quitting the game in any
-//// way, such as clicking the x or trying to start a new game
-// void end_game(crow::game_state& state);
-//
-// void clean_state(crow::game_state& state);
-//
-// void update(crow::game_state& state, lava::delta dt);
-//
-// auto left_click_update(game_state& state) -> bool;
-//
-// auto right_click_update(game_state& state) -> bool;
-//}  // namespace crow

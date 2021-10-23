@@ -1,43 +1,30 @@
 #include "../hpp/interactible.hpp"
 
-#include <liblava-extras/fbx.hpp>
-
+#include "../hpp/game_manager.hpp"
 #include "../hpp/map.hpp"
 
 namespace crow {
 
-void pg_console::interact(size_t const index, crow::entities& entity) {
-  if (!is_broken) {
-    fmt::print("\n*****interacted with pg_console*****\n");
-  } else {
-    fmt::print("\n*****fixing pg_console*****\n");
-    is_broken = false;
-  }
-  is_active = true;
-}
-
-pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
-
 void interactible::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
-    fmt::print("\n*****interacted with interactible*****\n");
+    printf("\n*****interacted with interactible*****\n");
   } else {
-    fmt::print("\n*****fixing interactible*****\n");
+    printf("\n*****fixing interactible*****\n");
     is_broken = false;
   }
   is_active = !is_active;
 
   if (is_active) {
-    fmt::print("*****power generator online*****");
+    printf("*****power generator online*****");
   } else {
-    fmt::print("*****power generator offline*****");
+    printf("*****power generator offline*****");
   }
 }
 
-void interactible::activate() { fmt::print("something was activated.\n"); }
+void interactible::activate() { printf("something was activated.\n"); }
 
 void interactible::dissable() {
-  fmt::print("\n*****interactible has been destroyed*****");
+  printf("\n*****interactible has been destroyed*****");
   is_broken = true;
   is_active = false;
 }
@@ -48,6 +35,27 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
 }
 
 interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
+
+void pg_console::interact(size_t const index, crow::entities& entity) {
+  if (!is_broken) {
+    printf("\n*****interacted with pg_console*****\n");
+  } else {
+    printf("\n*****fixing pg_console*****\n");
+    is_broken = false;
+  }
+  is_active = true;
+}
+
+pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
+
+oxygen_console::oxygen_console() {
+  type = crow::object_type::OXYGEN_CONSOLE;
+  is_active = false;
+}
+
+void oxygen_console::interact(size_t const index, crow::entities& entity) {
+  is_active = true;
+}
 
 void door_panel::interact(size_t const index, crow::entities& entity) {
   std::string text;
@@ -116,9 +124,9 @@ door_panel::door_panel(crow::level* _lv) {
 
 void sd_console::interact(size_t const index, crow::entities& entity) {
   if (!is_broken) {
-    fmt::print("\n*****interacted with sd_console*****\n");
+    printf("\n*****interacted with sd_console*****\n");
   } else {
-    fmt::print("\n*****fixing sd_console*****\n");
+    printf("\n*****fixing sd_console*****\n");
     is_broken = false;
   }
   is_active = true;
@@ -127,7 +135,7 @@ void sd_console::interact(size_t const index, crow::entities& entity) {
 sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
 
 void player_interact::dissable() {
-  fmt::print("\n*****enemy is attacking player\n");
+  printf("\n*****enemy is attacking player\n");
   interactible::dissable();
 }
 
@@ -137,7 +145,7 @@ player_interact::player_interact() {
 }
 
 void door::interact(size_t const index, crow::entities& entity) {
-  fmt::print("\ninteracted with door, congrats!");
+  printf("\ninteracted with door, congrats!");
 
   // panel to look at
   // if this door doesn't have a panel attached, it will check to see if the
@@ -160,7 +168,7 @@ void door::interact(size_t const index, crow::entities& entity) {
               "can be used.");
         }
       } else {
-        fmt::print(
+        printf(
             "\nerror! tried to display a message, but the door doesn't have a "
             "reference to the current level!");
       }
@@ -174,7 +182,7 @@ void door::interact(size_t const index, crow::entities& entity) {
             "You've hacked this door shut. You need to unlock it before you "
             "can use it.");
       } else {
-        fmt::print(
+        printf(
             "\nerror! tried to display a message, but the door doesn't have a "
             "reference to the current level!");
       }
@@ -204,7 +212,7 @@ void door::interact(size_t const index, crow::entities& entity) {
     roomptr->object_indices.pop_back();
 
     neighbor->roomptr->object_indices.push_back(index);
-    glm::vec2 npos = neighbor->roomptr->get_tile_wpos(neighbor->x, neighbor->y);
+    float2e npos = neighbor->roomptr->get_tile_wpos(neighbor->x, neighbor->y);
 
     entity.set_world_position(index, npos.x, 0.f, npos.y);
     if (index == static_cast<size_t>(crow::entity::WORKER)) {
@@ -234,15 +242,15 @@ door::door(crow::level* _lv) {
 }
 
 void exit::interact(size_t const index, crow::entities& entity) {
-  current_level->change_level(app, level_num + 1);
-  fmt::print("\ninteracted with exit, congrats! loaded level: %i",
+  printf("\ninteracted with exit, congrats! loaded level: %i",
              level_num + 1);
+  state->change_level(level_num + 1);
 }
 
-exit::exit(lava::app* _app, crow::level* _lv, int _level_num) {
+exit::exit(game_manager* _state, crow::level* _lv, int _level_num) {
   type = crow::object_type::EXIT;
   current_level = _lv;
-  app = _app;
+  state = _state;
   level_num = _level_num;
 }
 

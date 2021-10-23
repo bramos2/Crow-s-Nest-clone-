@@ -1,16 +1,6 @@
-[submodule "ext/liblava"]
-	path = ext/liblava
-	url = https://github.com/liblava/liblava.git
-	branch = master
-[submodule "ext/lava-fbx"]
-	path = ext/lava-fbx
-	url = https://github.com/cons-cat/lava-fbx.git
-[submodule "ext/lava-rt"]
-	path = ext/lava-rt
-	url = https://github.com/cons-cat/lava-rt.git
 [submodule "ext/soloud"]
 	path = ext/soloud
 	url = https://github.com/jarikomppa/soloud.git
-[submodule "ext/backward-cpp"]
-	path = ext/backward-cpp
-	url = https://github.com/bombela/backward-cpp
+[submodule "ext/imgui"]
+	path = ext/imgui
+	url = https://github.com/ocornut/imgui.git

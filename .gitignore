@@ -1,7 +1,3 @@
-# Files
-debug_camera_control/debug_camera_control.hpp
-compile_commands.json
-
 # Folders
 build/
 .cache/
