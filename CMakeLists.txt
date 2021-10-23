@@ -165,9 +165,9 @@ set_source_files_properties( ${PIXEL_SHADERS} PROPERTIES
 
 # this copies the assets folder into the build folder when cmaking
 # kind of a hacky solution (not a good idea for big projects) but should be sufficient for us
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Assets)
+#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+#                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+#                       ${CMAKE_SOURCE_DIR}/Assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/../Assets)
 
 # ditto for the res folder
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

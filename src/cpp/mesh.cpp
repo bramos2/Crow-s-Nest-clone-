@@ -23,7 +23,7 @@ namespace crow {
 	{
 	}
 
-	void LoadBinData(const char* file_path, mesh_a& mesh)
+	void load_bin_data(const char* file_path, mesh_a& mesh)
 	{
 		uint32_t indexCount;
 		uint32_t vertexCount;
@@ -50,7 +50,7 @@ namespace crow {
 		file.close();
 	}
 
-	void LoadMatData(const char* file_path, std::vector<std::string>& filePaths, std::vector<material_a>& materials)
+	void load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<material_a>& materials)
 	{
 		uint32_t materialsCount;
 		uint32_t pathCount;
@@ -82,7 +82,7 @@ namespace crow {
 
 		file.close();
 
-		std::string folPath = "../Renderer/Assets/";
+		std::string folPath = "../res/textures/";
 		for (int i = 0; i < filePaths.size(); ++i)
 		{
 			size_t spos = filePaths[i].find_first_of('\\');
@@ -93,7 +93,7 @@ namespace crow {
 		}
 	}
 
-	void LoadAnimData(const char* file_path, animClip& animationClip)
+	void load_anim_data(const char* file_path, anim_clip& animationClip)
 	{
 		uint32_t frameCount;
 
@@ -114,7 +114,7 @@ namespace crow {
 		for (int f = 0; f < frameCount; ++f)
 		{
 			//create keyframe
-			keyFrame currentFrame;
+			key_frame currentFrame;
 			//read current frame time as double
 			file.read((char*)&currentFrame.time, sizeof(double));
 			//read the number of joints in this frame as uint32_t
@@ -131,7 +131,7 @@ namespace crow {
 		file.close();
 	}
 
-	void TranslateJoints(keyFrame& frame, float3e translation)
+	void translate_joints(key_frame& frame, float3e translation)
 	{
 		for (int i = 0; i < frame.joints.size(); ++i)
 		{
@@ -141,7 +141,7 @@ namespace crow {
 		}
 	}
 
-	keyFrame GetTweenFrame(animClip _animationClip, double t)
+	key_frame get_tween_frame(anim_clip _animationClip, double t)
 	{
 		double d = 0;
 		int prev = 0;
@@ -161,8 +161,8 @@ namespace crow {
 		}
 
 		d = (t - _animationClip.frames[prev].time) / (_animationClip.frames[next].time - _animationClip.frames[prev].time);
-		const keyFrame& prevFrame = _animationClip.frames[prev];
-		const keyFrame& nextFrame = _animationClip.frames[next];
+		const key_frame& prevFrame = _animationClip.frames[prev];
+		const key_frame& nextFrame = _animationClip.frames[next];
 
 		for (int j = 0; j < tween_frame.size(); ++j)
 		{
@@ -185,14 +185,16 @@ namespace crow {
 
 		}
 
-		keyFrame result;
+		key_frame result;
 		result.joints = tween_frame;
 		result.time = t;
 
 		//drawKeyFrame(result);
 		return result;
 	}
-	mesh_s clip_a_mesh(mesh_a& mesh)
+	
+
+	mesh_s clip_mesh(mesh_a& mesh)
 	{
 		mesh_s result;
 
@@ -231,6 +233,27 @@ namespace crow {
 
 		if (i != std::string::npos) {
 			s.replace(i + 1, newExt.length(), newExt);
+		}
+	}
+
+	void invert_bind_pose(anim_clip& anim_clip)
+	{
+		for (int i = 0; i < anim_clip.frames[0].joints.size(); ++i) //preparing the bind pose
+		{
+			DirectX::XMMATRIX temp = DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&anim_clip.frames[0].joints[i].transform));
+			DirectX::XMStoreFloat4x4(&anim_clip.frames[0].joints[i].transform, temp);
+		}
+	}
+
+	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat)
+	{
+		if (!tween_frame.joints.empty()) {
+			ent_mat = new DirectX::XMMATRIX[tween_frame.joints.size()];
+			for (int i = 0; i < tween_frame.joints.size(); ++i)
+			{
+				DirectX::XMMATRIX cMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&anim_clip.frames[0].joints[i].transform), DirectX::XMLoadFloat4x4(&tween_frame.joints[i].transform));
+				ent_mat[i] = XMMatrixTranspose(cMatrix);
+			}
 		}
 	}
 }

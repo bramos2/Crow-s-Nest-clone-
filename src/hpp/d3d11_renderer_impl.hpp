@@ -227,13 +227,13 @@ namespace crow
 		
 
 		//loads a .mat file
-		void LoadMatData(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials);
+		void load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials);
 
 		//Loads a .bin file
-		void LoadBinData(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts);
+		void load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts);
 
 		//loads a .anim file
-		void LoadAnimData(const char* file_path, aClip& animationClip);
+		void load_anim_data(const char* file_path, aClip& animationClip);
 
 		/* DEV5 helper functions
 		* *****

@@ -46,16 +46,16 @@ namespace crow {
 		int parent_index = -1;
 	};
 
-	struct keyFrame
+	struct key_frame
 	{
 		double time = -1;
 		std::vector<joint_x> joints;
 	};
 
-	struct animClip
+	struct anim_clip
 	{
 		double duration;
-		std::vector<keyFrame> frames;
+		std::vector<key_frame> frames;
 	};
 
 	// material data
@@ -77,17 +77,23 @@ namespace crow {
 		component_a components[COUNT];
 	};
 
-	void LoadBinData(const char* file_path, mesh_a& mesh);
+	void load_bin_data(const char* file_path, mesh_a& mesh);
 	
-	void LoadMatData(const char* file_path, std::vector<std::string>& filePaths, std::vector<material_a>& materials);
+	void load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<material_a>& materials);
 
-	void LoadAnimData(const char* file_path, animClip& animationClip);
+	void load_anim_data(const char* file_path, anim_clip& animationClip);
 	
-	void TranslateJoints(keyFrame& frame, float3e translation);
+	void translate_joints(key_frame& frame, float3e translation);
 
-	keyFrame GetTweenFrame(animClip _animationClip, double t);
+	// returns the interpolated frame based on time t
+	key_frame get_tween_frame(anim_clip _animationClip, double t);
 
-	mesh_s clip_a_mesh(mesh_a& mesh);
+	mesh_s clip_mesh(mesh_a& mesh);
 
 	void replace_ext(std::string& s, const std::string& newExt);
+
+	// inverts the bind pose stored in the animation clip
+	void invert_bind_pose(anim_clip& anim_clip);
+
+	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat);
 }

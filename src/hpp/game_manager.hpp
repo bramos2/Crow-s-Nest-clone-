@@ -52,6 +52,8 @@ namespace crow {
 		crow::player_behavior_data player_data;
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
+		anim_clip anim1;
+		float d = 0.f;
 
 		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
 		void init_app(void* window_handle);
@@ -61,7 +63,7 @@ namespace crow {
 		void set_bitmap(std::bitset<256>& bitmap);
 
 		// timing variables
-		double time_elapsed;
+		double time_elapsed = 0;
 
 		game_manager();
 		~game_manager();

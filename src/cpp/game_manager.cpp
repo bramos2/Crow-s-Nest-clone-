@@ -34,9 +34,37 @@ namespace crow {
 			entities.mesh_ptrs[i] = &all_meshes[0];
 		}
 
+		// WARNING: DANGER
+		mesh_a temp;
+		entities.a_meshes[1] = new mesh_a();
+		load_bin_data("res/meshes/Run.bin", temp);
+		load_bin_data("res/meshes/Run.bin", *entities.a_meshes[1]);
+		std::vector<std::string> paths;
+		std::vector<material_a> mats;
+		load_mat_data("res/textures/Run.mat", paths, mats);
+		//anim_clip animc;
+		load_anim_data("res/animations/Run.anim", anim1);
+		invert_bind_pose(anim1);
+		d = anim1.frames[1].time;
+
+
+		entities.s_meshes[0] = new mesh_s(clip_mesh(temp));
+		//entities.s_meshes[1] = new mesh_s(clip_mesh(temp));
+
+		for (size_t i = 0; i < 1; i++)
+		{
+			p_impl->create_vertex_buffer(entities.vertex_buffer[i], entities.index_buffer[i], *entities.s_meshes[i]);
+			p_impl->create_text_sresources(paths, entities, i);
+		}
+
+		p_impl->create_vertex_buffer(entities.vertex_buffer[1], entities.index_buffer[1], *entities.a_meshes[1]);
+		p_impl->create_text_sresources(paths, entities, 1);
+		// WARNING: DANGER
+
+
 		DirectX::XMFLOAT4X4 w1;
 		DirectX::XMStoreFloat4x4(&w1, entities.world_matrix[0]);
-		w1.m[3][0] = 5.f;
+		w1.m[3][0] = -5.f;
 		entities.world_matrix[0] = DirectX::XMLoadFloat4x4(&w1);
 		int stop = 0;
 
@@ -45,6 +73,19 @@ namespace crow {
 
 	void game_manager::update()
 	{
+		timer.Signal();
+		time_elapsed += timer.Delta();
+		d += static_cast<float>(timer.Delta());
+		if (d >= anim1.duration) {
+			d = anim1.frames[1].time;
+		}
+
+		key_frame kf = get_tween_frame(anim1, d);
+		mult_invbp_tframe(anim1, kf, entities.framexbind[1]);
+
+		p_impl->update(static_cast<float>(timer.Delta()));
+		// WARNING: DANGER!
+
 		timer.Signal(); double dt = timer.Delta();
 		time_elapsed += dt;
 		p_impl->update(static_cast<float>(dt));
