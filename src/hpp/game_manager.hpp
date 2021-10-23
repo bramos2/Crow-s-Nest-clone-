@@ -7,6 +7,9 @@
 #include "mesh.hpp"
 #include "XTime.hpp"
 #include "view.hpp"
+#include "minimap.hpp"
+#include "map.hpp"
+#include "player_behavior.hpp"
 
 namespace crow {
 	//using native_handle_type = void*;
@@ -32,16 +35,25 @@ namespace crow {
 
 		game_state prev_state = game_state::MAIN_MENU;
 		float state_time = 0;
+
+		bool debug_mode = false;
 		
 		float left_click_time = 0.f;
 		float right_click_time = 0.f;
 		int menu_position = 0;
+		float2e mouse_pos;
 		
 		impl_t* p_impl = nullptr;
 		XTime timer;
 		entities entities;
 		view_t view;
+		level current_level;
+		crow::minimap minimap;
+		crow::player_behavior_data player_data;
+		// list of every single drawable mesh that is currently loaded
+		std::vector<mesh_info> all_meshes;
 
+		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
 		void init_app(void* window_handle);
 
 		void update();
@@ -55,6 +67,8 @@ namespace crow {
 		~game_manager();
 
 		// game state data functions
+		void change_level(int lv);
+		void load_level(int lv);
 		// todo::the method body for these functions go in game_manager.cpp
 		void new_game() {}
 		void load_mesh_data() {}
@@ -63,6 +77,7 @@ namespace crow {
 		bool l_click_update() { return false; }
 		bool r_click_update() { return false; }
 		void cleanup() {}
+		void unload_all_meshes();
 		// updates room metadata such as oxygen remaining, pressure, etc
 		void room_updates(float dt);
 

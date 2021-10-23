@@ -61,15 +61,18 @@ namespace crow {
 
 			create_constant_buffers();
 
-			//initializing view and projection matrices
+			// initializing projection matrix
 			float aspect = view_port[VIEWPORT::DEFAULT].Width / view_port[VIEWPORT::DEFAULT].Height;
-			XMVECTOR eyepos = XMVectorSet(0.0f, 5.0f, 10.0f, 1.0f);
-			XMVECTOR focus = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
-			XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-			default_view.view_mat = (float4x4_a&)XMMatrixInverse(nullptr, XMMatrixLookAtLH(eyepos, focus, up));
 			default_view.proj_mat = (float4x4_a&)XMMatrixPerspectiveFovLH(3.1415926f / 4.0f, aspect, 0.01f, 100.0f);
 			//vt.proj_mat = (float4x4_a&)XMMatrixPerspectiveFovLH(fov, aspect, nd, fd);
+
+			// note: please don't use lookatLH for the view matrix since it doesnt give the rotation vector, which complicates things
+			default_view.init();
+			default_view.position.y = 5.f;
+			default_view.position.z = -10.f;
+			default_view.rotation.x = -20.f;
+			default_view.update_rotation_matrix();
+			default_view.update();
 		}
 	}
 
@@ -282,8 +285,8 @@ namespace crow {
 
 		MVP_t mvp;
 		mvp.modeling = XMMatrixTranspose(XMMatrixIdentity());
-		mvp.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-		mvp.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
+		mvp.projection = view.proj_final;
+		mvp.view = view.view_final;
 		context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::MVP], 0, NULL, &mvp, 0, 0);
 
 		context->Draw(36, 0);
@@ -336,8 +339,8 @@ namespace crow {
 		// update the cb using updatesubresource
 		MVP_t mvp;
 		mvp.modeling = XMMatrixTranspose(XMMatrixIdentity());
-		mvp.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-		mvp.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
+		mvp.projection = view.proj_final;
+		mvp.view = view.view_final;
 		context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::MVP], 0, NULL, &mvp, 0, 0);
 		// draw!
 		context->Draw(crow::debug_renderer::get_line_vert_count(), 0);
@@ -363,8 +366,8 @@ namespace crow {
 		context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 
 		meshCB.modeling = XMMatrixTranspose(XMMatrixIdentity());
-		meshCB.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-		meshCB.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
+		meshCB.projection = view.proj_final;
+		meshCB.view = view.view_final;
 		context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &meshCB, 0, 0);
 
 		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -379,33 +382,33 @@ namespace crow {
 		MCB_s s_buff;
 		MCB_t a_buff;
 
-		a_buff.projection = s_buff.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-		a_buff.view = s_buff.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
+		a_buff.projection = s_buff.projection = view.proj_final;
+		a_buff.view = s_buff.view = view.view_final;
 
 		for (auto& i : inds) {
-			bool animated = (entities.framexbind[inds[i]] != nullptr);
+			bool animated = (entities.mesh_ptrs[inds[i]]->framexbind != nullptr);
 			UINT offset = 0;
 			UINT stride = 0;
 			if (!animated) {
 				// binding
 				stride = sizeof(crow::vert_s);
-				context->IASetVertexBuffers(0, 1, &entities.vertex_buffer[inds[i]], &stride, &offset);
-				context->UpdateSubresource(entities.vertex_buffer[inds[i]], 0, nullptr, entities.s_meshes[inds[i]]->vertices.data(), 0, 0);
+				context->IASetVertexBuffers(0, 1, &entities.mesh_ptrs[inds[i]]->vertex_buffer, &stride, &offset);
+				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->s_mesh->vertices.data(), 0, 0);
 
 				context->IASetInputLayout(input_layout[INPUT_LAYOUT::STATIC_MESH]);
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::STATIC_MESH], nullptr, 0);
 				context->PSSetShader(pixel_shader[PIXEL_SHADER::STATIC_MESH], nullptr, 0);
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]);
-				context->IASetIndexBuffer(entities.index_buffer[inds[i]], DXGI_FORMAT_R32_UINT, 0);
+				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-				if (entities.s_resource_view[inds[i]]) {
-					context->PSSetShaderResources(0, 1, &entities.s_resource_view[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->s_resource_view) {
+					context->PSSetShaderResources(0, 1, &entities.mesh_ptrs[inds[i]]->s_resource_view);
 				}
-				if (entities.emissive[inds[i]]) {
-					context->PSSetShaderResources(1, 1, &entities.emissive[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->emissive) {
+					context->PSSetShaderResources(1, 1, &entities.mesh_ptrs[inds[i]]->emissive);
 				}
-				if (entities.specular[inds[i]]) {
-					context->PSSetShaderResources(2, 1, &entities.specular[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->specular) {
+					context->PSSetShaderResources(2, 1, &entities.mesh_ptrs[inds[i]]->specular);
 				}
 				context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 
@@ -415,36 +418,36 @@ namespace crow {
 				context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 				// drawing
-				context->DrawIndexed((int)entities.s_meshes[inds[i]]->indicies.size(), 0, 0);
+				context->DrawIndexed((int)entities.mesh_ptrs[inds[i]]->s_mesh->indicies.size(), 0, 0);
 
 			}
 			else {
 				// binding
 				stride = sizeof(crow::vert_a);
-				context->IASetVertexBuffers(0, 1, &entities.vertex_buffer[inds[i]], &stride, &offset);
-				context->UpdateSubresource(entities.vertex_buffer[inds[i]], 0, nullptr, entities.a_meshes[inds[i]]->vertices.data(), 0, 0);
+				context->IASetVertexBuffers(0, 1, &entities.mesh_ptrs[inds[i]]->vertex_buffer, &stride, &offset);
+				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->a_mesh->vertices.data(), 0, 0);
 
 				context->IASetInputLayout(input_layout[INPUT_LAYOUT::ANIM_MESH]);
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::ANIM_MESH], nullptr, 0);
 				context->PSSetShader(pixel_shader[PIXEL_SHADER::ANIM_MESH], nullptr, 0);
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
-				context->IASetIndexBuffer(entities.index_buffer[inds[i]], DXGI_FORMAT_R32_UINT, 0);
+				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-				if (entities.s_resource_view[inds[i]]) {
-					context->PSSetShaderResources(0, 1, &entities.s_resource_view[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->s_resource_view) {
+					context->PSSetShaderResources(0, 1, &entities.mesh_ptrs[inds[i]]->s_resource_view);
 				}
-				if (entities.emissive[inds[i]]) {
-					context->PSSetShaderResources(1, 1, &entities.emissive[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->emissive) {
+					context->PSSetShaderResources(1, 1, &entities.mesh_ptrs[inds[i]]->emissive);
 				}
-				if (entities.specular[inds[i]]) {
-					context->PSSetShaderResources(2, 1, &entities.specular[inds[i]]);
+				if (entities.mesh_ptrs[inds[i]]->specular) {
+					context->PSSetShaderResources(2, 1, &entities.mesh_ptrs[inds[i]]->specular);
 				}
 
 				a_buff.modeling = XMMatrixTranspose(entities.world_matrix[inds[i]]);
 
 				// TODO: adjust this index to accomodate for future animations
 				for (size_t j = 0; j < 28; ++j) {
-					a_buff.matrices[j] = entities.framexbind[inds[i]][j];
+					a_buff.matrices[j] = entities.mesh_ptrs[inds[i]]->framexbind[j];
 				}
 				context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 				context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &a_buff, 0, 0);
@@ -452,7 +455,7 @@ namespace crow {
 				context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 				// drawing
-				context->DrawIndexed((int)entities.a_meshes[inds[i]]->indicies.size(), 0, 0);
+				context->DrawIndexed((int)entities.mesh_ptrs[inds[i]]->a_mesh->indicies.size(), 0, 0);
 			}
 		}
 	}
@@ -1001,7 +1004,7 @@ namespace crow {
 		hr = CreateDDSTextureFromFile(device, wcstrS, nullptr, &sResourceView[SUBRESOURCE_VIEW::SPECULAR]);
 	}
 
-	void impl_t::create_text_sresources(std::vector<std::string> text_filenames, entities& ent, unsigned int indx)
+	void impl_t::create_text_sresources(std::vector<std::string> text_filenames, mesh_info& m)
 	{
 		/*for (size_t i = 0; i < text_filenames.size(); ++i) {
 			std::wstring wstr = std::wstring(text_filenames[i].begin(), text_filenames[i].end());
@@ -1012,17 +1015,17 @@ namespace crow {
 		{
 			std::wstring wstr = std::wstring(text_filenames[0].begin(), text_filenames[0].end());
 			const wchar_t* wcstrD = wstr.c_str();
-			HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &ent.s_resource_view[indx]);
+			HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &m.s_resource_view);
 
 			if (text_filenames.size() > 1) {
 				std::wstring wstr = std::wstring(text_filenames[1].begin(), text_filenames[1].end());
 				const wchar_t* wcstrD = wstr.c_str();
-				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &ent.emissive[indx]);
+				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &m.emissive);
 			}
 			if (text_filenames.size() > 2) {
 				std::wstring wstr = std::wstring(text_filenames[2].begin(), text_filenames[2].end());
 				const wchar_t* wcstrD = wstr.c_str();
-				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &ent.specular[indx]);
+				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &m.specular);
 			}
 		}
 	}

@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # set the project name
 project(crows_nest)
+
 # by default CMake selects "ALL_BUILD" as the startup project
 # this causes that step to be skipped
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
@@ -30,6 +31,7 @@ target_link_libraries(
   soloud
 )
 
+# includes for imgui
 target_include_directories(
   ${PROJECT_NAME} PRIVATE
   ext/imgui/backends
@@ -42,24 +44,25 @@ if(WIN32)
 endif()
 
 set(HPP_FILES
-  #src/hpp/ai_manager.hpp
   src/hpp/audio.hpp
-  #src/hpp/behavior_tree.hpp
+  src/hpp/behavior_tree.hpp
   src/hpp/blob.hpp
   src/hpp/bvh.hpp
   src/hpp/d3d11_renderer_impl.hpp
   src/hpp/DDSTextureLoader.hpp
-  #src/hpp/enemy_behaviors.hpp
+  src/hpp/enemy_behaviors.hpp
   src/hpp/debug_renderer.hpp
   src/hpp/entities.hpp
   src/hpp/frustum_culling.hpp
   src/hpp/game_manager.hpp
-  #src/hpp/interactible.hpp
-  #src/hpp/map.hpp
+  src/hpp/interactible.hpp
+  src/hpp/map.hpp
   src/hpp/math_types.hpp
   src/hpp/message.hpp
+  src/hpp/minimap.hpp
   src/hpp/mbvh.hpp
   src/hpp/mesh.hpp
+  src/hpp/player_behavior.hpp
   src/hpp/pools.hpp
   src/hpp/renderer.hpp
   src/hpp/search_theta.hpp
@@ -70,24 +73,27 @@ set(HPP_FILES
 
 set(CPP_FILES
   src/cpp/audio.cpp
-  #src/cpp/behavior_tree.cpp
+  src/cpp/behavior_tree.cpp
   src/cpp/blob.cpp
   src/cpp/d3d11_renderer_impl.cpp
   src/cpp/DDSTextureLoader.cpp
   src/cpp/debug_renderer.cpp
-  #src/cpp/enemy_behaviors.cpp
+  src/cpp/enemy_behaviors.cpp
   src/cpp/entities.cpp
   src/cpp/game_manager.cpp
   src/cpp/gui.cpp
-  #src/cpp/interactible.cpp
-  #src/cpp/levels.cpp
+  src/cpp/interactible.cpp
+  src/cpp/levels.cpp
   src/cpp/main.cpp
-  #src/cpp/map.cpp
+  src/cpp/map.cpp
   src/cpp/mesh.cpp
   src/cpp/message.cpp
+  src/cpp/minimap.cpp
+  src/cpp/player_behavior.cpp
   src/cpp/renderer.cpp
   src/cpp/search_theta.cpp
   src/cpp/tile.cpp
+  src/cpp/view.cpp
   src/cpp/XTime.cpp
 )
 
@@ -137,10 +143,11 @@ target_sources(
   ${PIXEL_SHADERS}
 )
 
+# puts the imgui files in their own VS folder so that they don't clutter up the solution
 source_group("imgui" FILES ${IMGUI_FILES})
 
 set_source_files_properties( ${VERTEX_SHADERS} PROPERTIES 
-	VS_SHADER_TYPE Vertex VS_SHADER_MODEL 5.0 VS_SHADER_ENTRYPOINT main 
+	VS_SHADER_TYPE Vertex VS_SHADER_MODEL 5.0 VS_SHADER_ENTRYPOINT main
 	VS_SHADER_OBJECT_FILE_NAME "$(OutDir)../%(Filename).cso"
 	#VS_SHADER_OUTPUT_HEADER_FILE "%(RelativeDir)%(Filename).h"
 	#VS_SHADER_VARIABLE_NAME "%(Filename)"

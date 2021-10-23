@@ -5,14 +5,9 @@
 
 namespace crow {
 	void game_manager::imgui_on_draw() {
-		// capture the mouse data
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(p_impl->hwnd, &p);
-
 		ImGuiIO& io = ImGui::GetIO();
 		// teach ImGui where the mouse is
-		io.MousePos = { (float)p.x, (float)p.y };
+        io.MousePos = { mouse_pos.x, mouse_pos.y };
 		io.MouseDown[0] = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
 		io.MouseDown[1] = (GetKeyState(VK_RBUTTON) & 0x8000) != 0;
 		// this prevents the program from crashing
@@ -23,12 +18,22 @@ namespace crow {
 		ImGui_ImplDX11_NewFrame();
 		ImGui::NewFrame();
 		// IMGUI SETUP FOR THIS FRAME IS COMPLETE, ALL IMGUI DRAWS GO IN HERE:
+		ImVec2 wh = get_window_size();
+
+        switch (current_state) {
+        case game_state::PLAYING:
+            minimap.draw_call(*this);
+            break;
+        }
 
 		// this is just here to prove to you that yes, it does in fact work. it will be gone in the next commit.
-		ImGui::Text("temp");
+		ImVec2 s = get_window_size();
+		float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
+		ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
+		ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
+		ImGui::Text("wpos: %f, %f", wh.x, wh.y);
 		if (ImGui::Button("click me")) audio::play_sfx(0);
 
-		ImVec2 wh = get_window_size();
 		//draw_main_menu(wh);
 
 

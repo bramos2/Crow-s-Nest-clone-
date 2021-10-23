@@ -7,6 +7,7 @@
 
 namespace crow {
 	// forward declares for circular includes
+	class game_manager;
 	struct room;
 	struct level;
 	struct door_panel;
@@ -103,9 +104,9 @@ namespace crow {
 	  virtual void interact(size_t const index, crow::entities& entity);
 	  // third param of the constructor (level number) should ALWAYS be the level
 	  // number that the exit is IN, NOT the level number that it takes you to
-	  exit(lava::app* _app, crow::level* _lv, int _level_num);
+	  exit(game_manager* _state, crow::level* _lv, int _level_num);
 
-	  lava::app* app = nullptr;
+	  game_manager* state = nullptr;
 	  int level_num = 0;
 	};
 

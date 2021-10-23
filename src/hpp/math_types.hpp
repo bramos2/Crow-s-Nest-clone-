@@ -8,6 +8,10 @@
 
 namespace crow
 {
+	constexpr double to_radians = 0.01745329251994329576923690768489;
+	constexpr float to_radiansf = 0.0174532924f;
+	constexpr double to_degrees = 57.295779513082320876798154814105;
+	constexpr float to_degreesf = 57.2957802;
 
 	struct float2e
 	{
@@ -32,6 +36,23 @@ namespace crow
 			}
 			return *this;
 		}
+		inline friend bool operator==(const float2e& lhs, const float2e& rhs) {
+			if (lhs.x == rhs.x && lhs.y == rhs.y) return true;
+			return false;
+		}
+
+		inline friend float2e operator+(float2e lhs, float2e rhs)
+		{
+			return { lhs.x + rhs.x, lhs.y + rhs.y };
+		}
+
+		inline friend float2e operator-(float2e lhs, float2e rhs)
+		{
+			return { lhs.x - rhs.x, lhs.y - rhs.y };
+		}
+
+		inline const float length() const { return sqrtf(x*x + y*y);  }
+
 	};
 
 	struct float3e
@@ -50,6 +71,7 @@ namespace crow
 
 		float3e() : x(0), y(0), z(0) {}
 		float3e(float _x, float _y, float _z) : x(_x), y(_y), z(_z) { }
+		float3e(const DirectX::XMFLOAT3 that) : x(that.x), y(that.y), z(that.z) { }
 
 		float3e& operator=(const float3e& that)
 		{
@@ -229,6 +251,18 @@ namespace crow
 			return { lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs };
 		}
 
+		inline float4e normalize(float4e n)
+		{
+			float length = sqrtf(n.x*n.x + n.y*n.y + n.z*n.z);
+			if (length == 0.0f)
+			{
+				float4e value = { 0.0f, 0.0f, 0.0f, 0.0f };
+				return value;
+			}
+			float4e value = { n.x / length, n.y / length, n.z / length, n.w / length };
+			return value;
+		}
+
 		inline float4e& operator*=(float rhs)
 		{
 			x *= rhs;
@@ -258,7 +292,7 @@ namespace crow
 
 	using float4x4 = std::array< float4e, 4 >;
 	using float4x4_a = std::array< float4_a, 4 >;
-
+	
 	inline float4x4 IdentityM()
 	{
 		float4x4 temp;
@@ -266,6 +300,17 @@ namespace crow
 		temp[1] = { 0,1.0f,0,0 };
 		temp[2] = { 0,0,1.0f,0 };
 		temp[3] = { 0,0,0,1.0f };
+
+		return temp;
+	}
+
+	inline float4x4_a IdentityM_a()
+	{
+		float4x4_a temp;
+		temp[0][0] = 1.0f; temp[0][1] = 0.0f; temp[0][2] = 0.0f; temp[0][3] = 0.0f; 
+		temp[1][0] = 0.0f; temp[1][1] = 1.0f; temp[1][2] = 0.0f; temp[1][3] = 0.0f; 
+		temp[2][0] = 0.0f; temp[2][1] = 0.0f; temp[2][2] = 1.0f; temp[2][3] = 0.0f; 
+		temp[3][0] = 0.0f; temp[3][1] = 0.0f; temp[3][2] = 0.0f; temp[3][3] = 1.0f; 
 
 		return temp;
 	}
@@ -311,9 +356,9 @@ namespace crow
 		deg = deg * (3.1415f / 180.0f);
 
 		float4x4 temp = IdentityM();
-		temp[0].y = cos(deg);
+		temp[0].x = cos(deg);
 		temp[0].z = sin(deg);
-		temp[2].y = -sin(deg);
+		temp[2].x = -sin(deg);
 		temp[2].z = cos(deg);
 		return temp;
 	}
@@ -323,11 +368,30 @@ namespace crow
 		deg = deg * (3.1415f / 180.0f);
 
 		float4x4 temp = IdentityM();
-		temp[0].y = cos(deg);
-		temp[0].z = -sin(deg);
-		temp[1].y = sin(deg);
-		temp[1].z = cos(deg);
+		temp[0].x = cos(deg);
+		temp[0].y = -sin(deg);
+		temp[1].x = sin(deg);
+		temp[1].y = cos(deg);
+		return temp;
 
+	}
+
+	inline float3_a pac(float3e in) {
+		float3_a temp;
+		temp.x = in.x;
+		temp.y = in.y;
+		temp.z = in.z;
+		return temp;
+	}
+
+	inline float4x4_a pac(float4x4 in) {
+		float4x4_a temp;
+		temp[0][0] = in[0][0]; temp[0][1] = in[0][1]; temp[0][2] = in[0][2]; temp[0][3] = in[0][3]; 
+		temp[1][0] = in[1][0]; temp[1][1] = in[1][1]; temp[1][2] = in[1][2]; temp[1][3] = in[1][3]; 
+		temp[2][0] = in[2][0]; temp[2][1] = in[2][1]; temp[2][2] = in[2][2]; temp[2][3] = in[2][3]; 
+		temp[3][0] = in[3][0]; temp[3][1] = in[3][1]; temp[3][2] = in[3][2]; temp[3][3] = in[3][3]; 
+
+		return temp;
 	}
 
 	inline float clampf(float in, float min, float max) {

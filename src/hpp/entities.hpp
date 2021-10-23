@@ -7,18 +7,25 @@
 
 namespace crow {
 
+	// contains all data necessary for a mesh to be rendered
+	struct mesh_info {
+		DirectX::XMMATRIX* framexbind;
+		mesh_a* a_mesh;
+		mesh_s* s_mesh;
+		ID3D11Buffer* vertex_buffer;
+		ID3D11Buffer* index_buffer;
+		ID3D11ShaderResourceView* s_resource_view;
+		ID3D11ShaderResourceView* emissive;
+		ID3D11ShaderResourceView* specular;
+	};
+
+	// contains all currently loaded game objects
 	struct entities {
 		std::vector<DirectX::XMMATRIX> world_matrix;
 		std::vector<DirectX::XMFLOAT3> velocities;
-		std::vector<DirectX::XMMATRIX*> framexbind;
-		// everything below this line needs to be split from the entities system
-		std::vector<mesh_a*> a_meshes;
-		std::vector<mesh_s*> s_meshes;
-		std::vector<ID3D11Buffer*> vertex_buffer;
-		std::vector<ID3D11Buffer*> index_buffer;
-		std::vector<ID3D11ShaderResourceView*> s_resource_view;
-		std::vector<ID3D11ShaderResourceView*> emissive;
-		std::vector<ID3D11ShaderResourceView*> specular;
+		// pointer to the mesh data/information that will be loaded for the mesh at the relevant index
+		// do not use new on this object, only use pointers to pre-existing data
+		std::vector<mesh_info*> mesh_ptrs;
 
 
 		uint32_t current_size = 0;

@@ -304,7 +304,7 @@ namespace crow
 
 		void CreateTexture(std::string diff_filename, std::string emis_filename, std::string spec_filename);
 
-		void create_text_sresources(std::vector<std::string> text_filenames, entities& ent, unsigned int indx);
+		void create_text_sresources(std::vector<std::string> text_filenames, mesh_info& m);
 
 		void CreateSamplerState();
 

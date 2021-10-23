@@ -1,5 +1,6 @@
 #include "../hpp/interactible.hpp"
 
+#include "../hpp/game_manager.hpp"
 #include "../hpp/map.hpp"
 
 namespace crow {
@@ -241,15 +242,15 @@ door::door(crow::level* _lv) {
 }
 
 void exit::interact(size_t const index, crow::entities& entity) {
-  current_level->change_level(app, level_num + 1);
   printf("\ninteracted with exit, congrats! loaded level: %i",
              level_num + 1);
+  state->change_level(level_num + 1);
 }
 
-exit::exit(lava::app* _app, crow::level* _lv, int _level_num) {
+exit::exit(game_manager* _state, crow::level* _lv, int _level_num) {
   type = crow::object_type::EXIT;
   current_level = _lv;
-  app = _app;
+  state = _state;
   level_num = _level_num;
 }
 
