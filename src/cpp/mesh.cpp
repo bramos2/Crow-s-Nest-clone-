@@ -167,7 +167,7 @@ namespace crow {
 		for (int j = 0; j < tween_frame.size(); ++j)
 		{
 			tween_frame[j].parent_index = prevFrame.joints[j].parent_index;
-			
+
 			DirectX::XMVECTOR q1 = DirectX::XMQuaternionRotationMatrix(XMLoadFloat4x4(&prevFrame.joints[j].transform));
 			DirectX::XMVECTOR q2 = DirectX::XMQuaternionRotationMatrix(XMLoadFloat4x4(&nextFrame.joints[j].transform));
 			DirectX::XMVECTOR qs = DirectX::XMQuaternionSlerp(q1, q2, d);
@@ -192,7 +192,7 @@ namespace crow {
 		//drawKeyFrame(result);
 		return result;
 	}
-	
+
 
 	mesh_s clip_mesh(mesh_a& mesh)
 	{
@@ -245,19 +245,141 @@ namespace crow {
 		}
 	}
 
+	void get_inverted_bind_pose(key_frame& bind_pose, animator& animator)
+	{
+		const unsigned int size = bind_pose.joints.size();
+		animator.inv_bindpose.joints.resize(size);
+		animator.inv_bindpose.time = 0.f;
+
+		for (size_t i = 0; i < size; ++i)
+		{
+			DirectX::XMMATRIX temp = DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&bind_pose.joints[i].transform));
+			DirectX::XMStoreFloat4x4(&animator.inv_bindpose.joints[i].transform, temp);
+		}
+	}
+
 	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat)
 	{
-		// deletes old version of this matrix, if applicable (prevents memory leaks)
-		if (ent_mat != nullptr) delete ent_mat;
-		ent_mat = nullptr;
+		if (ent_mat) {
+			delete[] ent_mat;
+		}
 
 		if (!tween_frame.joints.empty()) {
 			ent_mat = new DirectX::XMMATRIX[tween_frame.joints.size()];
-			for (int i = 0; i < tween_frame.joints.size(); ++i)
+			for (size_t i = 0; i < tween_frame.joints.size(); ++i)
 			{
 				DirectX::XMMATRIX cMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&anim_clip.frames[0].joints[i].transform), DirectX::XMLoadFloat4x4(&tween_frame.joints[i].transform));
 				ent_mat[i] = XMMatrixTranspose(cMatrix);
 			}
 		}
 	}
-}
+
+	void scale_matrix(DirectX::XMMATRIX& m, float x, float y, float z)
+	{
+		DirectX::XMFLOAT4X4 temp;
+		DirectX::XMStoreFloat4x4(&temp, m);
+
+		temp.m[0][0] *= x;
+		temp.m[1][1] *= y;
+		temp.m[2][2] *= z;
+
+		m = DirectX::XMLoadFloat4x4(&temp);
+	}
+
+
+	void animator::update_tween_frame()
+	{
+		double d = 0;
+		int prev = 0;
+		int next = 0;
+		//the frame we will be drawing
+		std::vector<joint_x> tween_f;
+		tween_f.resize(animations[curr_animation].frames[0].joints.size());
+
+		//find where t falls in
+		for (int i = 1; i < animations[curr_animation].frames.size() - 1; ++i)
+		{
+			if (t >= animations[curr_animation].frames[i].time)
+			{
+				prev = i;
+				next = i + 1;
+			}
+		}
+
+		d = (t - animations[curr_animation].frames[prev].time) / (animations[curr_animation].frames[next].time - animations[curr_animation].frames[prev].time);
+		const key_frame& prevFrame = animations[curr_animation].frames[prev];
+		const key_frame& nextFrame = animations[curr_animation].frames[next];
+
+		for (int j = 0; j < tween_f.size(); ++j)
+		{
+			tween_f[j].parent_index = prevFrame.joints[j].parent_index;
+
+			DirectX::XMVECTOR q1 = DirectX::XMQuaternionRotationMatrix(XMLoadFloat4x4(&prevFrame.joints[j].transform));
+			DirectX::XMVECTOR q2 = DirectX::XMQuaternionRotationMatrix(XMLoadFloat4x4(&nextFrame.joints[j].transform));
+			DirectX::XMVECTOR qs = DirectX::XMQuaternionSlerp(q1, q2, d);
+
+			XMStoreFloat4x4(&tween_f[j].transform, DirectX::XMMatrixRotationQuaternion(qs));
+
+			tween_f[j].transform.m[3][0] = (nextFrame.joints[j].transform.m[3][0] - prevFrame.joints[j].transform.m[3][0])
+				* d + prevFrame.joints[j].transform.m[3][0];
+
+			tween_f[j].transform.m[3][1] = (nextFrame.joints[j].transform.m[3][1] - prevFrame.joints[j].transform.m[3][1])
+				* d + prevFrame.joints[j].transform.m[3][1];
+
+			tween_f[j].transform.m[3][2] = (nextFrame.joints[j].transform.m[3][2] - prevFrame.joints[j].transform.m[3][2])
+				* d + prevFrame.joints[j].transform.m[3][2];
+
+		}
+
+		tween_frame.joints = tween_f;
+		tween_frame.time = t;
+	}
+
+
+	DirectX::XMMATRIX* animator::mult_curr_frame()
+	{
+		DirectX::XMMATRIX* result = nullptr;
+		const size_t size = tween_frame.joints.size();
+
+		if (!tween_frame.joints.empty()) {
+			result = new DirectX::XMMATRIX[size];
+
+			for (size_t i = 0; i < size; ++i)
+			{
+				DirectX::XMMATRIX cMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&inv_bindpose.joints[i].transform), DirectX::XMLoadFloat4x4(&tween_frame.joints[i].transform));
+				cMatrix = XMMatrixTranspose(cMatrix);
+				result[i] = cMatrix;
+			}
+		}
+		return result;
+	}
+
+	void animator::update(DirectX::XMMATRIX*& ent_mat, float dt)
+	{
+		t += dt;
+		if (t > animations[curr_animation].duration) {
+			if (curr_animation != 0) {
+				curr_animation = 0;
+			}
+			else {
+				switch_animation(1);
+			}
+			t = animations[curr_animation].frames[1].time;
+		}
+
+		update_tween_frame();
+		if (ent_mat) {
+			delete[] ent_mat;
+		}
+		ent_mat = mult_curr_frame();
+	}
+
+	void animator::switch_animation(unsigned int index)
+	{
+		if (index < animations.size()) {
+			curr_animation = index;
+			t = animations[curr_animation].frames[1].time;
+		}
+	}
+
+} // namespace crow

@@ -21,7 +21,7 @@
 #define SOUND_MAX_VOLUME 1.5f
 
 namespace crow {
-    struct game_manager;
+    class game_manager;
 
 namespace audio {
 // enums

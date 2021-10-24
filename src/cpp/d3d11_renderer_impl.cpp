@@ -13,11 +13,11 @@ namespace crow {
 			//LoadData(); //terrain for engine dev
 			//exporting and loading data from our fbx using our library
 			//export_fbx_mesh("../Renderer/Assets/Run.fbx");
-			load_anim_data("res/animations/Run.anim", animationClip);
-			load_bin_data( "res/meshes/Run.bin", meshInds, meshVerts);
-			load_mat_data( "res/textures/Run.mat", filePaths, materials);
+			/*load_anim_data("res/animations/Run.anim", animationClip);
+			load_bin_data("res/meshes/Run.bin", meshInds, meshVerts);
+			load_mat_data("res/textures/Run.mat", filePaths, materials);*/
 			//modifying file paths for textures/materials
-			std::string folPath = "res/textures/";
+			/*std::string folPath = "res/textures/";
 			for (int i = 0; i < filePaths.size(); ++i)
 			{
 				size_t spos = filePaths[i].find_first_of('\\');
@@ -35,13 +35,13 @@ namespace crow {
 			else
 			{
 				emissiveTexturePath = specularTexturePath = "";
-			}
+			}*/
 
-			//getting inverted bind pose
-			for (int i = 0; i < animationClip.frames[0].joints.size(); ++i) //preparing the bind pose
-			{
-				InvBindPose[i] = XMMatrixInverse(nullptr, XMLoadFloat4x4(&animationClip.frames[0].joints[i].transform));
-			}
+			////getting inverted bind pose
+			//for (int i = 0; i < animationClip.frames[0].joints.size(); ++i) //preparing the bind pose
+			//{
+			//	InvBindPose[i] = XMMatrixInverse(nullptr, XMLoadFloat4x4(&animationClip.frames[0].joints[i].transform));
+			//}
 
 			create_device_and_swapchain();
 
@@ -51,7 +51,7 @@ namespace crow {
 
 			setup_rasterizer();
 
-			CreateTexture(diffuseTexturePath, emissiveTexturePath, specularTexturePath);
+			//CreateTexture(diffuseTexturePath, emissiveTexturePath, specularTexturePath);
 
 			CreateSamplerState();
 
@@ -76,121 +76,121 @@ namespace crow {
 		}
 	}
 
-	void impl_t::replaceExt(std::string& s, const std::string& newExt)
-	{
-		std::string::size_type i = s.rfind('.', s.length());
+	//void impl_t::replaceExt(std::string& s, const std::string& newExt)
+	//{
+	//	std::string::size_type i = s.rfind('.', s.length());
 
-		if (i != std::string::npos) {
-			s.replace(i + 1, newExt.length(), newExt);
-		}
-	}
+	//	if (i != std::string::npos) {
+	//		s.replace(i + 1, newExt.length(), newExt);
+	//	}
+	//}
 
-	void impl_t::load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials)
-	{
-		uint32_t materialsCount;
-		uint32_t pathCount;
+	//void impl_t::load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials)
+	//{
+	//	uint32_t materialsCount;
+	//	uint32_t pathCount;
 
-		std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
-		assert(file.is_open());
+	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
+	//	assert(file.is_open());
 
-		if (!file.is_open())
-		{
-			assert(false);
-			return;
-		}
+	//	if (!file.is_open())
+	//	{
+	//		assert(false);
+	//		return;
+	//	}
 
-		file.read((char*)&materialsCount, sizeof(uint32_t));
-		materials.resize(materialsCount);
-		file.read((char*)materials.data(), materialsCount * sizeof(mat_t));
-		file.read((char*)&pathCount, sizeof(uint32_t));
-		filePaths.resize(pathCount);
-		for (int i = 0; i < pathCount; ++i)
-		{
-			std::string curr;
-			uint32_t stringSize;
-			file.read((char*)&stringSize, sizeof(uint32_t));
-			curr.resize(stringSize);
-			file.read((char*)curr.data(), stringSize * sizeof(char));
-			filePaths[i] = curr;
-		}
+	//	file.read((char*)&materialsCount, sizeof(uint32_t));
+	//	materials.resize(materialsCount);
+	//	file.read((char*)materials.data(), materialsCount * sizeof(mat_t));
+	//	file.read((char*)&pathCount, sizeof(uint32_t));
+	//	filePaths.resize(pathCount);
+	//	for (int i = 0; i < pathCount; ++i)
+	//	{
+	//		std::string curr;
+	//		uint32_t stringSize;
+	//		file.read((char*)&stringSize, sizeof(uint32_t));
+	//		curr.resize(stringSize);
+	//		file.read((char*)curr.data(), stringSize * sizeof(char));
+	//		filePaths[i] = curr;
+	//	}
 
-		file.close();
-	}
+	//	file.close();
+	//}
 
-	void impl_t::load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts)
-	{
-		uint32_t indexCount;
-		uint32_t vertexCount;
+	//void impl_t::load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts)
+	//{
+	//	uint32_t indexCount;
+	//	uint32_t vertexCount;
 
-		std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
+	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
 
-		assert(file.is_open());
+	//	assert(file.is_open());
 
-		if (!file.is_open())
-		{
-			assert(false);
-			return;
-		}
-		//retrieving index data
-		file.read((char*)&indexCount, sizeof(uint32_t));
-		mesh_inds.resize(indexCount);
-		file.read((char*)mesh_inds.data(), indexCount * sizeof(uint32_t));
+	//	if (!file.is_open())
+	//	{
+	//		assert(false);
+	//		return;
+	//	}
+	//	//retrieving index data
+	//	file.read((char*)&indexCount, sizeof(uint32_t));
+	//	mesh_inds.resize(indexCount);
+	//	file.read((char*)mesh_inds.data(), indexCount * sizeof(uint32_t));
 
-		//retrieving vertex data
-		file.read((char*)&vertexCount, sizeof(uint32_t));
-		mesh_verts.resize(vertexCount);
-		file.read((char*)mesh_verts.data(), vertexCount * sizeof(mesh_vertex));
+	//	//retrieving vertex data
+	//	file.read((char*)&vertexCount, sizeof(uint32_t));
+	//	mesh_verts.resize(vertexCount);
+	//	file.read((char*)mesh_verts.data(), vertexCount * sizeof(mesh_vertex));
 
-		file.close();
-	}
+	//	file.close();
+	//}
 
-	void impl_t::load_anim_data(const char* file_path, aClip& animationClip)
-	{
-		uint32_t frameCount;
+	//void impl_t::load_anim_data(const char* file_path, aClip& animationClip)
+	//{
+	//	uint32_t frameCount;
 
-		std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
-		assert(file.is_open());
+	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
+	//	assert(file.is_open());
 
-		if (!file.is_open())
-		{
-			assert(false);
-			return;
-		}
+	//	if (!file.is_open())
+	//	{
+	//		assert(false);
+	//		return;
+	//	}
 
-		//read duration as double into animation clip 
-		file.read((char*)&animationClip.duration, sizeof(double));
-		//then read the number of frames as uint32_t
-		file.read((char*)&frameCount, sizeof(uint32_t));
-		//loop for each frame
-		for (int f = 0; f < frameCount; ++f)
-		{
-			//create keyframe
-			kFrame currentFrame;
-			//read current frame time as double
-			file.read((char*)&currentFrame.time, sizeof(double));
-			//read the number of joints in this frame as uint32_t
-			uint32_t jointCount;
-			file.read((char*)&jointCount, sizeof(uint32_t));
-			//resize joints container inside this keyframe
-			currentFrame.joints.resize(jointCount);
-			//read the data into the joints container as number of joints in this frame * size of joint_x
-			file.read((char*)currentFrame.joints.data(), jointCount * sizeof(j_x));
-			//push keyframe into animation clip
-			animationClip.frames.push_back(currentFrame);
-		}
+	//	//read duration as double into animation clip 
+	//	file.read((char*)&animationClip.duration, sizeof(double));
+	//	//then read the number of frames as uint32_t
+	//	file.read((char*)&frameCount, sizeof(uint32_t));
+	//	//loop for each frame
+	//	for (int f = 0; f < frameCount; ++f)
+	//	{
+	//		//create keyframe
+	//		kFrame currentFrame;
+	//		//read current frame time as double
+	//		file.read((char*)&currentFrame.time, sizeof(double));
+	//		//read the number of joints in this frame as uint32_t
+	//		uint32_t jointCount;
+	//		file.read((char*)&jointCount, sizeof(uint32_t));
+	//		//resize joints container inside this keyframe
+	//		currentFrame.joints.resize(jointCount);
+	//		//read the data into the joints container as number of joints in this frame * size of joint_x
+	//		file.read((char*)currentFrame.joints.data(), jointCount * sizeof(j_x));
+	//		//push keyframe into animation clip
+	//		animationClip.frames.push_back(currentFrame);
+	//	}
 
-		file.close();
-	}
+	//	file.close();
+	//}
 
-	void impl_t::TranslateJoints(kFrame& frame, float3e translation)
-	{
-		for (int i = 0; i < frame.joints.size(); ++i)
-		{
-			frame.joints[i].transform.m[3][0] += translation.x;
-			frame.joints[i].transform.m[3][1] += translation.y;
-			frame.joints[i].transform.m[3][2] += translation.z;
-		}
-	}
+	//void impl_t::TranslateJoints(kFrame& frame, float3e translation)
+	//{
+	//	for (int i = 0; i < frame.joints.size(); ++i)
+	//	{
+	//		frame.joints[i].transform.m[3][0] += translation.x;
+	//		frame.joints[i].transform.m[3][1] += translation.y;
+	//		frame.joints[i].transform.m[3][2] += translation.z;
+	//	}
+	//}
 
 	void impl_t::drawJointTransform(j_x joint, float3e translation)
 	{
@@ -223,57 +223,57 @@ namespace crow {
 		}
 	}
 
-	kFrame impl_t::GetTweenFrame(aClip _animationClip, double t)
-	{
-		double d = 0;
-		int prev = 0;
-		int next = 0;
-		//the frame we will be drawing
-		std::vector<j_x> tween_frame;
-		tween_frame.resize(_animationClip.frames[0].joints.size());
+	//kFrame impl_t::GetTweenFrame(aClip _animationClip, double t)
+	//{
+	//	double d = 0;
+	//	int prev = 0;
+	//	int next = 0;
+	//	//the frame we will be drawing
+	//	std::vector<j_x> tween_frame;
+	//	tween_frame.resize(_animationClip.frames[0].joints.size());
 
-		//find where t falls in
-		for (int i = 1; i < _animationClip.frames.size() - 1; ++i)
-		{
-			if (t >= _animationClip.frames[i].time)
-			{
-				prev = i;
-				next = i + 1;
-			}
-		}
+	//	//find where t falls in
+	//	for (int i = 1; i < _animationClip.frames.size() - 1; ++i)
+	//	{
+	//		if (t >= _animationClip.frames[i].time)
+	//		{
+	//			prev = i;
+	//			next = i + 1;
+	//		}
+	//	}
 
-		d = (t - _animationClip.frames[prev].time) / (_animationClip.frames[next].time - _animationClip.frames[prev].time);
-		const kFrame& prevFrame = _animationClip.frames[prev];
-		const kFrame& nextFrame = _animationClip.frames[next];
+	//	d = (t - _animationClip.frames[prev].time) / (_animationClip.frames[next].time - _animationClip.frames[prev].time);
+	//	const kFrame& prevFrame = _animationClip.frames[prev];
+	//	const kFrame& nextFrame = _animationClip.frames[next];
 
-		for (int j = 0; j < tween_frame.size(); ++j)
-		{
-			tween_frame[j].parent_index = prevFrame.joints[j].parent_index;
+	//	for (int j = 0; j < tween_frame.size(); ++j)
+	//	{
+	//		tween_frame[j].parent_index = prevFrame.joints[j].parent_index;
 
-			XMVECTOR q1 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&prevFrame.joints[j].transform));
-			XMVECTOR q2 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&nextFrame.joints[j].transform));
-			XMVECTOR qs = XMQuaternionSlerp(q1, q2, d);
+	//		XMVECTOR q1 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&prevFrame.joints[j].transform));
+	//		XMVECTOR q2 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&nextFrame.joints[j].transform));
+	//		XMVECTOR qs = XMQuaternionSlerp(q1, q2, d);
 
-			XMStoreFloat4x4(&tween_frame[j].transform, XMMatrixRotationQuaternion(qs));
+	//		XMStoreFloat4x4(&tween_frame[j].transform, XMMatrixRotationQuaternion(qs));
 
-			tween_frame[j].transform.m[3][0] = (nextFrame.joints[j].transform.m[3][0] - prevFrame.joints[j].transform.m[3][0])
-				* d + prevFrame.joints[j].transform.m[3][0];
+	//		tween_frame[j].transform.m[3][0] = (nextFrame.joints[j].transform.m[3][0] - prevFrame.joints[j].transform.m[3][0])
+	//			* d + prevFrame.joints[j].transform.m[3][0];
 
-			tween_frame[j].transform.m[3][1] = (nextFrame.joints[j].transform.m[3][1] - prevFrame.joints[j].transform.m[3][1])
-				* d + prevFrame.joints[j].transform.m[3][1];
+	//		tween_frame[j].transform.m[3][1] = (nextFrame.joints[j].transform.m[3][1] - prevFrame.joints[j].transform.m[3][1])
+	//			* d + prevFrame.joints[j].transform.m[3][1];
 
-			tween_frame[j].transform.m[3][2] = (nextFrame.joints[j].transform.m[3][2] - prevFrame.joints[j].transform.m[3][2])
-				* d + prevFrame.joints[j].transform.m[3][2];
+	//		tween_frame[j].transform.m[3][2] = (nextFrame.joints[j].transform.m[3][2] - prevFrame.joints[j].transform.m[3][2])
+	//			* d + prevFrame.joints[j].transform.m[3][2];
 
-		}
+	//	}
 
-		kFrame result;
-		result.joints = tween_frame;
-		result.time = t;
+	//	kFrame result;
+	//	result.joints = tween_frame;
+	//	result.time = t;
 
-		//drawKeyFrame(result);
-		return result;
-	}
+	//	//drawKeyFrame(result);
+	//	return result;
+	//}
 
 	void impl_t::draw_cube(view_t& view)
 	{
@@ -292,30 +292,30 @@ namespace crow {
 		context->Draw(36, 0);
 	}
 
-	void impl_t::draw_terrain(view_t& view)
-	{
-		//	//only setting necesary components
-		//	UINT stride = sizeof(end::colored_vertex);
-		//	UINT offset = 0;
-		//	context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], &stride, &offset);
-		//	context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], 0, nullptr, terr.data(), 0, 0);
+	//void impl_t::draw_terrain(view_t& view)
+	//{
+	//	//	//only setting necesary components
+	//	//	UINT stride = sizeof(end::colored_vertex);
+	//	//	UINT offset = 0;
+	//	//	context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], &stride, &offset);
+	//	//	context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], 0, nullptr, terr.data(), 0, 0);
 
-		//	//context->IASetInputLayout(input_layout[INPUT_LAYOUT::COLORED_VERTEX]);
+	//	//	//context->IASetInputLayout(input_layout[INPUT_LAYOUT::COLORED_VERTEX]);
 
-		//	//context->VSSetShader(vertex_shader[VERTEX_SHADER::COLORED_VERTEX], nullptr, 0);
-		//	//context->PSSetShader(pixel_shader[PIXEL_SHADER::COLORED_VERTEX], nullptr, 0);
-		//	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	//	//context->VSSetShader(vertex_shader[VERTEX_SHADER::COLORED_VERTEX], nullptr, 0);
+	//	//	//context->PSSetShader(pixel_shader[PIXEL_SHADER::COLORED_VERTEX], nullptr, 0);
+	//	//	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		//	//context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::MVP]);
+	//	//	//context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::MVP]);
 
-		///*	MVP_t mvp;
-		//	mvp.modeling = XMMatrixTranspose(XMMatrixIdentity());
-		//	mvp.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-		//	mvp.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
-		//	context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::MVP], 0, NULL, &mvp, 0, 0);*/
+	//	///*	MVP_t mvp;
+	//	//	mvp.modeling = XMMatrixTranspose(XMMatrixIdentity());
+	//	//	mvp.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
+	//	//	mvp.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
+	//	//	context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::MVP], 0, NULL, &mvp, 0, 0);*/
 
-		//	context->Draw(vert_count, 0);
-	}
+	//	//	context->Draw(vert_count, 0);
+	//}
 
 	void impl_t::draw_debug_lines(view_t& view)
 	{
@@ -347,35 +347,35 @@ namespace crow {
 		crow::debug_renderer::clear_lines();
 	}
 
-	void impl_t::draw_mesh(view_t& view)
-	{
-		UINT stride = sizeof(crow::mesh_vertex);
-		UINT offset = 0;
+	//void impl_t::draw_mesh(view_t& view)
+	//{
+	//	UINT stride = sizeof(crow::mesh_vertex);
+	//	UINT offset = 0;
 
-		context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::ANIM_MESH], &stride, &offset);
-		context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::ANIM_MESH], 0, nullptr, meshVerts.data(), 0, 0);
-		context->IASetInputLayout(input_layout[INPUT_LAYOUT::ANIM_MESH]);
-		context->VSSetShader(vertex_shader[VERTEX_SHADER::ANIM_MESH], nullptr, 0);
-		context->PSSetShader(pixel_shader[PIXEL_SHADER::ANIM_MESH], nullptr, 0);
-		context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
-		context->IASetIndexBuffer(index_buffer[INDEX_BUFFER::ANIM_MESH], DXGI_FORMAT_R32_UINT, 0);
+	//	context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::ANIM_MESH], &stride, &offset);
+	//	context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::ANIM_MESH], 0, nullptr, meshVerts.data(), 0, 0);
+	//	context->IASetInputLayout(input_layout[INPUT_LAYOUT::ANIM_MESH]);
+	//	context->VSSetShader(vertex_shader[VERTEX_SHADER::ANIM_MESH], nullptr, 0);
+	//	context->PSSetShader(pixel_shader[PIXEL_SHADER::ANIM_MESH], nullptr, 0);
+	//	context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
+	//	context->IASetIndexBuffer(index_buffer[INDEX_BUFFER::ANIM_MESH], DXGI_FORMAT_R32_UINT, 0);
 
-		context->PSSetShaderResources(0, 1, &sResourceView[SUBRESOURCE_VIEW::DIFFUSE]);
-		context->PSSetShaderResources(1, 1, &sResourceView[SUBRESOURCE_VIEW::EMISSIVE]);
-		context->PSSetShaderResources(2, 1, &sResourceView[SUBRESOURCE_VIEW::SPECULAR]);
-		context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
+	//	context->PSSetShaderResources(0, 1, &sResourceView[SUBRESOURCE_VIEW::DIFFUSE]);
+	//	context->PSSetShaderResources(1, 1, &sResourceView[SUBRESOURCE_VIEW::EMISSIVE]);
+	//	context->PSSetShaderResources(2, 1, &sResourceView[SUBRESOURCE_VIEW::SPECULAR]);
+	//	context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 
-		meshCB.modeling = XMMatrixTranspose(XMMatrixIdentity());
-		meshCB.projection = view.proj_final;
-		meshCB.view = view.view_final;
-		context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &meshCB, 0, 0);
+	//	meshCB.modeling = XMMatrixTranspose(XMMatrixIdentity());
+	//	meshCB.projection = view.proj_final;
+	//	meshCB.view = view.view_final;
+	//	context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &meshCB, 0, 0);
 
-		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		//time to draw, please work
-		context->DrawIndexed((int)meshInds.size(), 0, 0);
+	//	//time to draw, please work
+	//	context->DrawIndexed((int)meshInds.size(), 0, 0);
 
-	}
+	//}
 
 	void impl_t::draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view)
 	{
@@ -393,7 +393,7 @@ namespace crow {
 				// binding
 				stride = sizeof(crow::vert_s);
 				context->IASetVertexBuffers(0, 1, &entities.mesh_ptrs[inds[i]]->vertex_buffer, &stride, &offset);
- 				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->s_mesh->vertices.data(), 0, 0);
+				context->UpdateSubresource(entities.mesh_ptrs[inds[i]]->vertex_buffer, 0, nullptr, entities.mesh_ptrs[inds[i]]->s_mesh->vertices.data(), 0, 0);
 
 				context->IASetInputLayout(input_layout[INPUT_LAYOUT::STATIC_MESH]);
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::STATIC_MESH], nullptr, 0);
@@ -460,56 +460,56 @@ namespace crow {
 		}
 	}
 
-	bool impl_t::InputUpdate(float delta, std::bitset<256> bm, float dx, float dy)
-	{
-		float3e prev = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
-		XMMATRIX temp = XMLoadFloat4x4(&a1);
+	//bool impl_t::InputUpdate(float delta, std::bitset<256> bm, float dx, float dy)
+	//{
+	//	float3e prev = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
+	//	XMMATRIX temp = XMLoadFloat4x4(&a1);
 
-		//rotation
-		if (bm[(int)VK_LEFT] == 1)
-			temp = XMMatrixMultiply(XMMatrixRotationY(-delta), temp);
+	//	//rotation
+	//	if (bm[(int)VK_LEFT] == 1)
+	//		temp = XMMatrixMultiply(XMMatrixRotationY(-delta), temp);
 
-		if (bm[(int)VK_RIGHT] == 1)
-			temp = XMMatrixMultiply(XMMatrixRotationY(delta), temp);
+	//	if (bm[(int)VK_RIGHT] == 1)
+	//		temp = XMMatrixMultiply(XMMatrixRotationY(delta), temp);
 
-		//translation
-		if (bm[(int)VK_UP] == 1)
-			temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * delta), temp);
-		if (bm[(int)VK_DOWN] == 1)
-			temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * -delta), temp);
+	//	//translation
+	//	if (bm[(int)VK_UP] == 1)
+	//		temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * delta), temp);
+	//	if (bm[(int)VK_DOWN] == 1)
+	//		temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * -delta), temp);
 
-		if (bm[(int)'N'] == 1)
-		{
-			keyframeIndex += 1;
-			//std::cout << "current key frame: " << keyframeIndex << std::endl;
-		}
+	//	if (bm[(int)'N'] == 1)
+	//	{
+	//		keyframeIndex += 1;
+	//		//std::cout << "current key frame: " << keyframeIndex << std::endl;
+	//	}
 
-		if (bm[(int)'B'] == 1)
-			b_on = !b_on;
+	//	if (bm[(int)'B'] == 1)
+	//		b_on = !b_on;
 
-		XMStoreFloat4x4(&a1, temp);
-		float3e curr = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
-		if (curr.x != prev.x || curr.y != prev.y || curr.z != prev.z)
-			return true;
+	//	XMStoreFloat4x4(&a1, temp);
+	//	float3e curr = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
+	//	if (curr.x != prev.x || curr.y != prev.y || curr.z != prev.z)
+	//		return true;
 
-		return false;
-	}
+	//	return false;
+	//}
 
 	void impl_t::update(float delta) {
-		aTime += delta;
+		/*aTime += delta;
 		if (aTime >= animationClip.duration)
-			aTime = animationClip.frames[1].time;
+			aTime = animationClip.frames[1].time;*/
 
 		//keyFrame tweenFrame = animationClip.frames[keyframeIndex];
 		//kFrame tweenFrame = GetTweenFrame(animationClip, aTime);
 		//drawKeyFrame(tweenFrame, float3e(5, 0, 0));
 
-		meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
+		/*meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
 		meshCB.lightPos = float3(0.0f, 0.0f, 0.0f);
-		meshCB.lightPower = 55.0f;
-		meshCB.surfaceShininess = 1.0f;
+		meshCB.lightPower = 55.0f;*/
+		//meshCB.surfaceShininess = 1.0f;
 
-		meshCB.matrices;
+		//meshCB.matrices;
 
 		//for (int i = 0; i < tweenFrame.joints.size(); ++i)
 		//{
@@ -914,27 +914,27 @@ namespace crow {
 
 		//hr = device->CreateBuffer(&desc2, &srd2, &vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX]);
 
-		{
-			//vertex buffer for fbx models
-			CD3D11_BUFFER_DESC desc3 = CD3D11_BUFFER_DESC(
-				sizeof(crow::mesh_vertex) * meshVerts.size(),
-				D3D11_BIND_VERTEX_BUFFER);
-			D3D11_SUBRESOURCE_DATA srd3 = { 0 };
-			srd3.pSysMem = meshVerts.data();
+		//{
+		//	//vertex buffer for fbx models
+		//	CD3D11_BUFFER_DESC desc3 = CD3D11_BUFFER_DESC(
+		//		sizeof(crow::mesh_vertex) * meshVerts.size(),
+		//		D3D11_BIND_VERTEX_BUFFER);
+		//	D3D11_SUBRESOURCE_DATA srd3 = { 0 };
+		//	srd3.pSysMem = meshVerts.data();
 
-			hr = device->CreateBuffer(&desc3, &srd3, &vertex_buffer[VERTEX_BUFFER::ANIM_MESH]);
+		//	hr = device->CreateBuffer(&desc3, &srd3, &vertex_buffer[VERTEX_BUFFER::ANIM_MESH]);
 
-			//Index Buffer for fbx model
-			D3D11_SUBRESOURCE_DATA iData = {};
-			iData.pSysMem = meshInds.data();
-			CD3D11_BUFFER_DESC iDesc = {};
-			iDesc.Usage = D3D11_USAGE_DEFAULT;
-			iDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-			iDesc.CPUAccessFlags = 0;
-			iDesc.ByteWidth = sizeof(uint32_t) * (int)meshInds.size();
+		//	//Index Buffer for fbx model
+		//	D3D11_SUBRESOURCE_DATA iData = {};
+		//	iData.pSysMem = meshInds.data();
+		//	CD3D11_BUFFER_DESC iDesc = {};
+		//	iDesc.Usage = D3D11_USAGE_DEFAULT;
+		//	iDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		//	iDesc.CPUAccessFlags = 0;
+		//	iDesc.ByteWidth = sizeof(uint32_t) * (int)meshInds.size();
 
-			hr = device->CreateBuffer(&iDesc, &iData, &index_buffer[INDEX_BUFFER::ANIM_MESH]);
-		}
+		//	hr = device->CreateBuffer(&iDesc, &iData, &index_buffer[INDEX_BUFFER::ANIM_MESH]);
+		//}
 	}
 
 	void impl_t::create_vertex_buffer(ID3D11Buffer*& vertex_buffer, ID3D11Buffer*& index_buffer, crow::mesh_a& mesh)
@@ -1044,10 +1044,10 @@ namespace crow {
 		HRESULT hr = device->CreateSamplerState(&sd, &samplerState[STATE_SAMPLER::DEFAULT]);
 	}
 
-	float impl_t::ManhDistance(float3e a, float3e b)
+	/*float impl_t::ManhDistance(float3e a, float3e b)
 	{
 		return fabsf(a.x - b.x) + fabsf(a.y - b.y) + fabsf(a.z - b.z);
-	}
+	}*/
 
 	//aabb_t impl_t::ComputeBounds(aabb_t a, aabb_t b)
 	//{

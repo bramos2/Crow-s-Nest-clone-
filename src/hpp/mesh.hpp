@@ -5,7 +5,7 @@
 #include "math_types.hpp"
 
 namespace crow {
-	
+
 	// mesh data
 	struct vert_a
 	{
@@ -77,12 +77,37 @@ namespace crow {
 		component_a components[COUNT];
 	};
 
-	void load_bin_data(const char* file_path, mesh_a& mesh);
-	
-	void load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<material_a>& materials);
+	struct animator
+	{
+		key_frame inv_bindpose;
+		key_frame tween_frame;
+		std::vector<anim_clip> animations;
 
+		unsigned int curr_animation = 0;
+		float t = 0.f;
+		
+		// calculates the current frame to be played based on time and handles playing the animaiton
+		void update(DirectX::XMMATRIX*& ent_mat, float dt);
+
+		// sets values to the animation corresponding to given index
+		void switch_animation(unsigned int index);
+
+	private:
+		void update_tween_frame();
+		// returns the multiplications of the inverted bindpose and the updated tween_frame
+		DirectX::XMMATRIX* mult_curr_frame();
+	};
+
+	// load mesh data from a .bin file and stores it in given mesh
+	void load_bin_data(const char* file_path, mesh_a& mesh);
+
+	// loads material data from a .mat file, will store the texture names inside filepaths
+	void load_mat_data(const char* file_path, std::vector<std::string>& file_paths, std::vector<material_a>& materials);
+
+	// loads animation froma .anim file and stores it in the given clip
 	void load_anim_data(const char* file_path, anim_clip& animationClip);
-	
+
+	// this is not good, could cause weird results in animations. instead translate the world matrix of the entity
 	void translate_joints(key_frame& frame, float3e translation);
 
 	// returns the interpolated frame based on time t
@@ -95,5 +120,10 @@ namespace crow {
 	// inverts the bind pose stored in the animation clip
 	void invert_bind_pose(anim_clip& anim_clip);
 
+	// inverts the bind pose and stores it inside the animator
+	void get_inverted_bind_pose(key_frame& bind_pose, animator& animator);
+
 	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat);
+
+	void scale_matrix(DirectX::XMMATRIX& m, float x = 1.f, float y = 1.f, float z = 1.f);
 }

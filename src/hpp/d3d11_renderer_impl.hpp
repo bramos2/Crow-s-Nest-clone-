@@ -38,7 +38,7 @@ namespace
 {
 	template<typename T>
 	void safe_release(T* t)
-	{ 
+	{
 		if (t)
 			t->Release();
 	}
@@ -147,67 +147,35 @@ namespace crow
 		// Device, swapchain, resource views, states, etc. can be members here
 		HWND hwnd;
 
-		//Emitter_sp spEmitter;
+		ID3D11Device* device = nullptr;
+		ID3D11DeviceContext* context = nullptr;
+		IDXGISwapChain* swapchain = nullptr;
 
-		//aabb_t boxes[11];// = { float3(0, 0, 0), float3(1, 1, 1) };
+		ID3D11RenderTargetView* render_target[VIEW_RENDER_TARGET::COUNT]{};
 
-		//pool_t<Particle,1024> freePool;
-		//Emitter_fp<int16_t> t1;
-		//Emitter_fp<int16_t> t2;
-		//Emitter_fp<int16_t> t3;
-		//Emitter_fp<int16_t> t4;
+		ID3D11DepthStencilView* depthStencilView[VIEW_DEPTH_STENCIL::COUNT]{};
 
-		XMFLOAT4X4 a1, a2, a3;
-		//aabb_t vbox;
-		std::vector<float3e> pos;
-		//std::vector<end::colored_vertex> terr;
-		//std::vector<uint32_t> Tindx;
-		//std::vector<Triangle> triangles;
-		//std::vector<bvh_node_t> tree;
-		uint32_t vert_count;
+		ID3D11DepthStencilState* depthStencilState[STATE_DEPTH_STENCIL::COUNT]{};
 
-		//dev5
-		std::vector<mesh_vertex> meshVerts;
-		std::vector<uint32_t> meshInds;
-		std::string diffuseTexturePath;
-		std::string emissiveTexturePath;
-		std::string specularTexturePath;
-		MCB_t meshCB;
-		std::vector<mat_t> materials;
-		std::vector<std::string> filePaths;
-		XMMATRIX InvBindPose[28];
+		ID3D11RasterizerState* rasterState[STATE_RASTERIZER::COUNT]{};
 
-		aClip animationClip;
+		ID3D11Buffer* vertex_buffer[VERTEX_BUFFER::COUNT]{};
 
-		ID3D11Device *device = nullptr;
-		ID3D11DeviceContext *context = nullptr;
-		IDXGISwapChain *swapchain = nullptr;
+		ID3D11Buffer* index_buffer[INDEX_BUFFER::COUNT]{};
 
-		ID3D11RenderTargetView*		render_target[VIEW_RENDER_TARGET::COUNT]{};
+		ID3D11InputLayout* input_layout[INPUT_LAYOUT::COUNT]{};
 
-		ID3D11DepthStencilView*		depthStencilView[VIEW_DEPTH_STENCIL::COUNT]{};
+		ID3D11VertexShader* vertex_shader[VERTEX_SHADER::COUNT]{};
 
-		ID3D11DepthStencilState*	depthStencilState[STATE_DEPTH_STENCIL::COUNT]{};
+		ID3D11PixelShader* pixel_shader[PIXEL_SHADER::COUNT]{};
 
-		ID3D11RasterizerState*		rasterState[STATE_RASTERIZER::COUNT]{};
-
-		ID3D11Buffer*				vertex_buffer[VERTEX_BUFFER::COUNT]{};
-
-		ID3D11Buffer*				index_buffer[INDEX_BUFFER::COUNT]{};
-		
-		ID3D11InputLayout*			input_layout[INPUT_LAYOUT::COUNT]{};
-
-		ID3D11VertexShader*			vertex_shader[VERTEX_SHADER::COUNT]{};
-
-		ID3D11PixelShader*			pixel_shader[PIXEL_SHADER::COUNT]{};
-
-		ID3D11Buffer*				constant_buffer[CONSTANT_BUFFER::COUNT]{};
+		ID3D11Buffer* constant_buffer[CONSTANT_BUFFER::COUNT]{};
 
 		D3D11_VIEWPORT				view_port[VIEWPORT::COUNT]{};
 
-		ID3D11ShaderResourceView*   sResourceView[SUBRESOURCE_VIEW::COUNT]{};
+		ID3D11ShaderResourceView* sResourceView[SUBRESOURCE_VIEW::COUNT]{};
 
-		ID3D11SamplerState*			samplerState[STATE_SAMPLER::COUNT]{};
+		ID3D11SamplerState* samplerState[STATE_SAMPLER::COUNT]{};
 
 		/* Add more as needed...
 		ID3D11SamplerState*			sampler_state[STATE_SAMPLER::COUNT]{};
@@ -217,49 +185,23 @@ namespace crow
 
 		// Constructor for renderer implementation
 		impl_t(void* window_handle, view_t& default_view);
-		
-
-		/*File Loading Functions
-		* *****
-		*/
-		//replaces the extension of s with newExt
-		void replaceExt(std::string& s, const std::string& newExt);
-		
-
-		//loads a .mat file
-		void load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials);
-
-		//Loads a .bin file
-		void load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts);
-
-		//loads a .anim file
-		void load_anim_data(const char* file_path, aClip& animationClip);
 
 		/* DEV5 helper functions
 		* *****
 		*/
-		//translates all joints inside frame
-		void TranslateJoints(kFrame& frame, float3e translation);
-
+		
 		//draws joint with given translation
 		void drawJointTransform(j_x joint, float3e translation);
 
 		//draws entire frame skeleton with given translation
 		void drawKeyFrame(kFrame frame, float3e translation);
 
-		//finds and slerps a keyframe based on t
-		kFrame GetTweenFrame(aClip _animationClip, double t);
-
 		/*Draw Functions
 		* *******
 		*/
 		void draw_cube(view_t& view);
 
-		void draw_terrain(view_t& view);
-
 		void draw_debug_lines(view_t& view);
-
-		void draw_mesh(view_t& view);
 
 		void draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view);
 
@@ -267,12 +209,7 @@ namespace crow
 		* *******
 		*/
 
-		// TODO: input should be handled outside of the renderer, this input is only for debugging 
-		bool InputUpdate(float delta, std::bitset<256> bm, float dx, float dy);
-
 		void update(float delta);
-
-		//void update(float delta, std::bitset<256> bm, float dx = 0.f, float dy = 0.f);
 
 		/* Implementation functions
 		* *********
@@ -311,16 +248,7 @@ namespace crow
 		/* Engine Dev functions
 		* ***********
 		*/
-		
-		float ManhDistance(float3e a, float3e b);
-
-		//aabb_t ComputeBounds(aabb_t a, aabb_t b);
-
-		//bool CheckCollision(aabb_t a, aabb_t b);
-
 		void drawXMatrix(XMFLOAT4X4 M);
-
-		//void add_aabb(aabb_t box, float4e color);
 
 		void VecToRow(XMFLOAT4X4* m, XMFLOAT3 v, int row);
 

@@ -36,6 +36,8 @@ namespace crow {
 
 		game_state prev_state = game_state::MAIN_MENU;
 		float state_time = 0;
+		animator player_animator;
+		animator ai_animator;
 
 		bool debug_mode = 0;
 		
