@@ -53,29 +53,52 @@ namespace crow {
 		all_meshes[mesh_types::PLAYER].a_mesh = new mesh_a();
 		load_bin_data("res/meshes/guy.bin", *all_meshes[mesh_types::PLAYER].a_mesh);
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::PLAYER].vertex_buffer, all_meshes[mesh_types::PLAYER].index_buffer, *all_meshes[mesh_types::PLAYER].a_mesh);
-		
+
 		// loading AI mesh
 		all_meshes[mesh_types::AI].a_mesh = new mesh_a();
 		load_bin_data("res/meshes/slasher_run.bin", *all_meshes[mesh_types::AI].a_mesh);
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI].vertex_buffer, all_meshes[mesh_types::AI].index_buffer, *all_meshes[mesh_types::AI].a_mesh);
-		
+
 		// loading texture cube mesh
 		mesh_a temp;
 		load_bin_data("res/meshes/floor1.bin", temp);
 		all_meshes[mesh_types::CUBE].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CUBE].vertex_buffer, all_meshes[mesh_types::CUBE].index_buffer, *all_meshes[mesh_types::CUBE].s_mesh);
-		
+    
+		// loading door mesh
+		load_bin_data("res/meshes/door2.bin", temp);
+		all_meshes[mesh_types::DOOR].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::DOOR].vertex_buffer, all_meshes[mesh_types::DOOR].index_buffer, *all_meshes[mesh_types::DOOR].s_mesh);
+
+		// loading exit light mesh
+		all_meshes[mesh_types::EXIT_LIGHT].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/exit_light.bin", *all_meshes[mesh_types::EXIT_LIGHT].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::EXIT_LIGHT].vertex_buffer, all_meshes[mesh_types::EXIT_LIGHT].index_buffer, *all_meshes[mesh_types::EXIT_LIGHT].a_mesh);
+
+		// loading console1 mesh
+		load_bin_data("res/meshes/console1.bin", temp);
+		all_meshes[mesh_types::CONSOLE1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE1].vertex_buffer, all_meshes[mesh_types::CONSOLE1].index_buffer, *all_meshes[mesh_types::CONSOLE1].s_mesh);
+
+		// loading console2 mesh
+		load_bin_data("res/meshes/console2.bin", temp);
+		all_meshes[mesh_types::CONSOLE2].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE2].vertex_buffer, all_meshes[mesh_types::CONSOLE2].index_buffer, *all_meshes[mesh_types::CONSOLE2].s_mesh);
 	}
 
 	void game_manager::load_texture_data() {
 		textures.resize(texture_list::COUNT);
 
-		p_impl->create_texture("res/textures/guyfinal.dds", textures[texture_list::PLAYER]);
-		p_impl->create_texture("res/textures/D_PA_3D_EnemyModel_Slasher.dds", textures[texture_list::AI]);
+		p_impl->create_texture("res/textures/player.dds", textures[texture_list::PLAYER]);
+		p_impl->create_texture("res/textures/enemy1.dds", textures[texture_list::AI]);
 		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
 		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
 		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
-
+		p_impl->create_texture("res/textures/exit_light_d.dds", textures[texture_list::EXIT_LIGHT_D]);
+		p_impl->create_texture("res/textures/exit_light_s.dds", textures[texture_list::EXIT_LIGHT_S]);
+		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
+		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
+		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
 	}
 
 	void crow::game_manager::load_animation_data()
@@ -92,6 +115,11 @@ namespace crow {
 		animators[i].animations.resize(2);
 		load_anim_data("res/animations/slasher_run.anim", animators[i].animations[0]);
 		load_anim_data("res/animations/slasher_attack.anim", animators[i].animations[1]);
+		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
+
+		i = animator_list::EXIT_LIGHT;
+		animators[i].animations.resize(1);
+		load_anim_data("res/animations/exit_light.anim", animators[i].animations[0]);
 		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
 	}
 
@@ -444,7 +472,6 @@ namespace crow {
 		return true;
 	}
 
-
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
@@ -532,15 +559,17 @@ namespace crow {
 		//textures.resize(1);
 		//p_impl->create_imgui_texture("res/textures/gui/go.dds", textures[0]);
 
-		//assigning animations, could be done inside function if meshes have been initialized
+		//assigning animatiors, could be done inside function if meshes have been initialized
 		all_meshes[mesh_types::PLAYER].animator = &animators[animator_list::PLAYER];
 		all_meshes[mesh_types::AI].animator = &animators[animator_list::AI];
+		all_meshes[mesh_types::EXIT_LIGHT].animator = &animators[animator_list::EXIT_LIGHT];
 
 		// initialize the first two entities
 		entities.allocate_and_init(2);
-		entities.mesh_ptrs[0] = &all_meshes[0];
+		entities.mesh_ptrs[0] = &all_meshes[mesh_types::PLAYER];
 		entities.s_resource_view[0] = textures[texture_list::PLAYER];
-		entities.mesh_ptrs[1] = &all_meshes[1];
+
+		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
 		entities.s_resource_view[1] = textures[texture_list::AI];
 
 		load_level(0);

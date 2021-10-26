@@ -69,6 +69,9 @@ namespace crow {
 				AI,
 				CUBE,
 				DOOR,
+				EXIT_LIGHT,
+				CONSOLE1,
+				CONSOLE2,
 				COUNT
 			};
 		};
@@ -81,6 +84,11 @@ namespace crow {
 				WALL1,
 				DOOR_OPEN,
 				DOOR_CLOSED,
+				EXIT_LIGHT_D,
+				EXIT_LIGHT_S,
+				CONSOLE1_D,
+				CONSOLE1_S,
+				CONSOLE2,
 				COUNT
 			};
 		};

@@ -54,6 +54,12 @@ namespace crow {
 		DirectX::XMFLOAT3 entities::get_world_position(size_t const index) const;
 		void set_world_position(size_t const index, float const x, float const y,
 			float const z);
+
+		// in degreess
+		void rotate_world_matrix(size_t const index, float x = 0.f, float y = 0.f, float z = 0.f);
+
+		void scale_world_matrix(size_t const index, float scale);
+
 		// per-frame update the world matrix of the specified object
 		// generally, just applies velocity
 		void entities::update_transform_data(size_t const index, float dt);

@@ -89,6 +89,32 @@ namespace crow {
 		}
 	}
 
+	void entities::rotate_world_matrix(size_t const index, float x, float y, float z)
+	{
+		x *= to_radiansf;
+		y *= to_radiansf;
+		z *= to_radiansf;
+
+		if (index < current_size) {
+			if (x != 0.f) {
+				world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationX(x), world_matrix[index]);
+			}
+			if (y != 0.f) {
+				world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationY(y), world_matrix[index]);
+			}
+			if (z != 0.f) {
+				world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationZ(z), world_matrix[index]);
+			}
+		}
+	}
+
+	void entities::scale_world_matrix(size_t const index, float scale)
+	{
+		if (index < current_size) {
+			world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixScaling(scale, scale, scale), world_matrix[index]);
+		}
+	}
+
 	void entities::update_transform_data(size_t const index, float dt) {
 		if (index < current_size) {
 			DirectX::XMFLOAT4X4 w;

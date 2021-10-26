@@ -21,7 +21,6 @@ namespace crow {
         floor_size[1][1] = 0.1f;
         floor_size[2][2] = length;
         state.entities.world_matrix[object_indices.back()] = (DirectX::XMMATRIX&)floor_size;
-
         
         // walls
         state.entities.allocate_and_init(4);
@@ -55,7 +54,6 @@ namespace crow {
                 break;
             }
 
-
             state.entities.world_matrix[object_indices.back()] = (DirectX::XMMATRIX&)wall_size;
         }
         /**/
@@ -66,7 +64,31 @@ namespace crow {
             object_indices.push_back(initial_index++);
             float2e pos = get_tile_wpos(i->x, i->y);
             state.entities.set_world_position(object_indices.back(), pos.x, 0.f, pos.y);
-            state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+            
+            switch (i->type)
+            {
+            case object_type::DOOR: 
+            {
+                if (i->x == 0 || i->x == this->width - 1) {
+                    state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f);
+                }
+                state.entities.scale_world_matrix(object_indices.back(), 0.35f);
+
+                state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::DOOR];
+                if (i->is_active) {
+                    state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::DOOR_OPEN];
+                }
+                else {
+                    state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+                }
+                break;
+            }
+            default:
+            {
+                state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+                break;
+            }
+            }
         }
     }
     
@@ -81,7 +103,6 @@ namespace crow {
                 tiles.map[i->y][i->x]->is_open = false;
             }
         }
-
     }
 
 float2e room::get_tile_wpos(unsigned int const x, unsigned int const y) {
