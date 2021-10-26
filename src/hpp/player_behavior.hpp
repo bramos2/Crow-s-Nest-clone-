@@ -3,13 +3,14 @@
 
 #include "../hpp/entities.hpp"
 #include "../hpp/interactible.hpp"
-#include "../hpp/math_types.hpp"
+#include "../hpp/super_matrix.hpp"
 
 namespace crow {
 
 struct player_behavior_data {
   const float worker_walk_speed = 2.0f;
   const float worker_run_speed = 3.5f;
+  super_matrix p_matrix;
   std::vector<float2e> path_result;
   float worker_speed = 0.f;
   bool interacting = false;

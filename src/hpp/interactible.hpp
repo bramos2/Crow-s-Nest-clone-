@@ -39,6 +39,7 @@ namespace crow {
 	  virtual void activate();
 	  virtual void dissable();
 	  void set_tile(unsigned int _x, unsigned int _y);
+	  void set_tile(char dir);
 	  // x and y coordinates in the tile map for the room that contains the item
 	  unsigned int x = 0;
 	  unsigned int y = 0;

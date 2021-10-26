@@ -2,6 +2,7 @@
 
 
 namespace crow {
+
 	void game_manager::load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index) {
 		// load either as static mesh or as animated mesh based on whether or not we have an .anim file
 		if (s_anim.length()) {
@@ -51,6 +52,8 @@ namespace crow {
 
 		// initialize the renderer
 		p_impl = new impl_t(window_handle, view);
+		imgui_wsize = get_window_size();
+
 
 		// initialize the timer
 		timer.Restart();
@@ -113,10 +116,24 @@ namespace crow {
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
+				end_game();
 				prev_state = current_state = game_state::GAME_OVER;
 				state_time = 0;
 				break;
 			}
+
+			// all this just to update the angle of the model of the player
+			player_data.p_matrix.scale = { 0.25f, 0.25f, 0.25f };
+			player_data.p_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::WORKER]);
+			player_data.p_matrix.update_position(entities.world_matrix[(int)crow::entity::WORKER]);
+			player_data.p_matrix.update();
+			entities.world_matrix[(int)crow::entity::WORKER] = player_data.p_matrix.final_matrix;
+
+			// same for the enemy model
+			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update();
+			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 
 			// TODO::room_updates(dt)
 			// room_updates(dt);
@@ -406,6 +423,7 @@ namespace crow {
 	}
 
 	void game_manager::cleanup() {
+		// delete all meshes and associated data
 		for (int i = 0; i < all_meshes.size(); i++) {
 			delete all_meshes[i].a_mesh;
 			delete all_meshes[i].s_mesh;
@@ -444,6 +462,10 @@ namespace crow {
 		//load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
 		load_mesh_data("slasher_run", 1);
 		load_mesh_data("res/meshes/Cube.bin", "", "", 2);
+
+
+		//textures.resize(1);
+		//p_impl->create_imgui_texture("res/textures/gui/go.dds", textures[0]);
 
 		// initialize the first two entities
 		entities.allocate_and_init(2);

@@ -31,7 +31,7 @@ struct room {
   crow::theta_star pather;
   // 0 = floor, 1-4 walls
 
-  float3e cam_pos = float3e(0.f, 25.f, 0.f);
+  float3e cam_pos = float3e(0.f, 20.f, -2.f);
   float3e cam_rotation = float3e(-85.f, 0.f, 0.f);
 
   // contains the entity index of every object that is in this room

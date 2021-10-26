@@ -55,6 +55,8 @@ namespace crow {
 		crow::message current_message;
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
+		// all textures not directly attached to mesh_info objects
+		std::vector<ID3D11ShaderResourceView*> textures;
 
 		// all ai components
 		crow::behavior_tree ai_bt;
@@ -106,6 +108,9 @@ namespace crow {
 		void draw_game_over(ImVec2 wh);
 		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
+
+		// imgui sucks
+		ImVec2 imgui_wsize;
 
 		// various helper functions
 
