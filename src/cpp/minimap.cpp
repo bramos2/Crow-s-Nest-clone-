@@ -13,7 +13,7 @@ void crow::minimap::draw_call(game_manager& state) {
                    ImGuiWindowFlags_NoBringToFrontOnFocus);
 
   // keeps the minimap properly sized for the game window
-  ImVec2 wh = state.get_window_size();
+  ImVec2 wh = state.imgui_wsize;
   set_window_size(wh);
 
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {

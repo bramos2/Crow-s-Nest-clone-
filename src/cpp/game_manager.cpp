@@ -2,6 +2,7 @@
 
 
 namespace crow {
+
 	void game_manager::load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index) {
 		// load either as static mesh or as animated mesh based on whether or not we have an .anim file
 		if (s_anim.length()) {
@@ -34,6 +35,9 @@ namespace crow {
 			// load textures
 			p_impl->create_text_sresources(paths, all_meshes[index]);
 		}
+
+		// tells the destructor to free ALL of the memory used by this object
+		all_meshes[index].is_duplicate = false;
 	}
 
 	void game_manager::load_mesh_data(std::string filename, int index) {
@@ -41,6 +45,22 @@ namespace crow {
 		std::string s_mat = "res/textures/" + filename + ".mat";
 		std::string s_anim = "res/animations/" + filename + ".anim";
 		load_mesh_data(s_bin, s_mat, s_anim, index);
+	}
+
+	void game_manager::load_mesh_data(int index_in, int index_out, std::string tex) {
+		all_meshes[index_out].a_mesh = all_meshes[index_in].a_mesh;
+		all_meshes[index_out].s_mesh = all_meshes[index_in].s_mesh;
+		all_meshes[index_out].vertex_buffer = all_meshes[index_in].vertex_buffer;
+		all_meshes[index_out].index_buffer = all_meshes[index_in].index_buffer;
+		// i think this copies by value, this is not a pointer being set (i think)
+		all_meshes[index_out].anim = all_meshes[index_in].anim;
+
+		// TODO:JULIO: load the textures here
+		//p_impl->create_text_sresources(tex, all_meshes[index_out]);
+		printf("texture NOT loaded!");
+			
+		// tells the destructor to free ONLY the memory of the texture(s) loaded
+		all_meshes[index_in].is_duplicate = true;
 	}
 
 	void game_manager::init_app(void* window_handle)
@@ -51,6 +71,8 @@ namespace crow {
 
 		// initialize the renderer
 		p_impl = new impl_t(window_handle, view);
+		imgui_wsize = get_window_size();
+
 
 		// initialize the timer
 		timer.Restart();
@@ -113,10 +135,24 @@ namespace crow {
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
+				end_game();
 				prev_state = current_state = game_state::GAME_OVER;
 				state_time = 0;
 				break;
 			}
+
+			// all this just to update the angle of the model of the player
+			player_data.p_matrix.scale = { 0.25f, 0.25f, 0.25f };
+			player_data.p_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::WORKER]);
+			player_data.p_matrix.update_position(entities.world_matrix[(int)crow::entity::WORKER]);
+			player_data.p_matrix.update();
+			entities.world_matrix[(int)crow::entity::WORKER] = player_data.p_matrix.final_matrix;
+
+			// same for the enemy model
+			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update();
+			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 
 			// TODO::room_updates(dt)
 			// room_updates(dt);
@@ -406,23 +442,34 @@ namespace crow {
 	}
 
 	void game_manager::cleanup() {
+		// delete all meshes and associated data
 		for (int i = 0; i < all_meshes.size(); i++) {
-			delete all_meshes[i].a_mesh;
-			delete all_meshes[i].s_mesh;
-			if (all_meshes[i].vertex_buffer != nullptr)   all_meshes[i].vertex_buffer->Release();
-			if (all_meshes[i].index_buffer != nullptr)    all_meshes[i].index_buffer->Release();
+			if (!all_meshes[i].is_duplicate) {
+				delete all_meshes[i].a_mesh;
+				delete all_meshes[i].s_mesh;
+				if (all_meshes[i].vertex_buffer != nullptr)   all_meshes[i].vertex_buffer->Release();
+				if (all_meshes[i].index_buffer != nullptr)    all_meshes[i].index_buffer->Release();
+
+				all_meshes[i].a_mesh = nullptr;
+				all_meshes[i].s_mesh = nullptr;
+				all_meshes[i].vertex_buffer = nullptr;
+				all_meshes[i].index_buffer = nullptr;
+			}
+
 			if (all_meshes[i].s_resource_view != nullptr) all_meshes[i].s_resource_view->Release();
 			if (all_meshes[i].emissive != nullptr)        all_meshes[i].emissive->Release();
 			if (all_meshes[i].specular != nullptr)        all_meshes[i].specular->Release();
-
-			all_meshes[i].a_mesh = nullptr;
-			all_meshes[i].s_mesh = nullptr;
-			all_meshes[i].vertex_buffer = nullptr;
-			all_meshes[i].index_buffer = nullptr;
 			all_meshes[i].s_resource_view = nullptr;
 			all_meshes[i].emissive = nullptr;
 			all_meshes[i].specular = nullptr;
 		}
+
+		// delete spare textures
+		for (int i = 0; i < textures.size(); i++) {
+			textures[i]->Release();
+			textures[i] = nullptr;
+		}
+
 	}
 
 	game_manager::game_manager()
@@ -444,6 +491,10 @@ namespace crow {
 		//load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
 		load_mesh_data("slasher_run", 1);
 		load_mesh_data("res/meshes/Cube.bin", "", "", 2);
+
+
+		textures.resize(1);
+		p_impl->create_imgui_texture("res/textures/gui/go.dds", textures[0]);
 
 		// initialize the first two entities
 		entities.allocate_and_init(2);

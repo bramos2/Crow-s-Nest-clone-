@@ -243,6 +243,8 @@ namespace crow
 
 		void create_text_sresources(std::vector<std::string> text_filenames, mesh_info& m);
 
+		void create_imgui_texture(std::string filename, ID3D11ShaderResourceView*& texture);
+
 		void CreateSamplerState();
 
 		/* Engine Dev functions

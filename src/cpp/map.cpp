@@ -11,8 +11,7 @@ namespace crow {
         // then we need to allocate state.entities
         state.entities.allocate_and_init(total_entities);
 
-        
-        /*
+        // floor
         state.entities.allocate_and_init(1);
         object_indices.push_back(initial_index++);
         state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
@@ -21,15 +20,50 @@ namespace crow {
         floor_size[1][1] = 0.1f;
         floor_size[2][2] = length;
         state.entities.world_matrix[object_indices.back()] = (DirectX::XMMATRIX&)floor_size;
-        */
 
+        /*
+        // walls
+        state.entities.allocate_and_init(4);
+        for (int i = 0; i < 4; i++) {
+            object_indices.push_back(initial_index++);
+            state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+            float4x4_a wall_size = (float4x4_a&)state.entities.world_matrix[object_indices.back()];
+            wall_size[1][1] = height;
+
+            switch (i) {
+            case 1: 
+                wall_size[0][0] = width;
+                wall_size[2][2] = 0.1f;
+                wall_size[3][2] = -((int)(length / 2));
+                break;
+            case 0:
+                wall_size[0][0] = width;
+                wall_size[2][2] = 0.1f;
+                wall_size[3][2] = length / 2;
+                break;
+            case 3: 
+                wall_size[0][0] = 0.1f;
+                wall_size[2][2] = length;
+                wall_size[3][0] = -((int)(width / 2));
+                break;
+            case 2:
+                wall_size[0][0] = 0.1f;
+                wall_size[2][2] = length;
+                wall_size[3][0] = width / 2;
+                break;
+            }
+
+
+            state.entities.world_matrix[object_indices.back()] = (DirectX::XMMATRIX&)wall_size;
+        }
+        /**/
 
         // loading objects
         for (crow::interactible*& i : objects) {
             // add each level object to the entities
             object_indices.push_back(initial_index++);
             float2e pos = get_tile_wpos(i->x, i->y);
-            state.entities.set_world_position(object_indices.back(), pos.x, 0.f, -pos.y);
+            state.entities.set_world_position(object_indices.back(), pos.x, 0.f, pos.y);
             state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
         }
     }

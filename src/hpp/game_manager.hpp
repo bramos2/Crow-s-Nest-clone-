@@ -55,6 +55,8 @@ namespace crow {
 		crow::message current_message;
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
+		// textures that are mostly used for just gui elements
+		std::vector<ID3D11ShaderResourceView*> textures;
 
 		// all ai components
 		crow::behavior_tree ai_bt;
@@ -68,6 +70,9 @@ namespace crow {
 		// pass in "" for either s_mat or s_anim if they aren't to be used
 		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
 		void load_mesh_data(std::string filename, int index);
+		// creates a duplicate of an already loaded mesh, but with a new texture
+		// reuses ram, so we're not wasteful by loading the same models multiple times
+		void load_mesh_data(int index_in, int index_out, std::string tex);
 		void init_app(void* window_handle);
 
 		// all update functions
@@ -106,6 +111,9 @@ namespace crow {
 		void draw_game_over(ImVec2 wh);
 		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
+
+		// imgui sucks
+		ImVec2 imgui_wsize;
 
 		// various helper functions
 

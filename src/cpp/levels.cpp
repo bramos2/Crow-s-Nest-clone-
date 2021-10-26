@@ -4,9 +4,9 @@
 namespace crow {
     void level::load_level(std::string filepath) {}
 
-    //    up door position (default):  7, 0
+    //    up door position (default):  7, 14
     //  left door position (default):  0, 7
-    //  down door position (default):  7, 14
+    //  down door position (default):  7, 0
     // right door position (default): 14, 7
 
     void level::load_level(crow::game_manager* state, int lv) {
@@ -26,9 +26,9 @@ namespace crow {
           crow::door* lv1_door1_l = new door();
           crow::door* lv1_door1_r = new door();
           {
-            lv1_door1_l->set_tile(0, 7);
-            lv1_door1_u->set_tile(7, 0);
-            lv1_door1_r->set_tile(14, 7);
+            lv1_door1_l->set_tile('l');
+            lv1_door1_u->set_tile('u');
+            lv1_door1_r->set_tile('r');
             lv1_door1_l->roomptr = lv1_door1_u->roomptr = lv1_door1_r->roomptr =
                 &rooms[2][1];
             rooms[2][1].objects.push_back(lv1_door1_l);
@@ -48,7 +48,7 @@ namespace crow {
           rooms[1][1].id = 2;
           crow::door* lv1_door2_d = new door();
           {
-            lv1_door2_d->set_tile(7, 14);
+            lv1_door2_d->set_tile('d');
             lv1_door2_d->roomptr = &rooms[1][1];
 
             // neighbors
@@ -63,7 +63,7 @@ namespace crow {
           rooms[2][0].id = 3;
           crow::door* lv1_door3_r = new door();
           {
-            lv1_door3_r->set_tile(7, 14);
+            lv1_door3_r->set_tile('r');
             lv1_door3_r->roomptr = &rooms[2][0];
 
             // neighbors
@@ -80,9 +80,9 @@ namespace crow {
           crow::door* lv1_door4_u = new door();
           crow::door* lv1_door4_r = new door();
           {
-            lv1_door4_l->set_tile(0, 7);
-            lv1_door4_u->set_tile(7, 0);
-            lv1_door4_r->set_tile(7, 14);
+            lv1_door4_l->set_tile('l');
+            lv1_door4_u->set_tile('u');
+            lv1_door4_r->set_tile('r');
             lv1_door4_l->roomptr = lv1_door4_u->roomptr = lv1_door4_r->roomptr =
                 &rooms[2][2];
 
@@ -101,8 +101,8 @@ namespace crow {
           crow::door* lv1_door5_l = new door();
           crow::door* lv1_door5_u = new door();
           {
-            lv1_door5_l->set_tile(0, 7);
-            lv1_door5_u->set_tile(7, 0);
+            lv1_door5_l->set_tile('l');
+            lv1_door5_u->set_tile('u');
             lv1_door5_l->roomptr = lv1_door5_u->roomptr = &rooms[2][3];
 
             // neighbors
@@ -120,9 +120,9 @@ namespace crow {
           crow::door* lv1_door6_u = new door();
           crow::door* lv1_door6_d = new door();
           {
-            lv1_door6_l->set_tile(0, 7);
-            lv1_door6_u->set_tile(7, 0);
-            lv1_door6_d->set_tile(14, 7);
+            lv1_door6_l->set_tile('l');
+            lv1_door6_u->set_tile('u');
+            lv1_door6_d->set_tile('d');
             lv1_door6_l->roomptr = lv1_door6_u->roomptr = lv1_door6_d->roomptr =
                 &rooms[1][3];
 
@@ -140,7 +140,7 @@ namespace crow {
           rooms[0][3].id = 7;
           crow::door* lv1_door7_d = new door();
           {
-            lv1_door7_d->set_tile(14, 7);
+            lv1_door7_d->set_tile('d');
             lv1_door7_d->roomptr = &rooms[0][3];
 
             // neighbors
@@ -157,9 +157,9 @@ namespace crow {
           crow::door* lv1_door8_r = new door();
           crow::door* lv1_door8_d = new door();
           {
-            lv1_door8_u->set_tile(0, 7);
-            lv1_door8_r->set_tile(14, 7);
-            lv1_door8_d->set_tile(7, 14);
+            lv1_door8_u->set_tile('u');
+            lv1_door8_r->set_tile('r');
+            lv1_door8_d->set_tile('d');
             lv1_door8_u->roomptr = lv1_door8_r->roomptr = lv1_door8_d->roomptr =
                 &rooms[1][2];
 
@@ -180,8 +180,8 @@ namespace crow {
           crow::door* lv1_door9_l = new door();
           crow::door* lv1_door9_d = new door();
           {
-            lv1_door9_l->set_tile(0, 7);
-            lv1_door9_d->set_tile(7, 14);
+            lv1_door9_l->set_tile('l');
+            lv1_door9_d->set_tile('d');
             lv1_door9_l->roomptr = lv1_door9_d->roomptr = &rooms[0][2];
 
             // neighbors
@@ -198,8 +198,8 @@ namespace crow {
           crow::door* lv1_door10_l = new door();
           crow::door* lv1_door10_r = new door();
           {
-            lv1_door10_l->set_tile(0, 7);
-            lv1_door10_r->set_tile(7, 14);
+            lv1_door10_l->set_tile('l');
+            lv1_door10_r->set_tile('r');
             lv1_door10_l->roomptr = lv1_door10_r->roomptr = &rooms[0][1];
 
             // neighbors
@@ -216,8 +216,8 @@ namespace crow {
           crow::door* lv1_door11_r = new door();
           crow::door* lv1_door11_d = new door();
           {
-            lv1_door11_r->set_tile(14, 7);
-            lv1_door11_d->set_tile(7, 14);
+            lv1_door11_r->set_tile('r');
+            lv1_door11_d->set_tile('d');
             lv1_door11_r->roomptr = lv1_door11_d->roomptr = &rooms[0][0];
 
             // neighbors
@@ -234,7 +234,7 @@ namespace crow {
           crow::door* lv1_door12_u = new door();
           crow::exit* floor1_exit = new exit(state, this, lv);
           {
-            lv1_door12_u->set_tile(7, 0);
+            lv1_door12_u->set_tile('u');
             lv1_door12_u->roomptr = &rooms[1][0];
 
             // neighbors
@@ -242,7 +242,8 @@ namespace crow {
             lv1_door11_d->neighbor = lv1_door12_u;
 
             rooms[1][0].objects.push_back(lv1_door12_u);
-            floor1_exit->set_tile(0, 7);
+
+            floor1_exit->set_tile('l');
             rooms[1][0].objects.push_back(floor1_exit);
 
             rooms[1][0].generate_tilemap();
@@ -275,7 +276,7 @@ namespace crow {
             door1->panel = door1p;
 
             // worker start position
-            rooms[2][2].object_indices.push_back(0);
+            rooms[0][0].object_indices.push_back(0);
 
             rooms[0][0].generate_tilemap();
 
@@ -291,7 +292,7 @@ namespace crow {
           crow::door* door2_2 = new door();
           {
             door2->set_tile(0, 7);
-            door2_2->set_tile(7, 14);
+            door2_2->set_tile(7, 0);
 
             door2->neighbor = door1;
             door1->neighbor = door2;
@@ -313,8 +314,8 @@ namespace crow {
           crow::door* door3 = new door();
           crow::door* door3_2 = new door();
           {
-            door3->set_tile(7, 0);
-            door3_2->set_tile(7, 14);
+            door3->set_tile(7, 14);
+            door3_2->set_tile(7, 0);
 
             door3->neighbor = door2_2;
             door2_2->neighbor = door3;
@@ -335,22 +336,22 @@ namespace crow {
           rooms[2][1].id = 4;
           crow::door* door4 = new door();
           crow::door* door4_2 = new door();
-          // crow::door* door4_3 = new door();
+          crow::door* door4_3 = new door();
           crow::door* door4_4 = new door();
           {
-            door4->set_tile(7, 0);
+            door4->set_tile(7, 14);
             door4_2->set_tile(0, 7);
-            // door4_3->set_tile(7, 14);
+            door4_3->set_tile(7, 0);
             door4_4->set_tile(14, 7);
 
             door4->neighbor = door3_2;
             door3_2->neighbor = door4;
 
-            door4->roomptr = door4_2->roomptr =  // door4_3->roomptr =
+            door4->roomptr = door4_2->roomptr = door4_3->roomptr =
                 door4_4->roomptr = &rooms[2][1];
             rooms[2][1].objects.push_back(door4);
             rooms[2][1].objects.push_back(door4_2);
-            // rooms[2][1].objects.push_back(door4_3);
+            rooms[2][1].objects.push_back(door4_3);
             rooms[2][1].objects.push_back(door4_4);
 
             rooms[2][1].generate_tilemap();
@@ -372,17 +373,18 @@ namespace crow {
             rooms[2][0].generate_tilemap();
           }
 
-          // rooms[3][1].id = 6;
-          // crow::door* door6 = new door();
-          //{
-          //  door6->set_tile(7, 0);
-          //
-          //  door6->neighbor = door4_3;
-          //  door4_3->neighbor = door6;
-          //
-          //  door6->roomptr = &rooms[3][1];
-          //  rooms[3][1].objects.push_back(door6);
-          //}
+           rooms[3][1].id = 6;
+           crow::door* door6 = new door();
+          {
+            door6->set_tile(7, 14);
+          
+            door6->neighbor = door4_3;
+            door4_3->neighbor = door6;
+          
+            door6->roomptr = &rooms[3][1];
+            rooms[3][1].objects.push_back(door6);
+            rooms[3][1].generate_tilemap();
+          }
 
           rooms[2][2].id = 7;
           crow::door* door7 = new door();

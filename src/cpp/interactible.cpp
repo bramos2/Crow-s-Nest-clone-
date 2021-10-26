@@ -34,6 +34,15 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
   y = _y;
 }
 
+void interactible::set_tile(char dir) {
+    switch (dir) {
+    case 'u': x =  7; y = 14; break;
+    case 'l': x =  0; y =  7; break;
+    case 'd': x =  7; y =  0; break;
+    case 'r': x = 14; y =  7; break;
+    }
+}
+
 interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
 
 void pg_console::interact(size_t const index, crow::entities& entity) {

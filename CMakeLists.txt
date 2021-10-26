@@ -66,6 +66,7 @@ set(HPP_FILES
   src/hpp/pools.hpp
   src/hpp/renderer.hpp
   src/hpp/search_theta.hpp
+  src/hpp/super_matrix.hpp
   src/hpp/tile.hpp
   src/hpp/view.hpp
   src/hpp/XTime.hpp
@@ -92,6 +93,7 @@ set(CPP_FILES
   src/cpp/player_behavior.cpp
   src/cpp/renderer.cpp
   src/cpp/search_theta.cpp
+  src/cpp/super_matrix.cpp
   src/cpp/tile.cpp
   src/cpp/view.cpp
   src/cpp/XTime.cpp

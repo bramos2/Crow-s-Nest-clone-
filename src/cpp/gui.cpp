@@ -5,20 +5,23 @@
 
 namespace crow {
 	void game_manager::imgui_on_draw() {
+        // actual size of the window cuz imgui is weirdo
+        ImVec2 real_size = get_window_size();
+
 		ImGuiIO& io = ImGui::GetIO();
 		// teach ImGui where the mouse is
-        io.MousePos = { mouse_pos.x, mouse_pos.y };
+        io.MousePos = { mouse_pos.x * (imgui_wsize.x / real_size.x), mouse_pos.y  * (imgui_wsize.y / real_size.y)};
 		io.MouseDown[0] = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
 		io.MouseDown[1] = (GetKeyState(VK_RBUTTON) & 0x8000) != 0;
-		// this prevents the program from crashing
-		io.DisplaySize.x = 1920.0f;
-		io.DisplaySize.y = 1280.0f;
 		io.WantCaptureMouse = false;
+		// this prevents the program from crashing, i dont know if it actually does anything though
+        io.DisplaySize.x = real_size.x;
+		io.DisplaySize.y = real_size.y;
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui::NewFrame();
 		// IMGUI SETUP FOR THIS FRAME IS COMPLETE, ALL IMGUI DRAWS GO IN HERE:
-		ImVec2 wh = get_window_size();
+		ImVec2 wh = imgui_wsize;
 
         switch (current_state) {
         case game_state::MAIN_MENU:
@@ -39,10 +42,13 @@ namespace crow {
         }
 
         if (debug_mode) {
-		    float3e p = mouse_to_floor(view, mouse_pos, wh.x, wh.y);
-		    ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
-		    ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
-		    ImGui::Text("wpos: %f, %f", wh.x, wh.y);
+            ImVec2 s = get_window_size();
+            float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
+            ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
+            ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
+            ImGui::Text("wpos: %f, %f", wh.x, wh.y);
+            ImGui::Text("dpos: %f, %f", real_size.x, real_size.y);
+            ImGui::Text("mpos: %f, %f", (imgui_wsize.x / real_size.x), (imgui_wsize.y / real_size.y));
 		    if (ImGui::Button("click me")) audio::play_sfx(0);
         }
 
@@ -126,6 +132,7 @@ namespace crow {
       ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
       ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
       // set size parameters for the pause button icon
       ImVec2 pause_button_xy = {wh.x - (0.0333333f * wh.x), 0};
       ImVec2 pause_button_wh = {0.0333333f * wh.x, 0.0592592592592593f * wh.y};
@@ -133,8 +140,7 @@ namespace crow {
       ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
       // finally create the pause button
       ImGui::Begin("Pause", nullptr, texture_flag);
-      if (ImGui::ImageButton(nullptr /* INSERT TEXTURE POINTER HERE */,
-                             pause_button_wh)) {
+      if (ImGui::ImageButton(textures[0], pause_button_wh, { 0, 0 }, { 1, 1 }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 0.8f })) {
         crow::audio::play_sfx(crow::audio::MENU_OK);
         current_state = crow::game_manager::game_state::PAUSED;
       }
@@ -142,7 +148,7 @@ namespace crow {
       ImGui::End();
       //// all texture-only GUI items should be before this line as it resets
       /// the / GUI window styling back to default
-      ImGui::PopStyleVar(3);
+      ImGui::PopStyleVar(4);
     }
 
     void game_manager::draw_pause_menu(ImVec2 wh) {  // set size parameters for the pause
@@ -272,7 +278,6 @@ namespace crow {
         ImGui::SetCursorPos({wh.x * 0.25f, wh.y * 0.65f});
         if (ImGui::Button("Retry", game_over_button_wh)) {
           crow::audio::play_sfx(crow::audio::MENU_OK);
-          end_game();
           new_game();
           current_state = game_state::PLAYING;
           // TODO::selecting this option is the same as hitting the continue button

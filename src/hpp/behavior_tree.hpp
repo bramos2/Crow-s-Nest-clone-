@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "../hpp/enemy_behaviors.hpp"
+#include "../hpp/super_matrix.hpp"
 
 namespace crow {
 
@@ -12,6 +13,7 @@ namespace crow {
 struct behavior_tree {
 
     crow::ai_manager* aim = nullptr;
+    super_matrix e_matrix;
 
   struct node {
     virtual status run(float dt, crow::ai_manager& m) = 0;

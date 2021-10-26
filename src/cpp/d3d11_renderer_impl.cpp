@@ -517,7 +517,7 @@ namespace crow {
 		//	meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
 		//}
 
-		DrawGrid();
+		//DrawGrid();
 	}
 
 	//void impl_t::update(float delta, std::bitset<256> bm, float dx = 0.f, float dy = 0.f)
@@ -1028,6 +1028,13 @@ namespace crow {
 				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &m.specular);
 			}
 		}
+	}
+
+	void impl_t::create_imgui_texture(std::string filename, ID3D11ShaderResourceView*& /* ?????????????????????? */ texture) {
+		std::wstring wstr = std::wstring(filename.begin(), filename.end());
+		const wchar_t* wcstrD = wstr.c_str();
+		HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &texture);
+		std::string message = std::system_category().message(hr);
 	}
 
 	void impl_t::CreateSamplerState()
