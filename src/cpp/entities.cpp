@@ -16,8 +16,11 @@ namespace crow {
 		velocities.resize(current_size);
 		framexbind.resize(current_size);
 		mesh_ptrs.resize(current_size);
-		anim_time.resize(current_size);
-		curr_anim.resize(current_size);
+		//anim_time.resize(current_size);
+		//curr_anim.resize(current_size);
+		s_resource_view.resize(current_size);
+		emissive.resize(current_size);
+		specular.resize(current_size);
 	}
 
 	void entities::init_entity(unsigned int n)
@@ -27,8 +30,8 @@ namespace crow {
 			velocities[n] = DirectX::XMFLOAT3{ 0.f,0.f,0.f };
 			framexbind[n] = nullptr;
 			mesh_ptrs[n] = nullptr;
-			anim_time[n] = 0;
-			curr_anim[n] = 0;
+			//anim_time[n] = 0;
+			//curr_anim[n] = 0;
 		}
 	}
 
@@ -45,8 +48,12 @@ namespace crow {
 			// DO NOT CALL DELETE ON mesh_ptrs
 			mesh_ptrs.pop_back();
 
-			anim_time.pop_back();
-			curr_anim.pop_back();
+			//anim_time.pop_back();
+			//curr_anim.pop_back();
+
+			s_resource_view.pop_back();
+			emissive.pop_back();
+			specular.pop_back();
 
 			--current_size;
 		}

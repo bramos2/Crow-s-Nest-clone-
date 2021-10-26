@@ -18,8 +18,8 @@ bool tile::line_of_sight(tile* const to,
   int y0 = this->row;
   int y1 = to->row;
 
-  int deltax = std::fabs(x1 - x0);
-  int deltay = std::fabs(y1 - y0);
+  int deltax = static_cast<int>(std::fabs(x1 - x0));
+  int deltay = static_cast<int>(std::fabs(y1 - y0));
 
   int total_tiles = (deltax > deltay) ? deltax : deltay;
   for (size_t i = 0; i < total_tiles; ++i) {

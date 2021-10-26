@@ -239,7 +239,9 @@ namespace crow
 
 		void create_vertex_buffer(ID3D11Buffer*& vertex_buffer, ID3D11Buffer*& index_buffer, crow::mesh_s& mesh);
 
-		void CreateTexture(std::string diff_filename, std::string emis_filename, std::string spec_filename);
+		void CreateTextures_old(std::string diff_filename, std::string emis_filename, std::string spec_filename);
+
+		void create_texture(std::string filepath, ID3D11ShaderResourceView*& sresourceview);
 
 		void create_text_sresources(std::vector<std::string> text_filenames, mesh_info& m);
 

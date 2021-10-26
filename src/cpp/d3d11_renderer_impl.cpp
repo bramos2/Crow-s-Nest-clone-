@@ -401,14 +401,14 @@ namespace crow {
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]);
 				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-				if (entities.mesh_ptrs[inds[i]]->s_resource_view) {
-					context->PSSetShaderResources(0, 1, &entities.mesh_ptrs[inds[i]]->s_resource_view);
+				if (entities.s_resource_view[inds[i]]) {
+					context->PSSetShaderResources(0, 1, &entities.s_resource_view[inds[i]]);
 				}
-				if (entities.mesh_ptrs[inds[i]]->emissive) {
-					context->PSSetShaderResources(1, 1, &entities.mesh_ptrs[inds[i]]->emissive);
+				if (entities.emissive[inds[i]]) {
+					context->PSSetShaderResources(1, 1, &entities.emissive[inds[i]]);
 				}
-				if (entities.mesh_ptrs[inds[i]]->specular) {
-					context->PSSetShaderResources(2, 1, &entities.mesh_ptrs[inds[i]]->specular);
+				if (entities.specular[inds[i]]) {
+					context->PSSetShaderResources(2, 1, &entities.specular[inds[i]]);
 				}
 				context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
 
@@ -433,20 +433,20 @@ namespace crow {
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
 				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
-				if (entities.mesh_ptrs[inds[i]]->s_resource_view) {
-					context->PSSetShaderResources(0, 1, &entities.mesh_ptrs[inds[i]]->s_resource_view);
+				if (entities.s_resource_view[inds[i]]) {
+					context->PSSetShaderResources(0, 1, &entities.s_resource_view[inds[i]]);
 				}
-				if (entities.mesh_ptrs[inds[i]]->emissive) {
-					context->PSSetShaderResources(1, 1, &entities.mesh_ptrs[inds[i]]->emissive);
+				if (entities.emissive[inds[i]]) {
+					context->PSSetShaderResources(1, 1, &entities.emissive[inds[i]]);
 				}
-				if (entities.mesh_ptrs[inds[i]]->specular) {
-					context->PSSetShaderResources(2, 1, &entities.mesh_ptrs[inds[i]]->specular);
+				if (entities.specular[inds[i]]) {
+					context->PSSetShaderResources(2, 1, &entities.specular[inds[i]]);
 				}
 
 				a_buff.modeling = XMMatrixTranspose(entities.world_matrix[inds[i]]);
 
 				// TODO: adjust this index to accomodate for future animations
-				for (size_t j = 0; j < 28; ++j) {
+				for (size_t j = 0; j < 30; ++j) {
 					a_buff.matrices[j] = entities.framexbind[inds[i]][j];
 				}
 				context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
@@ -985,7 +985,7 @@ namespace crow {
 		hr = device->CreateBuffer(&iDesc, &iData, &index_buffer);
 	}
 
-	void impl_t::CreateTexture(std::string diff_filename, std::string emis_filename, std::string spec_filename)
+	void impl_t::CreateTextures_old(std::string diff_filename, std::string emis_filename, std::string spec_filename)
 	{
 		// load texture here -------------------------
 		//diffuse texture
@@ -1004,6 +1004,14 @@ namespace crow {
 		hr = CreateDDSTextureFromFile(device, wcstrS, nullptr, &sResourceView[SUBRESOURCE_VIEW::SPECULAR]);
 	}
 
+	void impl_t::create_texture(std::string filename, ID3D11ShaderResourceView*& sresourceview)
+	{
+		std::wstring wstr = std::wstring(filename.begin(), filename.end());
+		const wchar_t* wcstrD = wstr.c_str();
+		HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &sresourceview);
+	}
+
+	// we are loading textures individually now and storing them in the texture container
 	void impl_t::create_text_sresources(std::vector<std::string> text_filenames, mesh_info& m)
 	{
 		/*for (size_t i = 0; i < text_filenames.size(); ++i) {
@@ -1011,7 +1019,7 @@ namespace crow {
 			const wchar_t* wcstrD = wstr.c_str();
 			HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &s_resource_view[i]);
 		}*/
-		if (!text_filenames.empty())
+		/*if (!text_filenames.empty())
 		{
 			std::wstring wstr = std::wstring(text_filenames[0].begin(), text_filenames[0].end());
 			const wchar_t* wcstrD = wstr.c_str();
@@ -1027,7 +1035,7 @@ namespace crow {
 				const wchar_t* wcstrD = wstr.c_str();
 				HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &m.specular);
 			}
-		}
+		}*/
 	}
 
 	void impl_t::create_imgui_texture(std::string filename, ID3D11ShaderResourceView*& /* ?????????????????????? */ texture) {

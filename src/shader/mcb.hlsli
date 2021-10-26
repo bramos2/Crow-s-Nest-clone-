@@ -10,9 +10,7 @@ cbuffer MCB_t
     matrix modeling;
     matrix view;
     matrix projection;
-   // matrix bindPose[28];
-   // matrix tweenTransforms[28];
-    matrix matrices[28];
+    matrix matrices[30];
     float3 lightColor;
     float surfaceShininess;
     float3 lightPos;

@@ -82,6 +82,7 @@ namespace crow {
 		key_frame inv_bindpose;
 		key_frame tween_frame;
 		std::vector<anim_clip> animations;
+		bool is_animating_action = false;
 
 		unsigned int curr_animation = 0;
 		float t = 0.f;
@@ -123,7 +124,7 @@ namespace crow {
 	// inverts the bind pose and stores it inside the animator
 	void get_inverted_bind_pose(key_frame& bind_pose, animator& animator);
 
-	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat);
+	//void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat);
 
 	void scale_matrix(DirectX::XMMATRIX& m, float x = 1.f, float y = 1.f, float z = 1.f);
 }

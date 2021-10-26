@@ -11,7 +11,7 @@ namespace crow
 	constexpr double to_radians = 0.01745329251994329576923690768489;
 	constexpr float to_radiansf = 0.0174532924f;
 	constexpr double to_degrees = 57.295779513082320876798154814105;
-	constexpr float to_degreesf = 57.2957802;
+	constexpr float to_degreesf = 57.2957802f;
 
 	struct float2e
 	{
@@ -357,10 +357,10 @@ namespace crow
 		deg = deg * (3.1415f / 180.0f);
 
 		float4x4 temp = IdentityM();
-		temp[1].y = cos(deg);
-		temp[1].z = -sin(deg);
-		temp[2].y = sin(deg);
-		temp[2].z = cos(deg);
+		temp[1].y = cosf(deg);
+		temp[1].z = -sinf(deg);
+		temp[2].y = sinf(deg);
+		temp[2].z = cosf(deg);
 		return temp;
 	}
 
@@ -369,10 +369,10 @@ namespace crow
 		deg = deg * (3.1415f / 180.0f);
 
 		float4x4 temp = IdentityM();
-		temp[0].x = cos(deg);
-		temp[0].z = sin(deg);
-		temp[2].x = -sin(deg);
-		temp[2].z = cos(deg);
+		temp[0].x = cosf(deg);
+		temp[0].z = sinf(deg);
+		temp[2].x = -sinf(deg);
+		temp[2].z = cosf(deg);
 		return temp;
 	}
 
@@ -381,10 +381,10 @@ namespace crow
 		deg = deg * (3.1415f / 180.0f);
 
 		float4x4 temp = IdentityM();
-		temp[0].x = cos(deg);
-		temp[0].y = -sin(deg);
-		temp[1].x = sin(deg);
-		temp[1].y = cos(deg);
+		temp[0].x = cosf(deg);
+		temp[0].y = -sinf(deg);
+		temp[1].x = sinf(deg);
+		temp[1].y = cosf(deg);
 		return temp;
 
 	}

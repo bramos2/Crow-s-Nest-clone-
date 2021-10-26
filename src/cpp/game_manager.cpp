@@ -3,38 +3,39 @@
 
 namespace crow {
 
+	// made changes to the loading process
 	void game_manager::load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index) {
-		// load either as static mesh or as animated mesh based on whether or not we have an .anim file
-		if (s_anim.length()) {
-			all_meshes[index].a_mesh = new mesh_a();
-			load_bin_data(s_bin.c_str(), *all_meshes[index].a_mesh);
+		//// load either as static mesh or as animated mesh based on whether or not we have an .anim file
+		//if (s_anim.length()) {
+		//	all_meshes[index].a_mesh = new mesh_a();
+		//	load_bin_data(s_bin.c_str(), *all_meshes[index].a_mesh);
 
-			anim_clip animc;
-			load_anim_data(s_anim.c_str(), animc);
-			invert_bind_pose(animc);
-			all_meshes[index].anim = animc;
+		//	anim_clip animc;
+		//	load_anim_data(s_anim.c_str(), animc);
+		//	invert_bind_pose(animc);
+		//	all_meshes[index].anim = animc;
 
-			// create vertex buffer
-			p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].a_mesh);
-		} else {
-			// static mesh
-			mesh_a temp;
-			load_bin_data(s_bin.c_str(), temp);
-			all_meshes[index].s_mesh = new mesh_s(clip_mesh(temp));
+		//	// create vertex buffer
+		//	p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].a_mesh);
+		//} else {
+		//	// static mesh
+		//	mesh_a temp;
+		//	load_bin_data(s_bin.c_str(), temp);
+		//	all_meshes[index].s_mesh = new mesh_s(clip_mesh(temp));
 
-			// create vertex buffer
-			p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].s_mesh);
-		}
-		
-		// load textures if textures are provided
-		if (s_mat.length()) {
-			std::vector<std::string> paths;
-			std::vector<material_a> mats;
-			load_mat_data(s_mat.c_str(), paths, mats);
+		//	// create vertex buffer
+		//	p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].s_mesh);
+		//}
+		//
+		//// load textures if textures are provided
+		//if (s_mat.length()) {
+		//	std::vector<std::string> paths;
+		//	std::vector<material_a> mats;
+		//	load_mat_data(s_mat.c_str(), paths, mats);
 
-			// load textures
-			p_impl->create_text_sresources(paths, all_meshes[index]);
-		}
+		//	// load textures
+		//	p_impl->create_text_sresources(paths, all_meshes[index]);
+		//}
 	}
 
 	void game_manager::load_mesh_data(std::string filename, int index) {
@@ -42,6 +43,56 @@ namespace crow {
 		std::string s_mat = "res/textures/" + filename + ".mat";
 		std::string s_anim = "res/animations/" + filename + ".anim";
 		load_mesh_data(s_bin, s_mat, s_anim, index);
+	}
+
+	void game_manager::load_all_meshes()
+	{
+		all_meshes.resize(mesh_types::COUNT);
+
+		// loading player mesh
+		all_meshes[mesh_types::PLAYER].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/guy.bin", *all_meshes[mesh_types::PLAYER].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::PLAYER].vertex_buffer, all_meshes[mesh_types::PLAYER].index_buffer, *all_meshes[mesh_types::PLAYER].a_mesh);
+		
+		// loading AI mesh
+		all_meshes[mesh_types::AI].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/slasher_run.bin", *all_meshes[mesh_types::AI].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI].vertex_buffer, all_meshes[mesh_types::AI].index_buffer, *all_meshes[mesh_types::AI].a_mesh);
+		
+		// loading texture cube mesh
+		mesh_a temp;
+		load_bin_data("res/meshes/floor1.bin", temp);
+		all_meshes[mesh_types::CUBE].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::CUBE].vertex_buffer, all_meshes[mesh_types::CUBE].index_buffer, *all_meshes[mesh_types::CUBE].s_mesh);
+		
+	}
+
+	void game_manager::load_texture_data() {
+		textures.resize(texture_list::COUNT);
+
+		p_impl->create_texture("res/textures/guyfinal.dds", textures[texture_list::PLAYER]);
+		p_impl->create_texture("res/textures/D_PA_3D_EnemyModel_Slasher.dds", textures[texture_list::AI]);
+		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
+		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
+		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
+
+	}
+
+	void crow::game_manager::load_animation_data()
+	{
+		animators.resize(animator_list::COUNT);
+
+		size_t i = animator_list::PLAYER;
+		animators[i].animations.resize(2);
+		load_anim_data("res/animations/guyf.anim", animators[i].animations[0]);
+		load_anim_data("res/animations/guy.anim", animators[i].animations[1]);
+		get_inverted_bind_pose(animators[i].animations[1].frames[0], animators[i]);
+
+		i = animator_list::AI;
+		animators[i].animations.resize(2);
+		load_anim_data("res/animations/slasher_run.anim", animators[i].animations[0]);
+		load_anim_data("res/animations/slasher_attack.anim", animators[i].animations[1]);
+		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
 	}
 
 	void game_manager::init_app(void* window_handle)
@@ -209,15 +260,16 @@ namespace crow {
 	void game_manager::update_animations(double dt) {
 		// update all animations for all animated entities
 		for (int i = 0; i < entities.current_size; i++) {
-			if (entities.mesh_ptrs[i]->a_mesh) {
-				// timer increment
-				entities.anim_time[i] += dt;
-				if (entities.anim_time[i] > entities.mesh_ptrs[i]->anim.duration) {
-					entities.anim_time[i] = entities.mesh_ptrs[i]->anim.frames[1].time;
-				}
-				// update keyframe/bindpose
-				key_frame kf = get_tween_frame(entities.mesh_ptrs[i]->anim, entities.anim_time[i]);
-				mult_invbp_tframe(entities.mesh_ptrs[i]->anim, kf, entities.framexbind[i]);
+			if (entities.mesh_ptrs[i]->animator) {
+				entities.mesh_ptrs[i]->animator->update(entities.framexbind[i], dt);
+				//// timer increment
+				//entities.anim_time[i] += dt;
+				//if (entities.anim_time[i] > entities.mesh_ptrs[i]->anim.duration) {
+				//	entities.anim_time[i] = entities.mesh_ptrs[i]->anim.frames[1].time;
+				//}
+				//// update keyframe/bindpose
+				//key_frame kf = get_tween_frame(entities.mesh_ptrs[i]->anim, entities.anim_time[i]);
+				//mult_invbp_tframe(entities.mesh_ptrs[i]->anim, kf, entities.framexbind[i]);
 			}
 		}
 	}
@@ -429,18 +481,28 @@ namespace crow {
 			delete all_meshes[i].s_mesh;
 			if (all_meshes[i].vertex_buffer != nullptr)   all_meshes[i].vertex_buffer->Release();
 			if (all_meshes[i].index_buffer != nullptr)    all_meshes[i].index_buffer->Release();
-			if (all_meshes[i].s_resource_view != nullptr) all_meshes[i].s_resource_view->Release();
+			/*if (all_meshes[i].s_resource_view != nullptr) all_meshes[i].s_resource_view->Release();
 			if (all_meshes[i].emissive != nullptr)        all_meshes[i].emissive->Release();
-			if (all_meshes[i].specular != nullptr)        all_meshes[i].specular->Release();
+			if (all_meshes[i].specular != nullptr)        all_meshes[i].specular->Release();*/
 
 			all_meshes[i].a_mesh = nullptr;
 			all_meshes[i].s_mesh = nullptr;
 			all_meshes[i].vertex_buffer = nullptr;
 			all_meshes[i].index_buffer = nullptr;
-			all_meshes[i].s_resource_view = nullptr;
+			/*all_meshes[i].s_resource_view = nullptr;
 			all_meshes[i].emissive = nullptr;
-			all_meshes[i].specular = nullptr;
+			all_meshes[i].specular = nullptr;*/
 		}
+
+		// clearing texture data
+		for (auto& m : textures) {
+			if (m) {
+				m->Release();
+			}
+		}
+		textures.clear();
+
+
 	}
 
 	game_manager::game_manager()
@@ -457,20 +519,29 @@ namespace crow {
 
 	void game_manager::new_game() {
 		// load all the meshes that we are going to need
-		all_meshes.resize(3);
-		load_mesh_data("Run", 0);
-		//load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
-		load_mesh_data("slasher_run", 1);
-		load_mesh_data("res/meshes/Cube.bin", "", "", 2);
-
+		//all_meshes.resize(3);
+		//load_mesh_data("guy", 0);
+		////load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
+		//load_mesh_data("slasher_run", 1);
+		//load_mesh_data("res/meshes/floor1.bin", "res/textures/floor1.mat", "", 2);
+		//scale_matrix(entities.world_matrix[2], 0.1f, 0.1f, 0.1f);
+		load_texture_data();
+		load_all_meshes();
+		load_animation_data();
 
 		//textures.resize(1);
 		//p_impl->create_imgui_texture("res/textures/gui/go.dds", textures[0]);
 
+		//assigning animations, could be done inside function if meshes have been initialized
+		all_meshes[mesh_types::PLAYER].animator = &animators[animator_list::PLAYER];
+		all_meshes[mesh_types::AI].animator = &animators[animator_list::AI];
+
 		// initialize the first two entities
 		entities.allocate_and_init(2);
 		entities.mesh_ptrs[0] = &all_meshes[0];
+		entities.s_resource_view[0] = textures[texture_list::PLAYER];
 		entities.mesh_ptrs[1] = &all_meshes[1];
+		entities.s_resource_view[1] = textures[texture_list::AI];
 
 		load_level(0);
 	}

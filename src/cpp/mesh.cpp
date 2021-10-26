@@ -258,7 +258,7 @@ namespace crow {
 		}
 	}
 
-	void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat)
+	/*void mult_invbp_tframe(anim_clip& anim_clip, key_frame& tween_frame, DirectX::XMMATRIX*& ent_mat)
 	{
 		if (ent_mat) {
 			delete[] ent_mat;
@@ -272,7 +272,7 @@ namespace crow {
 				ent_mat[i] = XMMatrixTranspose(cMatrix);
 			}
 		}
-	}
+	}*/
 
 	void scale_matrix(DirectX::XMMATRIX& m, float x, float y, float z)
 	{
@@ -361,10 +361,8 @@ namespace crow {
 			if (curr_animation != 0) {
 				curr_animation = 0;
 			}
-			else {
-				switch_animation(1);
-			}
 			t = animations[curr_animation].frames[1].time;
+			is_animating_action = false;
 		}
 
 		update_tween_frame();
@@ -379,6 +377,7 @@ namespace crow {
 		if (index < animations.size()) {
 			curr_animation = index;
 			t = animations[curr_animation].frames[1].time;
+			is_animating_action = true;
 		}
 	}
 

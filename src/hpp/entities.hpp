@@ -9,14 +9,16 @@ namespace crow {
 
 	// contains all data necessary for a mesh to be rendered
 	struct mesh_info {
-		mesh_a* a_mesh;
-		mesh_s* s_mesh;
-		ID3D11Buffer* vertex_buffer;
-		ID3D11Buffer* index_buffer;
-		ID3D11ShaderResourceView* s_resource_view;
-		ID3D11ShaderResourceView* emissive;
-		ID3D11ShaderResourceView* specular;
-		anim_clip anim;
+		mesh_a* a_mesh = nullptr;
+		mesh_s* s_mesh = nullptr;
+		ID3D11Buffer* vertex_buffer = nullptr;
+		ID3D11Buffer* index_buffer = nullptr;
+		// to be removed
+		/*ID3D11ShaderResourceView* s_resource_view = nullptr;
+		ID3D11ShaderResourceView* emissive = nullptr;
+		ID3D11ShaderResourceView* specular = nullptr;*/
+		//anim_clip anim; // to be removed
+		animator* animator = nullptr;
 	};
 
 	// contains all currently loaded game objects
@@ -27,9 +29,12 @@ namespace crow {
 		// pointer to the mesh data/information that will be loaded for the mesh at the relevant index
 		// do not use new on this object, only use pointers to pre-existing data
 		std::vector<mesh_info*> mesh_ptrs;
-		std::vector<float> anim_time;
+		std::vector<ID3D11ShaderResourceView*> s_resource_view;
+		std::vector<ID3D11ShaderResourceView*> emissive;
+		std::vector<ID3D11ShaderResourceView*> specular;
+		//std::vector<float> anim_time;
 		// consider the following: use this to determine which animation is playing
-		std::vector<float> curr_anim;
+		//std::vector<float> curr_anim;
 
 
 		uint32_t current_size = 0;
@@ -60,4 +65,4 @@ namespace crow {
 	  WORKER = 0,
 	  SPHYNX = 1,
 	};
-} // namespace crow
+} // nam--espace crow

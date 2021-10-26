@@ -40,12 +40,12 @@ namespace crow {
 		animator ai_animator;
 
 		bool debug_mode = 0;
-		
+
 		float left_click_time = 0.f;
 		float right_click_time = 0.f;
 		int menu_position = 0;
 		float2e mouse_pos;
-		
+
 		impl_t* p_impl = nullptr;
 		XTime timer;
 		entities entities;
@@ -53,10 +53,46 @@ namespace crow {
 		level current_level;
 		crow::minimap minimap;
 		crow::message current_message;
+
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
-		// all textures not directly attached to mesh_info objects
+
+		// a list of every texture in our program
 		std::vector<ID3D11ShaderResourceView*> textures;
+
+		// a list of every animatior each containing all the animations respective to their model
+		std::vector<animator> animators;
+
+		struct mesh_types {
+			enum {
+				PLAYER = 0,
+				AI,
+				CUBE,
+				DOOR,
+				COUNT
+			};
+		};
+
+		struct texture_list {
+			enum {
+				PLAYER = 0,
+				AI,
+				FLOOR1,
+				WALL1,
+				DOOR_OPEN,
+				DOOR_CLOSED,
+				COUNT
+			};
+		};
+
+		struct animator_list {
+			enum {
+				PLAYER = 0,
+				AI,
+				EXIT_LIGHT,
+				COUNT
+			};
+		};
 
 		// all ai components
 		crow::behavior_tree ai_bt;
@@ -70,6 +106,9 @@ namespace crow {
 		// pass in "" for either s_mat or s_anim if they aren't to be used
 		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
 		void load_mesh_data(std::string filename, int index);
+		void load_all_meshes();
+		void load_texture_data();
+		void load_animation_data();
 		void init_app(void* window_handle);
 
 		// all update functions

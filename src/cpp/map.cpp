@@ -14,19 +14,21 @@ namespace crow {
         // floor
         state.entities.allocate_and_init(1);
         object_indices.push_back(initial_index++);
-        state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+        state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CUBE];
+        state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::FLOOR1];
         float4x4_a floor_size = (float4x4_a&)state.entities.world_matrix[object_indices.back()];
         floor_size[0][0] = width;
         floor_size[1][1] = 0.1f;
         floor_size[2][2] = length;
         state.entities.world_matrix[object_indices.back()] = (DirectX::XMMATRIX&)floor_size;
 
-        /*
+        
         // walls
         state.entities.allocate_and_init(4);
         for (int i = 0; i < 4; i++) {
             object_indices.push_back(initial_index++);
-            state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+            state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CUBE];
+            state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::FLOOR1];
             float4x4_a wall_size = (float4x4_a&)state.entities.world_matrix[object_indices.back()];
             wall_size[1][1] = height;
 
