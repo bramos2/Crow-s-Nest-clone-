@@ -17,7 +17,6 @@ namespace crow {
 		ID3D11ShaderResourceView* emissive;
 		ID3D11ShaderResourceView* specular;
 		anim_clip anim;
-		bool is_duplicate;
 	};
 
 	// contains all currently loaded game objects

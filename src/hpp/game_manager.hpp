@@ -55,7 +55,7 @@ namespace crow {
 		crow::message current_message;
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;
-		// textures that are mostly used for just gui elements
+		// all textures not directly attached to mesh_info objects
 		std::vector<ID3D11ShaderResourceView*> textures;
 
 		// all ai components
@@ -70,9 +70,6 @@ namespace crow {
 		// pass in "" for either s_mat or s_anim if they aren't to be used
 		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
 		void load_mesh_data(std::string filename, int index);
-		// creates a duplicate of an already loaded mesh, but with a new texture
-		// reuses ram, so we're not wasteful by loading the same models multiple times
-		void load_mesh_data(int index_in, int index_out, std::string tex);
 		void init_app(void* window_handle);
 
 		// all update functions

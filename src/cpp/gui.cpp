@@ -140,7 +140,7 @@ namespace crow {
       ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
       // finally create the pause button
       ImGui::Begin("Pause", nullptr, texture_flag);
-      if (ImGui::ImageButton(textures[0], pause_button_wh, { 0, 0 }, { 1, 1 }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 0.8f })) {
+      if (ImGui::ImageButton(nullptr /*texture goes here*/, pause_button_wh, { 0, 0 }, { 1, 1 }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 0.8f })) {
         crow::audio::play_sfx(crow::audio::MENU_OK);
         current_state = crow::game_manager::game_state::PAUSED;
       }
