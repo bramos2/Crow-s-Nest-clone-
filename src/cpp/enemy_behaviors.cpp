@@ -286,9 +286,14 @@ status reached_target(float dt, crow::ai_manager& m) {
   // || crow::reached_destination({0.f, 0.f}, {curr_pos.x, curr_pos.z},
   // target_pos)
   if (m.path.empty()) {
+      size_t index = static_cast<size_t>(crow::entity::SPHYNX);
     result = crow::status::PASSED;
-    m.entities->velocities[static_cast<size_t>(crow::entity::SPHYNX)] = {
+    m.entities->velocities[index] = {
         0.f, 0.f, 0.f};
+    if (!m.entities->mesh_ptrs[index]->animator->is_acting && !m.entities->mesh_ptrs[index]->animator->performed_action) {
+        m.entities->mesh_ptrs[index]->animator->switch_animation(1);
+        m.entities->mesh_ptrs[index]->animator->performed_action = true;
+    }
   }
 
   return result;
@@ -330,55 +335,63 @@ status is_target_door(float dt, crow::ai_manager& m) {
 status handle_door(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
   size_t index = static_cast<size_t>(crow::entity::SPHYNX);
+  if (!m.entities->mesh_ptrs[index]->animator->is_acting) {
+      // door is closed
+      if (m.target->is_active == false) {
+          // TODO: check logic for closed door as it always seems to destroy the door
+          // instead of going for another target
+          unsigned int d_count = 0;
+          std::vector<crow::interactible*> doors;
+          for (auto& d : m.curr_room->objects) {
+              if (d->type == crow::object_type::DOOR) {
+                  ++d_count;
+                  doors.push_back(d);
+              }
+          }
 
-  // door is closed
-  if (m.target->is_active == false) {
-    // TODO: check logic for closed door as it always seems to destroy the door
-    // instead of going for another target
-    unsigned int d_count = 0;
-    std::vector<crow::interactible*> doors;
-    for (auto& d : m.curr_room->objects) {
-      if (d->type == crow::object_type::DOOR) {
-        ++d_count;
-        doors.push_back(d);
+          if (d_count > 1) {
+              unsigned roll = static_cast<unsigned int>((rand() % 2));
+              if (roll == 0) {
+                  m.target->dissable();
+                  m.target->interact(index, *m.entities);
+
+              }
+              else {
+                  crow::interactible* selected_door = nullptr;
+
+                  while (!selected_door) {
+                      unsigned int i = static_cast<unsigned int>((rand() % doors.size()));
+                      selected_door = doors[i];
+                  }
+                  m.prev_target = m.target;
+                  m.target = selected_door;
+              }
+
+          }
+          else {
+              m.target->dissable();
+              m.target->interact(index, *m.entities);
+              m.prev_target = m.target;
+              m.target = nullptr;
+          }
+
       }
-    }
-
-    if (d_count > 1) {
-      unsigned roll = static_cast<unsigned int>((rand() % 2));
-      if (roll == 0) {
-        m.target->dissable();
-        m.target->interact(index, *m.entities);
-
-      } else {
-        crow::interactible* selected_door = nullptr;
-
-        while (!selected_door) {
-          unsigned int i = static_cast<unsigned int>((rand() % doors.size()));
-          selected_door = doors[i];
-        }
-        m.prev_target = m.target;
-        m.target = selected_door;
+      else {
+          m.target->interact(index, *m.entities);
+          m.prev_target = m.target;
+          m.target = nullptr;
       }
 
-    } else {
-      m.target->dissable();
-      m.target->interact(index, *m.entities);
-      m.prev_target = m.target;
-      m.target = nullptr;
-    }
-
-  } else {
-    m.target->interact(index, *m.entities);
-    m.prev_target = m.target;
-    m.target = nullptr;
+      m.room_check();
+      m.interacting = false;
+      m.is_roaming = true;
+      m.roam_timer = 0.f;
+      m.entities->mesh_ptrs[index]->animator->performed_action = false;
+      result = crow::status::PASSED;
   }
-
-  m.room_check();
-  m.interacting = false;
-  m.is_roaming = true;
-  m.roam_timer = 0.f;
-  result = crow::status::PASSED;
+  else {
+      result = crow::status::RUNNING;
+  }
 
   return result;
 }
@@ -387,12 +400,19 @@ status destroy_target(float dt, crow::ai_manager& m) {
   status result = crow::status::FAILED;
   size_t index = static_cast<size_t>(crow::entity::SPHYNX);
 
-  m.target->dissable();
-  m.prev_target = m.target;
-  m.target = nullptr;
-  m.counter--;
-  m.interacting = false;
-  result = crow::status::PASSED;
+  if (m.entities->mesh_ptrs[index]->animator && !m.entities->mesh_ptrs[index]->animator->is_acting) {
+
+      m.target->dissable();
+      m.prev_target = m.target;
+      m.target = nullptr;
+      m.counter--;
+      m.interacting = false;
+      m.entities->mesh_ptrs[index]->animator->performed_action = false;
+      result = crow::status::PASSED;
+  }
+  else {
+      result = crow::status::RUNNING;
+  }
 
   return result;
 }

@@ -64,7 +64,7 @@ namespace crow {
 		load_bin_data("res/meshes/floor1.bin", temp);
 		all_meshes[mesh_types::CUBE].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CUBE].vertex_buffer, all_meshes[mesh_types::CUBE].index_buffer, *all_meshes[mesh_types::CUBE].s_mesh);
-    
+
 		// loading door mesh
 		load_bin_data("res/meshes/door2.bin", temp);
 		all_meshes[mesh_types::DOOR].s_mesh = new mesh_s(clip_mesh(temp));
@@ -106,10 +106,13 @@ namespace crow {
 		animators.resize(animator_list::COUNT);
 
 		size_t i = animator_list::PLAYER;
-		animators[i].animations.resize(2);
+		animators[i].animations.resize(3);
+		anim_clip pbindpose;
+		load_anim_data("res/animations/guy.anim", pbindpose);
 		load_anim_data("res/animations/guyf.anim", animators[i].animations[0]);
-		load_anim_data("res/animations/guy.anim", animators[i].animations[1]);
-		get_inverted_bind_pose(animators[i].animations[1].frames[0], animators[i]);
+		load_anim_data("res/animations/jogging.anim", animators[i].animations[1]);
+		load_anim_data("res/animations/dying.anim", animators[i].animations[2]);
+		get_inverted_bind_pose(pbindpose.frames[0], animators[i]);
 
 		i = animator_list::AI;
 		animators[i].animations.resize(2);
@@ -158,13 +161,13 @@ namespace crow {
 		time_elapsed += dt;
 		p_impl->update(static_cast<float>(dt));
 
-		
+
 		// updates that run irregardless of the game state
 		current_message.update(dt);
 		if (current_level.interacting && current_message.progress_max &&
 			current_message.progress_max == current_message.progress) {
-		  current_level.interacting->activate();
-		  current_level.interacting = nullptr;
+			current_level.interacting->activate();
+			current_level.interacting = nullptr;
 		}
 		left_click_time += dt;
 		right_click_time += dt;
@@ -187,19 +190,27 @@ namespace crow {
 		case game_state::PLAYING:
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
-			l_click_update();
-			r_click_update();
 			
+
 			// all ai updates (player and enemy) here
 			if (current_level.found_ai) ai_bt.run(dt);
-			crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
-			entities.update_transform_data(dt);
+			
+			// animations need to be updated before checking if the player is alive
+			update_animations(dt);
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
 				game_over();
 				break;
 			}
+
+			// input updates should be done if the player is alive
+			l_click_update();
+			r_click_update();
+
+			// movement update should be done if the player is still alive
+			crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
+			entities.update_transform_data(dt);
 
 			// all this just to update the angle of the model of the player
 			player_data.p_matrix.scale = { 0.25f, 0.25f, 0.25f };
@@ -227,13 +238,13 @@ namespace crow {
 			}
 
 			// this should be the last thing that is updated in the state
-			update_animations(dt);
+			
 			break;
 		}
 
 		// debug mode updates
 		if (debug_mode) {
-			float4e translate = {0, 0, 0, 0};
+			float4e translate = { 0, 0, 0, 0 };
 
 			// debug camera controls
 			/* WASD = basic movement                                                     */
@@ -244,25 +255,25 @@ namespace crow {
 			/* R = reset camera to room's initial camera                                 */
 
 			// movement for camera
-			if ((GetKeyState('W'      ) & 0x8000) != 0) translate.z += view.debug_camera_mspeed * dt;
-			if ((GetKeyState('S'      ) & 0x8000) != 0) translate.z -= view.debug_camera_mspeed * dt;
-			if ((GetKeyState('A'      ) & 0x8000) != 0) translate.x -= view.debug_camera_mspeed * dt;
-			if ((GetKeyState('D'      ) & 0x8000) != 0) translate.x += view.debug_camera_mspeed * dt;
+			if ((GetKeyState('W') & 0x8000) != 0) translate.z += view.debug_camera_mspeed * dt;
+			if ((GetKeyState('S') & 0x8000) != 0) translate.z -= view.debug_camera_mspeed * dt;
+			if ((GetKeyState('A') & 0x8000) != 0) translate.x -= view.debug_camera_mspeed * dt;
+			if ((GetKeyState('D') & 0x8000) != 0) translate.x += view.debug_camera_mspeed * dt;
 			if ((GetKeyState(VK_LSHIFT) & 0x8000) != 0) translate.y -= view.debug_camera_mspeed * dt;
-			if ((GetKeyState(VK_SPACE ) & 0x8000) != 0) translate.y += view.debug_camera_mspeed * dt;
-			
+			if ((GetKeyState(VK_SPACE) & 0x8000) != 0) translate.y += view.debug_camera_mspeed * dt;
+
 			// rotation for camera
-			if ((GetKeyState(VK_UP    ) & 0x8000) != 0) view.rotation.x += view.debug_camera_rspeed * dt;
-			if ((GetKeyState(VK_DOWN  ) & 0x8000) != 0) view.rotation.x -= view.debug_camera_rspeed * dt;
-			if ((GetKeyState(VK_LEFT  ) & 0x8000) != 0) view.rotation.y += view.debug_camera_rspeed * dt;
-			if ((GetKeyState(VK_RIGHT ) & 0x8000) != 0) view.rotation.y -= view.debug_camera_rspeed * dt;
-			if ((GetKeyState('X'      ) & 0x8000) != 0) view.rotation.z += view.debug_camera_rspeed * dt;
-			if ((GetKeyState('Z'      ) & 0x8000) != 0) view.rotation.z -= view.debug_camera_rspeed * dt;
+			if ((GetKeyState(VK_UP) & 0x8000) != 0) view.rotation.x += view.debug_camera_rspeed * dt;
+			if ((GetKeyState(VK_DOWN) & 0x8000) != 0) view.rotation.x -= view.debug_camera_rspeed * dt;
+			if ((GetKeyState(VK_LEFT) & 0x8000) != 0) view.rotation.y += view.debug_camera_rspeed * dt;
+			if ((GetKeyState(VK_RIGHT) & 0x8000) != 0) view.rotation.y -= view.debug_camera_rspeed * dt;
+			if ((GetKeyState('X') & 0x8000) != 0) view.rotation.z += view.debug_camera_rspeed * dt;
+			if ((GetKeyState('Z') & 0x8000) != 0) view.rotation.z -= view.debug_camera_rspeed * dt;
 
 			// apply rotation to movement
 			view.update_rotation_matrix();
 			// but not if rshift is held
-			if ((GetKeyState(VK_RSHIFT ) & 0x8000) == 0) translate = MatrixVectorMult(translate, view.rot_mat);
+			if ((GetKeyState(VK_RSHIFT) & 0x8000) == 0) translate = MatrixVectorMult(translate, view.rot_mat);
 
 			// update the position
 			view.position.x += translate.x;
@@ -271,7 +282,7 @@ namespace crow {
 
 
 			if ((GetKeyState('R') & 0x8000) != 0 && current_level.selected_room) crow::update_room_cam(current_level.selected_room, view);
-			
+
 			// VERY LAST thing to do should be to update the camera
 			view.update();
 		}
@@ -301,69 +312,69 @@ namespace crow {
 		}
 	}
 
-	
 	bool game_manager::l_click_update() {
 		if (buttons_frame[controls::l_mouse] != 1) return false;
 
-	  // processing for left clicks while you are currently playing the game
-	  if (current_level.selected_room && current_level.selected_room->has_player) {
-		// these next two lines prevents the player from moving when you click on
-		// the minimap
-		if (!minimap.inside_minimap(mouse_pos_gui)) {
-		ImVec2 wh = get_window_size();
+		// processing for left clicks while you are currently playing the game
+		if (current_level.selected_room && current_level.selected_room->has_player) {
+			// these next two lines prevents the player from moving when you click on
+			// the minimap
+			if (!minimap.inside_minimap(mouse_pos_gui)) {
+				ImVec2 wh = get_window_size();
 
-		  // crow::audio::play_sfx(0);
-		  float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
-		  // y = -1 out of bound
-		  if (mouse_point.y != -1) {
-			const float3e player_pos = entities.get_world_position(
-				static_cast<size_t>(crow::entity::WORKER));
-			std::vector<float2e> temporary_results =
-				current_level.selected_room->get_path(
-					float2e(player_pos.x, player_pos.z),
-					float2e(mouse_point.x, mouse_point.z));
+				// crow::audio::play_sfx(0);
+				float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+				// y = -1 out of bound
+				if (mouse_point.y != -1) {
+					const float3e player_pos = entities.get_world_position(
+						static_cast<size_t>(crow::entity::WORKER));
+					std::vector<float2e> temporary_results =
+						current_level.selected_room->get_path(
+							float2e(player_pos.x, player_pos.z),
+							float2e(mouse_point.x, mouse_point.z));
 
-			if (temporary_results.size()) {
-			  // if the clicked position is the same as the previous position,
-			  // then we can assume that you've double clicked. thus, the
-			  // worker should run instead of walk
-			  if (player_data.path_result.size() &&
-				  player_data.path_result[0] == temporary_results[0]) {
-				// check to ensure that the clicks were close enough to each
-				// other to count as a double click.
-				if (left_click_time < 0.5f) {
-				  // worker starts running to destination
-				  player_data.worker_speed = player_data.worker_run_speed;
+					if (temporary_results.size()) {
+						// if the clicked position is the same as the previous position,
+						// then we can assume that you've double clicked. thus, the
+						// worker should run instead of walk
+						if (player_data.path_result.size() &&
+							player_data.path_result[0] == temporary_results[0]) {
+							// check to ensure that the clicks were close enough to each
+							// other to count as a double click.
+							if (left_click_time < 0.5f) {
+								// worker starts running to destination
+								player_data.worker_speed = player_data.worker_run_speed;
 
-				  // plays footstep sound when worker moves
-				  crow::audio::add_footstep_sound(
-					  (float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-						  crow::entity::WORKER)],
-					  0.285f);
+								// plays footstep sound when worker moves
+								crow::audio::add_footstep_sound(
+									(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+										crow::entity::WORKER)],
+									0.285f);
+							}
+						}
+						else {
+							// worker starts walking to destination
+							player_data.worker_speed = player_data.worker_walk_speed;
+
+							// plays footstep sound when worker moves
+							crow::audio::add_footstep_sound(
+								(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+									crow::entity::WORKER)], 0.5f);
+						}
+					}
+
+					// set the worker's path
+					player_data.path_result = temporary_results;
+					// disable interaction with object
+					if (current_level.interacting) {
+						current_level.interacting = nullptr;
+						current_message = message();
+					}
 				}
-			  } else {
-				// worker starts walking to destination
-				player_data.worker_speed = player_data.worker_walk_speed;
-
-				// plays footstep sound when worker moves
-				crow::audio::add_footstep_sound(
-					  (float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-						  crow::entity::WORKER)], 0.5f);
-			  }
 			}
-
-			// set the worker's path
-			player_data.path_result = temporary_results;
-			// disable interaction with object
-			if (current_level.interacting) {
-			  current_level.interacting = nullptr;
-			  current_message = message();
-			}
-		  }
 		}
-	  }
-	  left_click_time = 0;
-	  return true;
+		left_click_time = 0;
+		return true;
 	}
 
 	bool game_manager::r_click_update() {
@@ -371,100 +382,102 @@ namespace crow {
 
 		crow::room* selected_room = current_level.selected_room;
 		if (selected_room && selected_room->has_player) {
-		player_data.interacting = false;
-		player_data.target = nullptr;
-		ImVec2 wh = get_window_size();
+			player_data.interacting = false;
+			player_data.target = nullptr;
+			ImVec2 wh = get_window_size();
 
-		float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
-		if (mouse_point.y == -1) {
-			return true;
-		}
-		const crow::tile* clicked_tile =
-			selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
+			float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+			if (mouse_point.y == -1) {
+				return true;
+			}
+			const crow::tile* clicked_tile =
+				selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
 
-		if (!clicked_tile) {
-			return true;
-		}
-
-		for (auto& i : selected_room->objects) {
-			if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
-			player_data.interacting = true;
-			player_data.target = i;
-
-			const float3e p_pos = entities.get_world_position(
-				static_cast<size_t>(crow::entity::WORKER));
-
-			const crow::tile* p_tile =
-				selected_room->get_tile_at({p_pos.x, p_pos.z});
-
-			if (!p_tile) {
+			if (!clicked_tile) {
 				return true;
 			}
 
-			if (p_tile == clicked_tile) {
-				player_data.path_result.clear();
-				break;
-			}
+			for (auto& i : selected_room->objects) {
+				if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
+					player_data.interacting = true;
+					player_data.target = i;
 
-			float2e adjacent_tile =
-				float2e{static_cast<float>(p_tile->col) -
-								static_cast<float>(clicked_tile->col),
-							static_cast<float>(p_tile->row) -
-								static_cast<float>(clicked_tile->row)};
+					const float3e p_pos = entities.get_world_position(
+						static_cast<size_t>(crow::entity::WORKER));
 
-			adjacent_tile = adjacent_tile.normalize();
-			for (size_t i = 0; i < 2; i++) {
-				if (adjacent_tile[i] >= 0.5f) {
-				adjacent_tile[i] = 1.f;
-				continue;
-				} else if (adjacent_tile[i] <= -0.5f) {
-				adjacent_tile[i] = -1.f;
-				}
-			}
+					const crow::tile* p_tile =
+						selected_room->get_tile_at({ p_pos.x, p_pos.z });
 
-			adjacent_tile = {
-				adjacent_tile.x + static_cast<float>(clicked_tile->col),
-				adjacent_tile.y + static_cast<float>(clicked_tile->row)};
-
-			adjacent_tile =
-				selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
-												static_cast<int>(adjacent_tile.y));
-
-
-			std::vector<float2e> temporary_results =
-				selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
-
-			if (!temporary_results.empty() && !player_data.path_result.empty()) {
-				// check for double click on same tile
-				if (player_data.path_result.size() &&
-						player_data.path_result[0] == temporary_results[0]) {
-					// check to ensure that the clicks were close enough to each
-					// other to count as a double click.
-					if (right_click_time < 0.5f) {
-						player_data.worker_speed = player_data.worker_run_speed;
-
-						// plays footstep sound when worker moves
-						crow::audio::add_footstep_sound(
-							(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-								crow::entity::WORKER)],
-							0.285f);
+					if (!p_tile) {
+						return true;
 					}
-				} else {
-					player_data.worker_speed = player_data.worker_walk_speed;
-				
-					crow::audio::add_footstep_sound(
-						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-							crow::entity::WORKER)],
-						0.5f);
+
+					if (p_tile == clicked_tile) {
+						player_data.path_result.clear();
+						break;
+					}
+
+					float2e adjacent_tile =
+						float2e{ static_cast<float>(p_tile->col) -
+										static_cast<float>(clicked_tile->col),
+									static_cast<float>(p_tile->row) -
+										static_cast<float>(clicked_tile->row) };
+
+					adjacent_tile = adjacent_tile.normalize();
+					for (size_t i = 0; i < 2; i++) {
+						if (adjacent_tile[i] >= 0.5f) {
+							adjacent_tile[i] = 1.f;
+							continue;
+						}
+						else if (adjacent_tile[i] <= -0.5f) {
+							adjacent_tile[i] = -1.f;
+						}
+					}
+
+					adjacent_tile = {
+						adjacent_tile.x + static_cast<float>(clicked_tile->col),
+						adjacent_tile.y + static_cast<float>(clicked_tile->row) };
+
+					adjacent_tile =
+						selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
+							static_cast<int>(adjacent_tile.y));
+
+
+					std::vector<float2e> temporary_results =
+						selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
+
+					if (!temporary_results.empty() && !player_data.path_result.empty()) {
+						// check for double click on same tile
+						if (player_data.path_result.size() &&
+							player_data.path_result[0] == temporary_results[0]) {
+							// check to ensure that the clicks were close enough to each
+							// other to count as a double click.
+							if (right_click_time < 0.5f) {
+								player_data.worker_speed = player_data.worker_run_speed;
+
+								// plays footstep sound when worker moves
+								crow::audio::add_footstep_sound(
+									(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+										crow::entity::WORKER)],
+									0.285f);
+							}
+						}
+						else {
+							player_data.worker_speed = player_data.worker_walk_speed;
+
+							crow::audio::add_footstep_sound(
+								(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+									crow::entity::WORKER)],
+								0.5f);
+						}
+					}
+
+					// set the worker's path
+					player_data.path_result = temporary_results;
+
+					break;
 				}
 			}
-
-			// set the worker's path
-			player_data.path_result = temporary_results;
-
-			break;
-			}
-		}
 		}
 
 		right_click_time = 0;
@@ -537,9 +550,22 @@ namespace crow {
 	}
 
 	void game_manager::game_over() {
-		end_game();
-		prev_state = current_state = game_state::GAME_OVER;
-		state_time = 0;
+		const size_t index = static_cast<size_t>(entity::WORKER);
+
+		if(		 entities.mesh_ptrs[index]->animator &&
+				!entities.mesh_ptrs[index]->animator->is_acting &&
+				!entities.mesh_ptrs[index]->animator->performed_action) {
+
+			entities.mesh_ptrs[index]->animator->switch_animation(animator::anim_type::DYING);
+			entities.mesh_ptrs[index]->animator->performed_action = true;
+		}
+		else if (entities.mesh_ptrs[index]->animator &&
+				 entities.mesh_ptrs [index]->animator->performed_action &&
+				!entities.mesh_ptrs[index]->animator->is_acting) {
+			end_game();
+			prev_state = current_state = game_state::GAME_OVER;
+			state_time = 0;
+		}
 	}
 
 
@@ -592,11 +618,12 @@ namespace crow {
 			savefile.open("save.dat", std::ios::out);
 			if (!savefile) {
 				printf("Couldn't write to save file!\n");
-			} else {
+			}
+			else {
 				std::string save_data;
 				save_data += level_number;
 				save_data.resize(14);
-				
+
 				memcpy(&save_data[1], &audio::all_volume, 4);
 				memcpy(&save_data[5], &audio::bgm_volume, 4);
 				memcpy(&save_data[9], &audio::sfx_volume, 4);
@@ -609,7 +636,8 @@ namespace crow {
 				savefile.close();
 				printf("Sucessfully saved game.\n");
 			}
-		} catch (std::exception e) {
+		}
+		catch (std::exception e) {
 			printf(e.what());
 		}
 
@@ -621,13 +649,14 @@ namespace crow {
 			savefile.open("save.dat", std::ios::in);
 			if (!savefile) {
 				printf("Notice: No save file was loaded.\n");
-			} else {
+			}
+			else {
 				char save_data[14];
 
 				savefile.read(save_data, 14);
 
 				level_number = save_data[0];
-				
+
 				memcpy(&audio::all_volume, &save_data[1], 4);
 				memcpy(&audio::bgm_volume, &save_data[5], 4);
 				memcpy(&audio::sfx_volume, &save_data[9], 4);
@@ -635,7 +664,8 @@ namespace crow {
 				bool fs = save_data[13];
 				if (fs) p_impl->swapchain->SetFullscreenState(true, nullptr);
 			}
-		} catch (std::exception e) {
+		}
+		catch (std::exception e) {
 			printf(e.what());
 		}
 	}
@@ -689,7 +719,8 @@ namespace crow {
 			end_game();
 			current_state = prev_state = game_state::CREDITS;
 			state_time = 0;
-		} else {
+		}
+		else {
 			// unload the previous level
 			unload_level();
 
@@ -723,12 +754,12 @@ namespace crow {
 		current_level.p_inter = &player_data.player_interact;
 
 		// setting up minimap
-		minimap = crow::minimap({0.0f, 0.65f}, {0.35f, 0.35f});
-		minimap.map_minc = {-300, -300};
-		minimap.map_maxc = {300, 300};
-		minimap.screen_minr = {0.0f, 0.65f};
-		minimap.screen_maxr = {0.35f, 0.35f};
-		minimap.resolution = {1920, 1080};
+		minimap = crow::minimap({ 0.0f, 0.65f }, { 0.35f, 0.35f });
+		minimap.map_minc = { -300, -300 };
+		minimap.map_maxc = { 300, 300 };
+		minimap.screen_minr = { 0.0f, 0.65f };
+		minimap.screen_maxr = { 0.35f, 0.35f };
+		minimap.resolution = { 1920, 1080 };
 		minimap.set_window_size(get_window_size());
 		minimap.current_level = &current_level;
 		minimap.calculate_extents();
@@ -755,11 +786,11 @@ namespace crow {
 		entities.mesh_ptrs[0] = &all_meshes[0];
 		entities.mesh_ptrs[1] = &all_meshes[0];
 
-		
+
 		current_level.clean_level();
 		ai_bt.clean_tree();
 	}
-	
+
 	void game_manager::poll_controls(double dt) {
 		for (int i = 0; i < 2; i++) {
 			if ((GetKeyState(button_mappings[i]) & 0x8000) != 0) {
@@ -768,7 +799,8 @@ namespace crow {
 				// button is pressed
 				buttons[i] += dt;
 				buttons_frame[i]++;
-			} else {
+			}
+			else {
 				// reset button
 				buttons[i] = 0;
 				buttons_frame[i] = 0;
@@ -781,7 +813,7 @@ namespace crow {
 		ImGui::SetWindowFontScale(ImGui::GetWindowSize().x / 960.f * scale);
 		float text_size = ImGui::GetFontSize() * text.size() / 2;
 		ImGui::SameLine(wh.x / 2.0f - text_size +
-						(text_size / 2.0f));
+			(text_size / 2.0f));
 		ImGui::Text(text.c_str());
 		ImGui::SetWindowFontScale(f);
 		f = ImGui::GetFontSize();

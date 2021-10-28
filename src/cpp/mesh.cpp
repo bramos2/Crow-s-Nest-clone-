@@ -335,7 +335,6 @@ namespace crow {
 		tween_frame.time = t;
 	}
 
-
 	DirectX::XMMATRIX* animator::mult_curr_frame()
 	{
 		DirectX::XMMATRIX* result = nullptr;
@@ -358,11 +357,16 @@ namespace crow {
 	{
 		t += dt;
 		if (t > animations[curr_animation].duration) {
-			if (curr_animation != 0) {
-				curr_animation = 0;
+			if (is_running && !is_acting) {
+				// play running animation
+				curr_animation = anim_type::MOVING;
+			}
+			else if (!is_acting) {
+				// switch idle animation
+				curr_animation = anim_type::IDLE;
 			}
 			t = animations[curr_animation].frames[1].time;
-			is_animating_action = false;
+			is_acting = false; // we only play an action animation once
 		}
 
 		update_tween_frame();
@@ -377,7 +381,7 @@ namespace crow {
 		if (index < animations.size()) {
 			curr_animation = index;
 			t = animations[curr_animation].frames[1].time;
-			is_animating_action = true;
+			is_acting = true;
 		}
 	}
 

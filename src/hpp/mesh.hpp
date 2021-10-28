@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "math_types.hpp"
+//#include "interactible.hpp"
 
 namespace crow {
 
@@ -82,7 +83,18 @@ namespace crow {
 		key_frame inv_bindpose;
 		key_frame tween_frame;
 		std::vector<anim_clip> animations;
-		bool is_animating_action = false;
+		bool is_acting = false;
+		bool is_running = false;
+		bool performed_action = false;
+
+		struct anim_type {
+			enum {
+				IDLE = 0,
+				MOVING,
+				DYING,
+				COUNT
+			};
+		};
 
 		unsigned int curr_animation = 0;
 		float t = 0.f;

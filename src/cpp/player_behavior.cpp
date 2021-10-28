@@ -108,6 +108,12 @@ void path_through(player_behavior_data& p_data, crow::entities& entities,
       p_data.path_result.pop_back();
     }
 
+    if (entities.mesh_ptrs[index]->animator && !entities.mesh_ptrs[index]->animator->is_running) {
+        entities.mesh_ptrs[index]->animator->switch_animation(animator::anim_type::MOVING);
+        entities.mesh_ptrs[index]->animator->is_running = true;
+        entities.mesh_ptrs[index]->animator->is_acting = false;
+    }
+
   } else {
     entities.velocities[index] = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
     if (p_data.interacting) {
@@ -115,6 +121,12 @@ void path_through(player_behavior_data& p_data, crow::entities& entities,
 
       p_data.target = nullptr;
       p_data.interacting = false;
+      // TODO ADD INTERACTING ANIMATIONS
+    }
+    if (entities.mesh_ptrs[index]->animator && entities.mesh_ptrs[index]->animator->is_running) {
+        entities.mesh_ptrs[index]->animator->switch_animation(animator::anim_type::IDLE);
+        entities.mesh_ptrs[index]->animator->is_running = false;
+        entities.mesh_ptrs[index]->animator->is_acting = false;
     }
   }
 }

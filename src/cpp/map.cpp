@@ -85,7 +85,7 @@ namespace crow {
             }
             default:
             {
-                state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[2];
+                state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CUBE];
                 break;
             }
             }
