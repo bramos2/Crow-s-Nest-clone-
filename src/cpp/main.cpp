@@ -37,6 +37,7 @@ namespace
 	std::bitset<256> bmap;
 	float mx = 0.0f;
 	float my = 0.0f;
+	int mdelta = 0;
 }
 
 int CALLBACK WinMain(
@@ -144,6 +145,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		mx = GET_X_LPARAM(lParam);
 		my = GET_Y_LPARAM(lParam);
 		break;
+	case WM_MOUSEWHEEL:
+		mdelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
@@ -224,6 +228,8 @@ MSG begin_main_loop()
 				dy = my - py;
 				py = my;
 			}*/
+			manager.mwheel_delta = mdelta;
+			mdelta = 0;
 
 			manager.update();	// pass delta time
 			manager.render();

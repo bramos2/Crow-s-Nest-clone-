@@ -23,6 +23,7 @@ namespace crow {
 		float2e screen_maxr = {0, 0};
 
 		float2e resolution = {0, 0};
+		float2e window_pos2 = {0, 0};
 		float2e window_pos = {0, 0};
 		float2e window_ext = {0, 0};
 
@@ -47,12 +48,12 @@ namespace crow {
 		void set_window_size(ImVec2 window_size);
 
 		// updates map_minc and map_maxc based on the rooms inside the minimap.
-		// additionally centers the minimap
-		void calculate_extents();
+		// additionally centers the minimap unless specified otherwise
+		void calculate_extents(bool recenter = true);
 
 		auto inside_minimap(float2e& mouse_pos) -> bool;
 
-		private:
+		//private:
 		bool is_dragging = false;
 
 		// position of the mouse when you click

@@ -97,7 +97,6 @@ namespace crow {
         tiles.create_map();
         pather = crow::theta_star(&tiles);
 
-        return; // todo::temporary bugfix
         for (crow::interactible*& i : objects) {
             if (i && i->type != crow::object_type::DOOR) {
                 tiles.map[i->y][i->x]->is_open = false;

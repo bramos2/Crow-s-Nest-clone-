@@ -2,25 +2,40 @@
 #include "../hpp/game_manager.hpp"
 
 void crow::minimap::draw_call(game_manager& state) {
-  // pop style var moved into main
-  ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
-  ImGui::SetNextWindowSize((ImVec2&)window_ext, ImGuiCond_Always);
-  // finally create the window
-  ImGui::Begin("Facility Map", nullptr,
-               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                   ImGuiWindowFlags_NoTitleBar |
-                   ImGuiWindowFlags_NoBringToFrontOnFocus);
+    ImGui::SetNextWindowBgAlpha(0.02f);
 
-  // keeps the minimap properly sized for the game window
-  ImVec2 wh = state.imgui_wsize;
-  set_window_size(wh);
+    // special processing depending on if the mouse is inside the minimap
+    if (inside_minimap(state.mouse_pos_gui)) {
+        // first, enable zooming of the map
+        if (state.mwheel_delta) {
+            calculate_extents(false);
+            zoom += state.mwheel_delta * 0.001f;
+            zoom = clampf(zoom, 1, 5);
+            // TODO:: support for shift + lclick
+        }
+
+        // next, draw the minimap not faded out
+        ImGui::SetNextWindowBgAlpha(0.9f);
+    }
+
+    ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize((ImVec2&)window_ext, ImGuiCond_Always);
+    // finally create the window
+    ImGui::Begin("Facility Map", nullptr,
+                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                    ImGuiWindowFlags_NoTitleBar |
+                    ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    // keeps the minimap properly sized for the game window
+    ImVec2 wh = state.imgui_wsize;
+    set_window_size(wh);
 
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
     // first, check to see if the mouse click began inside of the minimap
     // window
-    if (inside_minimap(state.mouse_pos)) {
-      calculate_mouse_position(state.mouse_pos);
+    if (inside_minimap(state.mouse_pos_gui)) {
+      calculate_mouse_position(state.mouse_pos_gui);
     }
   }
   is_dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
@@ -30,7 +45,7 @@ void crow::minimap::draw_call(game_manager& state) {
     // if it has been grabbed, then minimap.mouse_position.x should have been
     // set to a float between 0:1
     if (mouse_position.x != -1) {
-      calculate_mouse_drag(state.mouse_pos);
+      calculate_mouse_drag(state.mouse_pos_gui);
     }
   }
 
@@ -54,8 +69,10 @@ void crow::minimap::draw_call(game_manager& state) {
         };
         ImVec2 room_wh = {
             // Set the width and height:
-            ((current_room.width * current_room.minimap_scale)) * scale.x,
+            ((current_room.length * current_room.minimap_scale)) * scale.x,
             ((current_room.length * current_room.minimap_scale)) * scale.y,
+            // room tile size is length x length instead of length x width
+            // so they are the same size even though the rooms are not the same size
         };
 
         
@@ -88,7 +105,8 @@ void crow::minimap::draw_call(game_manager& state) {
 
         // Set the x, y position of the room:
         ImGui::SetCursorPos(room_xy);
-        if (ImGui::Button(std::to_string(current_room.id).c_str(), room_wh)) {
+        //if (ImGui::Button( "", room_wh)) {
+        if (ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh)) {
           if (!is_dragging) {
             /* processing for room switch goes here */
             // active_room->set_active(app, room_mesh_ptr, *camera);
@@ -113,6 +131,7 @@ void crow::minimap::draw_call(game_manager& state) {
     minimap.dragging = false;*/
   }
   ImGui::End();
+
 }
 
 crow::minimap::minimap() {}
@@ -140,21 +159,19 @@ void crow::minimap::set_rooms_pos() {
       starting_position.x = 0.f;
       for (auto& current_room : current_row) {
         current_room.minimap_pos = starting_position;
-        starting_position.x += r_width + offset;
+        starting_position.x += current_room.length * current_room.minimap_scale + offset;
       }
-      starting_position.y += r_height + offset;
+      starting_position.y += 49.5 + offset;
     }
   }
 }
 
 auto crow::minimap::inside_minimap(float2e& mouse_pos)
     -> bool {
-  return (mouse_pos.x < static_cast<double>(window_pos.x) +
-                            static_cast<double>(window_ext.x) &&
-          mouse_pos.y < static_cast<double>(window_pos.y) +
-                            static_cast<double>(window_ext.y) &&
+  return (mouse_pos.x < static_cast<double>(window_pos.x) + static_cast<double>(window_ext.x) &&
+          mouse_pos.y < static_cast<double>(window_pos.y) + static_cast<double>(window_ext.y) &&
           mouse_pos.x > static_cast<double>(window_pos.x) &&
-          static_cast<double>(mouse_pos.y) > window_pos.y);
+            static_cast<double>(mouse_pos.y) > static_cast<double>(window_pos.y));
 }
 
 void crow::minimap::calculate_mouse_position(float2e& mouse_pos) {
@@ -194,7 +211,7 @@ void crow::minimap::calculate_mouse_drag(float2e& mouse_pos) {  // position of t
   minimap_center_position.y = clampf(minimap_center_position.y, map_minc.y, map_maxc.y);
 }
 
-void crow::minimap::calculate_extents() {
+void crow::minimap::calculate_extents(bool recenter) {
   set_rooms_pos();
 
   float2e min = {0, 0};
@@ -207,17 +224,16 @@ void crow::minimap::calculate_extents() {
       if (rooms_checked) {
         // check to see if this room is further out than the other rooms we have
         // already checked
-        // clang-format off
         if (current_room.minimap_pos.x < min.x) min.x = current_room.minimap_pos.x;
         if (current_room.minimap_pos.y < min.y) min.y = current_room.minimap_pos.y;
-        if (current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale  > max.x) max.x = current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale ;
-        if (current_room.minimap_pos.y + current_room.length * current_room.minimap_scale > max.y) max.y = current_room.minimap_pos.y + current_room .height * current_room.minimap_scale;
+        if (current_room.minimap_pos.x + current_room.length * current_room.minimap_scale > max.x) max.x = current_room.minimap_pos.x + current_room.length * current_room.minimap_scale;
+        if (current_room.minimap_pos.y + current_room.length * current_room.minimap_scale > max.y) max.y = current_room.minimap_pos.y + current_room.length * current_room.minimap_scale;
         // clang-format on
       } else {
         // this is the first room in the list, so it's the standard to check all
         // other rooms to (we need SOMETHING as a basic to check with)
         min = float2e(current_room.minimap_pos.x, current_room.minimap_pos.y);
-        max = float2e(current_room.minimap_pos.x + current_room.width  * current_room.minimap_scale,
+        max = float2e(current_room.minimap_pos.x + current_room.length * current_room.minimap_scale,
                         current_room.minimap_pos.y + current_room.length * current_room.minimap_scale);
       }
       rooms_checked++;
@@ -250,18 +266,25 @@ void crow::minimap::calculate_extents() {
   // zoom and map size grows too big this may never be fixed if we end up never
   // making a map big enough for this
 
-  minimap_center_position = mid;
+    if (recenter) {
+        minimap_center_position = mid;
+    } else {
+        // if we're not going to center the map, at least prevent it from going out of bounds
+        minimap_center_position.x = clampf(minimap_center_position.x, map_minc.x, map_maxc.x);
+        minimap_center_position.y = clampf(minimap_center_position.y, map_minc.y, map_maxc.y);
+    }
 }
 
 auto crow::minimap::room_off_view(crow::room const& room) const -> bool {
-  return (room.minimap_pos.x + minimap_center_position.x < -r_width ||
-          room.minimap_pos.y + minimap_center_position.y < -r_height ||
-          room.minimap_pos.x + r_width + minimap_center_position.x >
+    float2e wh = {room.width * room.minimap_scale, room.length * room.minimap_scale};
+
+  return (room.minimap_pos.x + minimap_center_position.x < -wh.y ||
+          room.minimap_pos.y + minimap_center_position.y < -wh.y ||
+          room.minimap_pos.x + wh.y + minimap_center_position.x >
               resolution.x * screen_maxr.x ||
-          room.minimap_pos.y + r_height + minimap_center_position.y >
+          room.minimap_pos.y + wh.y + minimap_center_position.y >
               resolution.y * screen_maxr.y);
 }
-
 void crow::minimap::reset_state() {
   mouse_position = {-1, -1};
   is_dragging = false;

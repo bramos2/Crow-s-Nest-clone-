@@ -10,26 +10,40 @@ namespace crow {
         SoLoud::Wav sfx[NUM_SFX];
         bool sound_loaded;
         std::vector<timed_audio> audio_timers;
+        // handle of currently playing bgm
+        int bgm_handle;
+        // volume of ALL sounds
+        float all_volume;
+        // volume of bgm ONLY (stacks with all_volume)
+        float bgm_volume;
+        // volume of sfx ONLY (stacks with all_volume)
+        float sfx_volume;
 
         // all audio-related initialization here
         void initialize() {
-          soloud.init();
-          load_all_sounds();
+            all_volume = 1;
+            bgm_volume = 1;
+            sfx_volume = 1;
+
+            bgm_handle = -1;
+            soloud.init();
+            load_all_sounds();
         }
         // all audio-related cleanup called here
         void cleanup() { soloud.deinit(); }
 
         int play_bgm(int id) {
-          int voice = soloud.play(bgm[id]);
-          // prevents the bgm from dying just because there's too many sfx
-          soloud.setProtectVoice(voice, 1);
-          return voice;
+            bgm_handle = soloud.play(bgm[id], bgm_volume);
+            // prevents the bgm from dying just because there's too many sfx
+            soloud.setProtectVoice(bgm_handle, 1);
+            return bgm_handle;
         }
 
+        void stop_bgm() { soloud.stop(bgm_handle); bgm_handle = -1; }
         void stop_bgm(int handle) { soloud.stop(handle); }
 
         int play_sfx(int id) {
-          int voice = soloud.play(sfx[id]);
+          int voice = soloud.play(sfx[id], sfx_volume);
           return voice;
         }
 
@@ -40,7 +54,7 @@ namespace crow {
           float dist_y = sfx_pos[3][1] - camera.view_mat[3].y;
           float dist_z = sfx_pos[3][2] - camera.view_mat[3].z;
           float volume = (dist_x * dist_x) + (dist_y * dist_y) + (dist_z * dist_z);
-          volume = crow::clampf(VOLUME_MAXDIST_SQUARED / volume, 0.0f, max_volume);
+          volume = crow::clampf(VOLUME_MAXDIST_SQUARED / volume, 0.0f, max_volume) * sfx_volume;
           float pan = crow::clampf(dist_x / PAN_MAXDIST, -1.0f, 1.0f);
           // finally, play the sound
           int voice = soloud.play(sfx[id], volume, pan);
@@ -61,7 +75,9 @@ namespace crow {
           sound_path = "res/sfx/bong_001.ogg";
           load_sfx(sound_path, 1);
 
-          // loading bgm one by one (doesn't exist yet)
+          // loading bgm one by one
+          sound_path = "res/bgm/cavethemeb4.ogg";
+          load_bgm(sound_path, 0);
 
           sound_loaded = true;
         }
@@ -84,6 +100,11 @@ namespace crow {
           if (bgm[i].mSampleCount) return true;
           // sound is null, return false
           return false;
+        }
+
+        void update_volume() {
+            soloud.setGlobalVolume(all_volume);
+            if (bgm_handle != -1) soloud.setVolume(bgm_handle, bgm_volume);
         }
 
         void add_footstep_sound(float4x4_a* worker_position, float interval) {

@@ -36,10 +36,10 @@ void interactible::set_tile(unsigned int _x, unsigned int _y) {
 
 void interactible::set_tile(char dir) {
     switch (dir) {
-    case 'u': x =  7; y = 14; break;
+    case 'u': x = 12; y = 14; break;
     case 'l': x =  0; y =  7; break;
-    case 'd': x =  7; y =  0; break;
-    case 'r': x = 14; y =  7; break;
+    case 'd': x = 12; y =  0; break;
+    case 'r': x = 24; y =  7; break;
     }
 }
 
@@ -57,13 +57,44 @@ void pg_console::interact(size_t const index, crow::entities& entity) {
 
 pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
 
-oxygen_console::oxygen_console() {
+oxygen_console::oxygen_console(crow::level* _lv) {
   type = crow::object_type::OXYGEN_CONSOLE;
-  is_active = false;
+  current_level = _lv;
+  is_broken = true;
 }
 
 void oxygen_console::interact(size_t const index, crow::entities& entity) {
-  is_active = true;
+    if (!is_broken) {
+         current_level->msg = message("The oxygen console is already repaired!");
+    } else {
+        current_level->interacting = this;
+        current_level->msg = message("Repairing oxygen console...", crow::default_message_time - 1.0f,
+                                    crow::default_interact_wait);
+    }
+}
+
+void oxygen_console::activate() {
+    is_broken = false;
+}
+
+pressure_console::pressure_console(crow::level* _lv) {
+  type = crow::object_type::OXYGEN_CONSOLE;
+  current_level = _lv;
+  is_broken = true;
+}
+
+void pressure_console::interact(size_t const index, crow::entities& entity) {
+    if (!is_broken) {
+         current_level->msg = message("The pressure console is already repaired!");
+    } else {
+        current_level->interacting = this;
+        current_level->msg = message("Repairing pressure console...", crow::default_message_time - 1.0f,
+                                    crow::default_interact_wait);
+    }
+}
+
+void pressure_console::activate() {
+    is_broken = false;
 }
 
 void door_panel::interact(size_t const index, crow::entities& entity) {
@@ -245,8 +276,11 @@ door::door() {
   is_active = true;
   is_broken = false;
 }
+
 door::door(crow::level* _lv) {
   type = crow::object_type::DOOR;
+  is_active = true;
+  is_broken = false;
   current_level = _lv;
 }
 
@@ -254,6 +288,7 @@ void exit::interact(size_t const index, crow::entities& entity) {
   printf("\ninteracted with exit, congrats! loaded level: %i",
              level_num + 1);
   state->change_level(level_num + 1);
+  // nothing should be called after the change level command
 }
 
 exit::exit(game_manager* _state, crow::level* _lv, int _level_num) {

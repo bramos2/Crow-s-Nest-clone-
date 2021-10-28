@@ -146,6 +146,8 @@ namespace crow {
 			buttons_frame[i] = 0;
 		}
 
+		load_game();
+
 		// load main menu
 		current_state = game_state::MAIN_MENU;
 	}
@@ -195,9 +197,7 @@ namespace crow {
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
-				end_game();
-				prev_state = current_state = game_state::GAME_OVER;
-				state_time = 0;
+				game_over();
 				break;
 			}
 
@@ -214,8 +214,7 @@ namespace crow {
 			ai_bt.e_matrix.update();
 			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 
-			// TODO::room_updates(dt)
-			// room_updates(dt);
+			room_updates(dt);
 			audio::update_audio_timers(this, dt);
 
 			// fetch any message that might have been summoned by the player object
@@ -310,7 +309,7 @@ namespace crow {
 	  if (current_level.selected_room && current_level.selected_room->has_player) {
 		// these next two lines prevents the player from moving when you click on
 		// the minimap
-		if (!minimap.inside_minimap(mouse_pos)) {
+		if (!minimap.inside_minimap(mouse_pos_gui)) {
 		ImVec2 wh = get_window_size();
 
 		  // crow::audio::play_sfx(0);
@@ -472,11 +471,47 @@ namespace crow {
 		return true;
 	}
 
+	void game_manager::room_updates(double dt) {
+		// oxygen console updates
+		if (current_level.oxygen_console && current_level.oxygen_console->is_broken) {
+			for (int i = 0; i < current_level.rooms.size(); i++) {
+				for (int j = 0; j < current_level.rooms[i].size(); j++) {
+					if (current_level.rooms[i][j].has_player) {
+						// decreases oxygen level
+						current_level.rooms[i][j].oxygen -= dt;
+
+						// this kills the worker
+						if (current_level.rooms[i][j].oxygen <= 0) {
+							game_over();
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		// pressure console updates
+		if (current_level.pressure_console && current_level.pressure_console->is_broken) {
+			// pressure is decreasing!
+			current_level.pressure -= dt;
+
+			// this kills the worker
+			if (current_level.pressure <= 0) {
+				game_over();
+				return;
+			}
+		}
+	}
+
+
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
 
 		switch (current_state) {
+		case game_state::SETTINGS:
+			// case falls if in-game, draw nothing otherwise
+			if (!current_level.rooms.size()) break;
 		case game_state::PLAYING: // falling case
 		case game_state::PAUSED:
 			render_game();
@@ -500,6 +535,13 @@ namespace crow {
 			}
 		}
 	}
+
+	void game_manager::game_over() {
+		end_game();
+		prev_state = current_state = game_state::GAME_OVER;
+		state_time = 0;
+	}
+
 
 	void game_manager::cleanup() {
 		// delete all meshes and associated data
@@ -544,6 +586,60 @@ namespace crow {
 		delete p_impl;
 	}
 
+	void game_manager::save_game() {
+		try {
+			std::fstream savefile;
+			savefile.open("save.dat", std::ios::out);
+			if (!savefile) {
+				printf("Couldn't write to save file!\n");
+			} else {
+				std::string save_data;
+				save_data += level_number;
+				save_data.resize(14);
+				
+				memcpy(&save_data[1], &audio::all_volume, 4);
+				memcpy(&save_data[5], &audio::bgm_volume, 4);
+				memcpy(&save_data[9], &audio::sfx_volume, 4);
+
+				BOOL fs;
+				p_impl->swapchain->GetFullscreenState(&fs, nullptr);
+				save_data[13] = fs;
+
+				savefile.write(save_data.c_str(), save_data.length());
+				savefile.close();
+				printf("Sucessfully saved game.\n");
+			}
+		} catch (std::exception e) {
+			printf(e.what());
+		}
+
+	}
+
+	void game_manager::load_game() {
+		try {
+			std::fstream savefile;
+			savefile.open("save.dat", std::ios::in);
+			if (!savefile) {
+				printf("Notice: No save file was loaded.\n");
+			} else {
+				char save_data[14];
+
+				savefile.read(save_data, 14);
+
+				level_number = save_data[0];
+				
+				memcpy(&audio::all_volume, &save_data[1], 4);
+				memcpy(&audio::bgm_volume, &save_data[5], 4);
+				memcpy(&audio::sfx_volume, &save_data[9], 4);
+
+				bool fs = save_data[13];
+				if (fs) p_impl->swapchain->SetFullscreenState(true, nullptr);
+			}
+		} catch (std::exception e) {
+			printf(e.what());
+		}
+	}
+
 	void game_manager::new_game() {
 		// load all the meshes that we are going to need
 		//all_meshes.resize(3);
@@ -572,10 +668,12 @@ namespace crow {
 		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
 		entities.s_resource_view[1] = textures[texture_list::AI];
 
-		load_level(0);
+		load_level(level_number);
+		audio::play_bgm(audio::BGM::NORMAL);
 	}
 
 	void game_manager::end_game() {
+		audio::stop_bgm();
 		current_level.clean_level();
 		cleanup();
 		entities.pop_all();
@@ -583,6 +681,8 @@ namespace crow {
 	}
 
 	void game_manager::change_level(int lv) {
+		level_number = lv;
+
 		// after all clean up is done, it's time to start loading the next level
 		if (lv - 1 == crow::final_level) {
 			// we beat the game, so send us to the endgame sequence, whatever that may be
@@ -595,6 +695,9 @@ namespace crow {
 
 			// load the next level
 			load_level(lv);
+
+			// save game to file
+			save_game();
 		}
 	}
 
@@ -620,11 +723,11 @@ namespace crow {
 		current_level.p_inter = &player_data.player_interact;
 
 		// setting up minimap
-		minimap = crow::minimap({0.0f, 0.65f}, {0.4f, 0.35f});
+		minimap = crow::minimap({0.0f, 0.65f}, {0.35f, 0.35f});
 		minimap.map_minc = {-300, -300};
 		minimap.map_maxc = {300, 300};
 		minimap.screen_minr = {0.0f, 0.65f};
-		minimap.screen_maxr = {0.25f, 0.35f};
+		minimap.screen_maxr = {0.35f, 0.35f};
 		minimap.resolution = {1920, 1080};
 		minimap.set_window_size(get_window_size());
 		minimap.current_level = &current_level;
@@ -674,11 +777,14 @@ namespace crow {
 	}
 
 	void game_manager::imgui_centertext(std::string text, float scale, ImVec2 wh) {
-		ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+		float f = ImGui::GetFontSize() / 13;
+		ImGui::SetWindowFontScale(ImGui::GetWindowSize().x / 960.f * scale);
 		float text_size = ImGui::GetFontSize() * text.size() / 2;
-		ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+		ImGui::SameLine(wh.x / 2.0f - text_size +
 						(text_size / 2.0f));
 		ImGui::Text(text.c_str());
+		ImGui::SetWindowFontScale(f);
+		f = ImGui::GetFontSize();
 	}
 
 	ImVec2 game_manager::get_window_size() {

@@ -62,7 +62,7 @@ struct timed_audio {
 };
 
 // readable names for every bgm object in the game
-enum BGM : int { TITLE = 1, DETECTED = 2 };
+enum BGM : int { NORMAL = 0, TITLE = 1, DETECTED = 2 };
 // readable names for every sfx object in the game
 enum SFX : int { FOOTSTEP_WORKER = 0, MENU_OK = 1, BEAKER_BREAK = 2 };
 
@@ -81,6 +81,11 @@ extern SoLoud::Wav sfx[NUM_SFX];
 extern bool sound_loaded;
 
 extern std::vector<timed_audio> audio_timers;
+
+extern int bgm_handle;
+extern float all_volume;
+extern float bgm_volume;
+extern float sfx_volume;
 
 // initialize everything necessary for audio
 void initialize();
@@ -103,6 +108,7 @@ bool load_bgm(std::string& path, int i);
 int play_bgm(int id);
 
 // stop playing the bgm represented by the handle
+void stop_bgm();
 void stop_bgm(int handle);
 
 // a static, barebones play sound function
@@ -115,6 +121,9 @@ int play_sfx(int id);
 // at, defaults to SOUND_MAX_VOLUME
 int play_sfx3d(int id, float4x4_a& sfx_pos, view_t& camera,
                float max_volume = SOUND_MAX_VOLUME);
+
+// updates the volume metadata
+void update_volume();
 
 void add_footstep_sound(float4x4_a* worker_position, float interval);
 

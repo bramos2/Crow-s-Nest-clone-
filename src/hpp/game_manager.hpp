@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bitset>
+#include <fstream>
 
 #include "audio.hpp"
 #include "behavior_tree.hpp"
@@ -44,8 +44,12 @@ namespace crow {
 		float left_click_time = 0.f;
 		float right_click_time = 0.f;
 		int menu_position = 0;
+		int level_number = 0;
+		int mwheel_delta = 0;
 		float2e mouse_pos;
-
+		// use this for any imgui functions that may for some reason need the mouse pos
+		float2e mouse_pos_gui;
+		
 		impl_t* p_impl = nullptr;
 		XTime timer;
 		entities entities;
@@ -138,11 +142,15 @@ namespace crow {
 		~game_manager();
 
 		// game state data functions
+		void save_game();
+		void load_game();
 		void new_game();
 		void end_game();
 		void load_level(int lv);
 		void change_level(int lv);
 		void unload_level();
+		// call this whenever the worker dies to transition to gameover state
+		void game_over();
 		void cleanup();
 
 		// ImGui draw calls
@@ -155,6 +163,7 @@ namespace crow {
 		void draw_game_over(ImVec2 wh);
 		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
+		void draw_pressure_remaining(ImVec2 wh);
 
 		// imgui sucks
 		ImVec2 imgui_wsize;

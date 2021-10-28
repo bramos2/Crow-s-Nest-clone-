@@ -10,6 +10,10 @@ namespace crow {
     // right door position (default): 14, 7
 
     void level::load_level(crow::game_manager* state, int lv) {
+        oxygen_console = nullptr;
+        pressure_console = nullptr;
+        pressure = pressure_max = 230;
+
       switch (lv) {
         case 1: {
           x = 4;
@@ -265,15 +269,24 @@ namespace crow {
           rooms[0][0].id = 1;
           crow::door* door1 = new door(this);
           crow::door_panel* door1p = new door_panel(this);
+          //crow::oxygen_console* oxy = new crow::oxygen_console(this);
+          crow::pressure_console* press = new crow::pressure_console(this);
           {
-            door1->set_tile(14, 7);
-            door1p->set_tile(14, 9);
+            door1->set_tile('r');
+            door1p->set_tile(24, 9);
             door1->roomptr = &rooms[0][0];
             rooms[0][0].objects.push_back(door1p);
             rooms[0][0].objects.push_back(door1);
 
             door1p->door = door1;
             door1->panel = door1p;
+            
+            //rooms[3][1].objects.push_back(oxy);
+            //oxygen_console = oxy;
+            //oxy->set_tile('d');
+            rooms[3][1].objects.push_back(press);
+            pressure_console = press;
+            press->set_tile('d');
 
             // worker start position
             rooms[0][0].object_indices.push_back(0);
@@ -291,8 +304,8 @@ namespace crow {
           crow::door* door2 = new door();
           crow::door* door2_2 = new door();
           {
-            door2->set_tile(0, 7);
-            door2_2->set_tile(7, 0);
+            door2->set_tile('l');
+            door2_2->set_tile('d');
 
             door2->neighbor = door1;
             door1->neighbor = door2;
@@ -314,8 +327,8 @@ namespace crow {
           crow::door* door3 = new door();
           crow::door* door3_2 = new door();
           {
-            door3->set_tile(7, 14);
-            door3_2->set_tile(7, 0);
+            door3->set_tile('u');
+            door3_2->set_tile('d');
 
             door3->neighbor = door2_2;
             door2_2->neighbor = door3;
@@ -339,10 +352,10 @@ namespace crow {
           crow::door* door4_3 = new door();
           crow::door* door4_4 = new door();
           {
-            door4->set_tile(7, 14);
-            door4_2->set_tile(0, 7);
-            door4_3->set_tile(7, 0);
-            door4_4->set_tile(14, 7);
+            door4->set_tile('u');
+            door4_2->set_tile('l');
+            door4_3->set_tile('d');
+            door4_4->set_tile('r');
 
             door4->neighbor = door3_2;
             door3_2->neighbor = door4;
@@ -360,7 +373,7 @@ namespace crow {
           rooms[2][0].id = 5;
           crow::door* door5 = new door();
           {
-            door5->set_tile(14, 7);
+            door5->set_tile('r');
 
             door5->neighbor = door4_2;
             door4_2->neighbor = door5;
@@ -376,7 +389,7 @@ namespace crow {
            rooms[3][1].id = 6;
            crow::door* door6 = new door();
           {
-            door6->set_tile(7, 14);
+            door6->set_tile('u');
           
             door6->neighbor = door4_3;
             door4_3->neighbor = door6;
@@ -390,8 +403,8 @@ namespace crow {
           crow::door* door7 = new door();
           crow::door* door7_2 = new door();
           {
-            door7->set_tile(0, 7);
-            door7_2->set_tile(14, 7);
+            door7->set_tile('l');
+            door7_2->set_tile('r');
 
             door7->neighbor = door4_4;
             door4_4->neighbor = door7;
@@ -412,7 +425,7 @@ namespace crow {
           crow::door* door8 = new door();
           crow::exit* floor0_exit = new exit(state, this, lv);
           {
-            door8->set_tile(0, 7);
+            door8->set_tile('l');
 
             door8->neighbor = door7_2;
             door7_2->neighbor = door8;
@@ -420,7 +433,7 @@ namespace crow {
             door8->roomptr = &rooms[2][3];
             rooms[2][3].objects.push_back(door8);
 
-            floor0_exit->set_tile(14, 7);
+            floor0_exit->set_tile('r');
             rooms[2][3].objects.push_back(floor0_exit);
 
             rooms[2][3].generate_tilemap();

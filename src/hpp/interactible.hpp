@@ -62,7 +62,15 @@ namespace crow {
 	struct oxygen_console : public interactible {
 	  // TODO: gives power to a level
 	  virtual void interact(size_t const index, crow::entities& entity);
-	  oxygen_console();
+	  virtual void activate();
+	  oxygen_console(crow::level* _lv);
+	};
+
+	struct pressure_console : public interactible {
+	  // TODO: gives power to a level
+	  virtual void interact(size_t const index, crow::entities& entity);
+	  virtual void activate();
+	  pressure_console(crow::level* _lv);
 	};
 
 	struct door : public interactible {

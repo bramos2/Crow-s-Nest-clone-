@@ -16,7 +16,7 @@ struct room {
   // how much to scale the width and length variables of the room when drawing
   // the minimap
   const float minimap_scale = 3.3f;
-  unsigned int width = 15;
+  unsigned int width = 25;
   unsigned int length = 15;
   unsigned int height = 50;
   bool has_player = false;
@@ -29,7 +29,6 @@ struct room {
   int id = 0;
   crow::tile_map tiles;
   crow::theta_star pather;
-  // 0 = floor, 1-4 walls
 
   float3e cam_pos = float3e(0.f, 20.f, -2.f);
   float3e cam_rotation = float3e(-85.f, 0.f, 0.f);
@@ -67,6 +66,8 @@ struct level {
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
   bool found_ai = false;
+  float pressure;
+  float pressure_max;
   player_interact* p_inter = nullptr;
   crow::room* selected_room = nullptr;
   std::vector<std::vector<room>> rooms;
@@ -80,6 +81,9 @@ struct level {
   // oxygen console in this floor. if there is no console, or if the console is
   // not broken, then oxygen will not decrease
   crow::oxygen_console* oxygen_console;
+  // pressure console in this floor. if there is no console, or if the consle is
+  // not broken, then pressure will not decrease (increase?)
+  crow::pressure_console* pressure_console;
 
   // loads a level from file
   void load_level(std::string filepath);

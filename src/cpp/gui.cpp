@@ -4,13 +4,14 @@
 #include "../hpp/game_manager.hpp"
 
 namespace crow {
-	void game_manager::imgui_on_draw() {
+    void game_manager::imgui_on_draw() {
         // actual size of the window cuz imgui is weirdo
         ImVec2 real_size = get_window_size();
 
-		ImGuiIO& io = ImGui::GetIO();
-		// teach ImGui where the mouse is
-        io.MousePos = { mouse_pos.x * (imgui_wsize.x / real_size.x), mouse_pos.y  * (imgui_wsize.y / real_size.y)};
+        ImGuiIO& io = ImGui::GetIO();
+        // teach ImGui where the mouse is
+        mouse_pos_gui = { mouse_pos.x * (imgui_wsize.x / real_size.x), mouse_pos.y* (imgui_wsize.y / real_size.y) };
+        io.MousePos = { mouse_pos_gui.x, mouse_pos_gui.y };
 		io.MouseDown[0] = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
 		io.MouseDown[1] = (GetKeyState(VK_RBUTTON) & 0x8000) != 0;
 		io.WantCaptureMouse = false;
@@ -32,9 +33,14 @@ namespace crow {
             current_message.display(1, wh);
             draw_pause_button(wh);
             draw_control_message(wh);
+            draw_oxygen_remaining(wh);
+            draw_pressure_remaining(wh);
             break;
         case game_state::PAUSED:
             draw_pause_menu(wh);
+            break;
+        case game_state::SETTINGS:
+            draw_options_menu(wh);
             break;
         case game_state::GAME_OVER:
             draw_game_over(wh);
@@ -44,16 +50,18 @@ namespace crow {
         if (debug_mode) {
             ImVec2 s = get_window_size();
             float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
+            ImGui::Text("current level: %i: current room: %i", level_number, (imgui_wsize.y / real_size.y));
             ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
             ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
             ImGui::Text("wpos: %f, %f", wh.x, wh.y);
             ImGui::Text("dpos: %f, %f", real_size.x, real_size.y);
             ImGui::Text("mpos: %f, %f", (imgui_wsize.x / real_size.x), (imgui_wsize.y / real_size.y));
+            ImGui::Text("mousedrag: %i", ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+            ImGui::NewLine();
+            ImGui::Text("mousedrag: %f, %f", minimap.mouse_position.x, minimap.mouse_position.y);
+            ImGui::Text("mousewheel: %i", mwheel_delta);
 		    if (ImGui::Button("click me")) audio::play_sfx(0);
         }
-
-		//draw_main_menu(wh);
-
 
 		// THIS MUST COME AFTER ALL IMGUI DRAW CALLS
 		ImGui::Render();
@@ -61,63 +69,111 @@ namespace crow {
 	}
 
     void game_manager::draw_main_menu(ImVec2 wh) {
-      // first things first, let's set the size of the main menu. it covers
-      // the
-      // whole screen tho, so...
-      ImVec2 mm_window_xy = {0, 0};
-      ImGui::SetNextWindowPos(mm_window_xy, ImGuiCond_Always);
-      ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
-      // black background so you can't tell that there is anything going on
-      // behind it, borderless so you can't tell it's just an imgui window
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-      ImGui::SetNextWindowBgAlpha(1);
-      // main menu drawing starts here
-      ImGui::Begin("Main Menu", 0,
-                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
-                       ImGuiWindowFlags_NoResize);
+        const int popup_flag = ImGuiWindowFlags_NoDecoration |
+                                ImGuiWindowFlags_NoCollapse |
+                                ImGuiWindowFlags_NoResize;
 
-      // as a placeholder, i have the game name as some tedext at the top,
-      // there should probably be a logo or something here later on (TODO)
-      imgui_centertext(std::string("Crow's Nest"), 2.0f, wh);
+        // first things first, let's set the size of the main menu. it covers
+        // the
+        // whole screen tho, so...
+        ImVec2 mm_window_xy = {0, 0};
+        ImGui::SetNextWindowPos(mm_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::SetNextWindowBgAlpha(1);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        // main menu drawing starts here
+        ImGui::Begin("Main Menu", 0,
+                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize);
 
-      // size of all menu options
-      ImVec2 mm_button_wh = {wh.x * 0.55f, wh.y * 0.05f};
+        // as a placeholder, i have the game name as some tedext at the top,
+        // there should probably be a logo or something here later on (TODO::)
+        imgui_centertext(std::string("Crow's Nest"), 4.0f, wh);
 
-      ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.45f});
-      if (ImGui::Button("New Game", mm_button_wh)) {
-        new_game();
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        // size of all menu options
+        ImVec2 mm_button_wh = {wh.x * 0.55f, wh.y * 0.05f};
 
-      ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.55f});
-      if (ImGui::Button("Continue", mm_button_wh)) {
-        new_game();
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.45f});
+        if (ImGui::Button("New Game", mm_button_wh)) {
+            if (menu_position == 0) {
+                if (level_number != 0) {
+                    menu_position = 3;
+                } else {
+                    new_game();
+                }
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+            }
+        }
 
-      ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.65f});
-      if (ImGui::Button("Options", mm_button_wh)) {
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-        menu_position = 20;
-      }
+        ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.55f});
+        if (ImGui::Button("Continue", mm_button_wh)) {
+            if (menu_position == 0) {
+                new_game();
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+            }
+        }
 
-      ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.75f});
-      if (ImGui::Button("Credits", mm_button_wh)) {
-        /* currently does nothing. TODO: this */
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.65f});
+        if (ImGui::Button("Options", mm_button_wh)) {
+            if (menu_position == 0) {
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+                menu_position = 20;
+                current_state = game_state::SETTINGS;
+            }
+        }
 
-      ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.85f});
-      if (ImGui::Button("Quit", mm_button_wh)) {
-        // no, that button doesn't quit the menu, it quits the game, and it
-        // doesn't even go "are you sure?", it's just like x_x
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-        PostQuitMessage(0);
-      }
-      ImGui::End();
+        ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.75f});
+        if (ImGui::Button("Credits", mm_button_wh)) {
+            if (menu_position == 0) {
+                /* currently does nothing. TODO: this */
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+            }
+        }
 
-      // no longer drawing borderless
-      ImGui::PopStyleVar(1);
+        ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.85f});
+        if (ImGui::Button("Quit", mm_button_wh)) {
+            if (menu_position == 0) {
+                // no, that button doesn't quit the menu, it quits the game, and it
+                // doesn't even go "are you sure?", it's just like x_x
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+                PostQuitMessage(0);
+            }
+        }
+        ImGui::End();
+
+        // no longer drawing borderless
+        ImGui::PopStyleVar(1);
+
+        if (menu_position == 3) {
+            ImVec2 confirm_window_xy = {wh.x * 0.25f, wh.y * 0.375f};
+            ImVec2 confirm_window_wh = {wh.x * 0.5f, wh.y * 0.25f};
+            ImGui::SetNextWindowPos(confirm_window_xy, ImGuiCond_Always);
+            ImGui::SetNextWindowSize(confirm_window_wh, ImGuiCond_Always);
+            ImGui::Begin("New Game Confirm", 0, popup_flag);
+            // confirmation dialog
+            imgui_centertext(std::string("Overwrite save data?"), 4.0f, confirm_window_wh);
+            ImGui::NewLine();
+            imgui_centertext(std::string("If you start a new game you will lose your progress."), 2.0f, confirm_window_wh);
+
+            ImVec2 confirm_button_wh = {confirm_window_wh.x * 0.25f, wh.y * 0.05f};
+            ImGui::SetCursorPos(
+                {confirm_window_wh.x * 0.15f, confirm_window_wh.y * 0.65f});
+            if (ImGui::Button("Yes", confirm_button_wh)) {
+                level_number = 0;
+                new_game();
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+            }
+            ImGui::SetCursorPos({confirm_window_wh.x * 0.6f, confirm_window_wh.y * 0.65f});
+            if (ImGui::Button("No", confirm_button_wh)) {
+                crow::audio::play_sfx(crow::audio::MENU_OK);
+                menu_position = 0;
+            }
+
+            ImGui::SetWindowFocus();
+            ImGui::End();
+        }
     }
 
     void game_manager::draw_pause_button(ImVec2 wh) {
@@ -178,24 +234,26 @@ namespace crow {
 
       ImVec2 pause_menu_button_wh = {pause_window_wh.x * 0.55f, wh.y * 0.05f};
 
-      // TODO: the text buttons are placeholders, we will need proper image
-      // buttons later draw all the menu options here
-      ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.19f});
-      if (ImGui::Button("Resume", pause_menu_button_wh)) {
-        current_state = game_state::PLAYING;
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        // TODO: the text buttons are placeholders, we will need proper image
+        // buttons later draw all the menu options here
+        ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.19f});
+        if (ImGui::Button("Resume", pause_menu_button_wh)) {
+            current_state = game_state::PLAYING;
+            crow::audio::play_sfx(crow::audio::MENU_OK);
+        }
 
-      ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.27f});
-      if (ImGui::Button("Options", pause_menu_button_wh)) {
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.27f});
+        if (ImGui::Button("Options", pause_menu_button_wh)) {
+            crow::audio::play_sfx(crow::audio::MENU_OK);
+            current_state = game_state::SETTINGS;
+            menu_position = 20;
+        }
 
-      ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.35f});
-      if (ImGui::Button("Main Menu", pause_menu_button_wh)) {
-        menu_position = 1;
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-      }
+        ImGui::SetCursorPos({pause_window_wh.x * 0.225f, wh.y * 0.35f});
+        if (ImGui::Button("Main Menu", pause_menu_button_wh)) {
+            menu_position = 1;
+            crow::audio::play_sfx(crow::audio::MENU_OK);
+        }
 
       ImGui::End();
 
@@ -206,9 +264,9 @@ namespace crow {
         ImGui::SetNextWindowSize(confirm_window_wh, ImGuiCond_Always);
         ImGui::Begin("Return Confirm", 0, popup_flag);
         // confirmation dialog
-        imgui_centertext(std::string("Quit to main menu?"), 2.0f, wh);
+        imgui_centertext(std::string("Quit to main menu?"), 4.0f, confirm_window_wh);
         ImGui::NewLine();
-        imgui_centertext(std::string("Unsaved progress will be lost."), 2.0f, wh);
+        imgui_centertext(std::string("Unsaved progress will be lost."), 4.0f, confirm_window_wh);
 
         ImVec2 confirm_button_wh = {confirm_window_wh.x * 0.25f, wh.y * 0.05f};
         ImGui::SetCursorPos(
@@ -229,22 +287,6 @@ namespace crow {
         ImGui::SetWindowFocus();
         ImGui::End();
       }
-    }
-
-    void game_manager::draw_options_menu(ImVec2 wh) {
-        const int popup_flag = ImGuiWindowFlags_NoDecoration |
-                           ImGuiWindowFlags_NoCollapse |
-                           ImGuiWindowFlags_NoResize;
-        if (menu_position == 20) {
-          // set size parameters for the options menu
-          ImVec2 options_window_xy = {wh.x * 0.15f, wh.y * 0.225f};
-          ImVec2 options_window_wh = {wh.x * 0.7f, wh.y * 0.55f};
-          ImGui::SetNextWindowPos(options_window_xy, ImGuiCond_Always);
-          ImGui::SetNextWindowSize(options_window_wh, ImGuiCond_Always);
-          ImGui::Begin("Options", 0, popup_flag);
-
-          imgui_centertext(std::string("Options"), 2.0f, wh);
-        }
     }
 
     void game_manager::draw_game_over(ImVec2 wh) {
@@ -294,93 +336,198 @@ namespace crow {
     }
 
     void game_manager::draw_control_message(ImVec2 wh) {
-      ImVec2 info_window_xy = {wh.x * 0.75f, wh.y * 0.65f};
-      ImVec2 info_window_wh = {wh.x * 0.25f, wh.y * 0.35f};
-      ImGui::SetNextWindowPos(info_window_xy, ImGuiCond_Always);
-      ImGui::SetNextWindowSize(info_window_wh, ImGuiCond_Always);
-      ImGui::Begin("control window", 0,
-                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
-                       ImGuiWindowFlags_NoResize);
-      ImGui::SetWindowFontScale(2.0f);
-      {
-        std::string ptext = "Controls:";
-        float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-        ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
-                        (text_size / 2.0f));
-        ImGui::Text(ptext.c_str());
-      }
-      ImGui::SetWindowFontScale(1.5f);
-      ImGui::NewLine();
-      {
-        std::string ptext = "L click to move";
-        float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-        ImGui::SameLine();
-        ImGui::Text(ptext.c_str());
-      }
-      ImGui::NewLine();
-      {
-        std::string ptext = "R click to Interact";
-        float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-        ImGui::SameLine();
-        ImGui::Text(ptext.c_str());
-      }
-      ImGui::SetWindowFontScale(1.4f);
-      ImGui::NewLine();
-      ImGui::NewLine();
-      {
-        std::string ptext = "Click on minimap boxes";
-        float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-        ImGui::SameLine();
-        ImGui::Text(ptext.c_str());
-      }
-      ImGui::NewLine();
-      {
-        std::string ptext = "To switch room view";
-        float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-        ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
-                        (text_size / 2.0f));
-        ImGui::Text(ptext.c_str());
-      }
+        if (level_number > 1) return;
+          ImVec2 info_window_xy = {wh.x * 0.74f, wh.y * 0.75f};
+          ImVec2 info_window_wh = {wh.x * 0.26f, wh.y * 0.25f};
+          ImGui::SetNextWindowPos(info_window_xy, ImGuiCond_Always);
+          ImGui::SetNextWindowSize(info_window_wh, ImGuiCond_Always);
+          ImGui::Begin("control window", 0,
+                       ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                           ImGuiWindowFlags_NoResize);
+          ImGui::SetWindowFontScale(2.0f);
+          {
+            std::string ptext = "Controls:";
+            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+            ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+                            (text_size / 2.0f));
+            ImGui::Text(ptext.c_str());
+          }
+          ImGui::SetWindowFontScale(1.5f);
+          ImGui::NewLine();
+          {
+            std::string ptext = "Left click to move";
+            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+            ImGui::SameLine();
+            ImGui::Text(ptext.c_str());
+          }
+          ImGui::NewLine();
+          {
+            std::string ptext = "Click on objects to interact";
+            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+            ImGui::SameLine();
+            ImGui::Text(ptext.c_str());
+          }
+          ImGui::SetWindowFontScale(1.4f);
+          ImGui::NewLine();
+          ImGui::NewLine();
+          {
+            std::string ptext = "Click on rooms in minimap";
+            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+            ImGui::SameLine();
+            ImGui::Text(ptext.c_str());
+          }
+          ImGui::NewLine();
+          {
+            std::string ptext = "to switch views";
+            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
+            ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
+                            (text_size / 2.0f));
+            ImGui::Text(ptext.c_str());
+          }
 
       ImGui::End();
     }
 
     void game_manager::draw_oxygen_remaining(ImVec2 wh) {
-      std::string text = "OXYGEN REMAINING";
+        if (!current_level.oxygen_console || !current_level.oxygen_console->is_broken) return;
+        std::string text = "OXYGEN REMAINING";
 
-      float scale = 2;
+        float scale = 2;
 
-      float text_size =
-          wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
+        float text_size =
+            wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
 
-      ImVec2 oxy_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.15f,
-                              wh.y * 0.02f};
-      ImVec2 oxy_window_wh = {text_size + wh.x * 0.3f,
-                              wh.y * 0.048f + wh.y * 0.08f};
-      ImGui::SetNextWindowPos(oxy_window_xy, ImGuiCond_Always);
-      ImGui::SetNextWindowSize(oxy_window_wh, ImGuiCond_Always);
-      ImGui::Begin("oxy_wind_p", 0,
-                   ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
-                       ImGuiWindowFlags_NoResize);
+        ImVec2 oxy_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.15f,
+                                wh.y * 0.02f};
+        ImVec2 oxy_window_wh = {text_size + wh.x * 0.3f,
+                                wh.y * 0.048f + wh.y * 0.08f};
+        ImGui::SetNextWindowPos(oxy_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(oxy_window_wh, ImGuiCond_Always);
+        ImGui::Begin("oxy_wind_p", 0,
+                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize);
 
-      ImGui::SetWindowFontScale(wh.x / 960.f * scale);
-      ImGui::SetCursorPos({wh.x * 0.15f, wh.y * 0.04f});
-      ImGui::Text(text.c_str());
+        ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+        ImGui::SetCursorPos({wh.x * 0.15f, wh.y * 0.04f});
+        ImGui::Text(text.c_str());
 
-      // draw the bar using a button, just because we can
-      // TODO::load a texture instead of something as hilarious as a BUTTON
-      // TODO::restore this to its former glory
-      ImVec2 oxy_bar_wh = {            0,
-          //(oxy_window_wh.x * 0.92f) * (current_level.selected_room->oxygen /
-          //                             current_level.selected_room->oxygen_max),
-          oxy_window_wh.y * 0.7f};
-      // positioning
-      ImGui::SetCursorPos(
-          {oxy_window_wh.x * 0.04f, oxy_window_wh.y * 0.15f});  // positioning
+        // draw the bar using a button, just because we can
+        // TODO::load a texture instead of something as hilarious as a BUTTON
+        ImVec2 oxy_bar_wh = { (oxy_window_wh.x * 0.92f) * (current_level.selected_room->oxygen /
+                current_level.selected_room->oxygen_max), oxy_window_wh.y * 0.7f};
+        // positioning
+        ImGui::SetCursorPos({oxy_window_wh.x * 0.04f, oxy_window_wh.y * 0.15f});  // positioning
 
-      ImGui::Button("", oxy_bar_wh);
+        ImGui::Button("", oxy_bar_wh);
+
+        ImGui::End();
+    }
+
+    void game_manager::draw_pressure_remaining(ImVec2 wh) {
+        if (!current_level.pressure_console || !current_level.pressure_console->is_broken) return;
+        std::string text = "PRESSURE LEVEL";
+
+        float scale = 2;
+
+        float text_size =
+            wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
+
+        ImVec2 pressure_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.15f,
+                                wh.y * 0.02f};
+        ImVec2 pressure_window_wh = {text_size + wh.x * 0.3f,
+                                wh.y * 0.048f + wh.y * 0.08f};
+        ImGui::SetNextWindowPos(pressure_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(pressure_window_wh, ImGuiCond_Always);
+        ImGui::Begin("pressure_wind_p", 0,
+                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize);
+
+        ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+        ImGui::SetCursorPos({wh.x * 0.15f, wh.y * 0.04f});
+        ImGui::Text(text.c_str());
+
+        // draw the bar using a button, just because we can
+        // TODO::load a texture instead of something as hilarious as a BUTTON
+        ImVec2 pressure_bar_wh = { (pressure_window_wh.x * 0.92f) * (current_level.pressure /
+                current_level.pressure_max), pressure_window_wh.y * 0.7f};
+        // positioning
+        ImGui::SetCursorPos({pressure_window_wh.x * 0.04f, pressure_window_wh.y * 0.15f});  // positioning
+
+        ImGui::Button("", pressure_bar_wh);
+
+        ImGui::End();
+    }
+
+    void game_manager::draw_options_menu(ImVec2 wh) {
+        bool in_game = current_level.rooms.size();
+
+        ImVec2 sm_window_xy = {0, 0};
+        ImGui::SetNextWindowPos(sm_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        if (!in_game) ImGui::SetNextWindowBgAlpha(1);
+        // menu drawing starts here
+        ImGui::Begin("Options", 0,
+                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize);
+        imgui_centertext(std::string("Options"), 4.0f, wh);
+        ImGui::NewLine(); ImGui::NewLine(); ImGui::NewLine();
+        ImGui::SetWindowFontScale(2);
+
+        // draw sliders
+        ImGui::NewLine();
+        ImGui::SetCursorPosX(wh.x * 0.085f);
+        ImGui::SliderFloat("   Master Volume", &audio::all_volume, 0.0f, 1.0f, " % .2f", ImGuiSliderFlags_AlwaysClamp);
+
+        ImGui::NewLine();
+        ImGui::SetCursorPosX(wh.x * 0.085f);
+        ImGui::SliderFloat("    BGM Volume", &audio::bgm_volume, 0.0f, 1.0f, " % .2f", ImGuiSliderFlags_AlwaysClamp);
+
+        ImGui::NewLine();
+        ImGui::SetCursorPosX(wh.x * 0.085f);
+        ImGui::SliderFloat("    SFX Volume", &audio::sfx_volume, 0.0f, 1.0f, " % .2f", ImGuiSliderFlags_AlwaysClamp);
+
+        // set audio volume
+        audio::update_volume();
+
+        ImGui::NewLine(); ImGui::NewLine(); ImGui::NewLine();
+
+        // fullscreen button
+        BOOL fs;
+        bool fs_b;
+        p_impl->swapchain->GetFullscreenState(&fs, nullptr);
+        fs_b = fs;
+        ImGui::SetCursorPosX(wh.x * 0.435f);
+        if (ImGui::Checkbox("Fullscreen", &fs_b)) {
+            p_impl->swapchain->SetFullscreenState(fs_b, nullptr);
+        }
+
+
+
+        
+        ImVec2 quit_button_wh = {wh.x * 0.2f, wh.y * 0.05f};
+        ImGui::SetCursorPos({(wh.x - quit_button_wh.x) / 2, wh.y * 0.85f});
+        if (ImGui::Button("Back", quit_button_wh)) {
+            // if a level is currently loaded, we can safely assume we are in-game. return to pause menu
+            if (in_game) {
+                current_state = game_state::PAUSED;
+            // return to main menu
+            } else {
+                current_state = game_state::MAIN_MENU;
+            }
+			save_game();
+            crow::audio::play_sfx(crow::audio::MENU_OK);
+            menu_position = 0;
+        }
+
+
 
       ImGui::End();
+
+      // no longer drawing borderless
+      ImGui::PopStyleVar(1);
     }
 
 }  // namespace crow
