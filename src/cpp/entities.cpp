@@ -41,8 +41,8 @@ namespace crow {
 			world_matrix.pop_back();
 			velocities.pop_back();
 
-			// the only heap data stored in entities
-			delete framexbind.back();
+			// not to be deleted anymore, a reference to stack memory is being stored at these pointers instead
+			framexbind.back() = nullptr;
 			framexbind.pop_back();
 
 			// DO NOT CALL DELETE ON mesh_ptrs

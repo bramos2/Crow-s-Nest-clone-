@@ -50,7 +50,11 @@ class ai_manager {
   // go here, these need to be called prior to calling the run method
   void room_check();
 
+  // initializes the ai manager with ecential data from the level and entities
   void init_manager(crow::entities *ent, crow::level *level);
+
+  // debug function to print out the behavior name and the result status
+  void print_status(std::string behavior, status b_status);
 
   // behavior methods
   // TODO: all behavior methods must return a status to match the node function
@@ -125,7 +129,7 @@ status reached_target(float dt, crow::ai_manager &m);
 status move(float dt, crow::ai_manager &m);
 
 // interaction branch
-status check_room(float dt, crow::ai_manager &m);  // new
+status check_room(float dt, crow::ai_manager &m);  // new unsued and unfinished
 status is_target_door(float dt, crow::ai_manager &m);
 status handle_door(float dt, crow::ai_manager &m);
 status destroy_target(float dt, crow::ai_manager &m);

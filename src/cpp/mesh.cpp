@@ -335,41 +335,46 @@ namespace crow {
 		tween_frame.time = t;
 	}
 
-
-	DirectX::XMMATRIX* animator::mult_curr_frame()
+	void animator::mult_curr_frame()
 	{
-		DirectX::XMMATRIX* result = nullptr;
+		//DirectX::XMMATRIX* result = nullptr;
 		const size_t size = tween_frame.joints.size();
 
 		if (!tween_frame.joints.empty()) {
-			result = new DirectX::XMMATRIX[size];
+			//result = new DirectX::XMMATRIX[size];
 
 			for (size_t i = 0; i < size; ++i)
 			{
 				DirectX::XMMATRIX cMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&inv_bindpose.joints[i].transform), DirectX::XMLoadFloat4x4(&tween_frame.joints[i].transform));
 				cMatrix = XMMatrixTranspose(cMatrix);
-				result[i] = cMatrix;
+				mat[i] = cMatrix;
 			}
 		}
-		return result;
+		//return result;
 	}
 
 	void animator::update(DirectX::XMMATRIX*& ent_mat, float dt)
 	{
 		t += dt;
 		if (t > animations[curr_animation].duration) {
-			if (curr_animation != 0) {
-				curr_animation = 0;
+			if (is_running && !is_acting) {
+				// play running animation
+				curr_animation = anim_type::MOVING;
+			}
+			else if (!is_acting) {
+				// switch idle animation
+				curr_animation = anim_type::IDLE;
 			}
 			t = animations[curr_animation].frames[1].time;
-			is_animating_action = false;
+			is_acting = false; // we only play an action animation once
 		}
 
 		update_tween_frame();
-		if (ent_mat) {
+		/*if (ent_mat) {
 			delete[] ent_mat;
-		}
-		ent_mat = mult_curr_frame();
+		}*/
+		mult_curr_frame();
+		ent_mat = &mat[0];
 	}
 
 	void animator::switch_animation(unsigned int index)
@@ -377,7 +382,7 @@ namespace crow {
 		if (index < animations.size()) {
 			curr_animation = index;
 			t = animations[curr_animation].frames[1].time;
-			is_animating_action = true;
+			is_acting = true;
 		}
 	}
 

@@ -21,8 +21,10 @@ struct player_behavior_data {
   ~player_behavior_data();
 };
 
+// check using the absolute value of the difference if the player is on or near the tile
+// the lower the precicion value the closer to the center the position must be
 auto reached_destination(float2e const velocity, float2e const position,
-                         float2e const destination) -> bool;
+                         float2e const destination, float const precicion) -> bool;
 
 auto get_angle(float2e const pos_from, float2e const pos_to) -> float;
 

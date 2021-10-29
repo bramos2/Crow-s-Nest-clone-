@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "math_types.hpp"
+//#include "interactible.hpp"
 
 namespace crow {
 
@@ -81,8 +82,20 @@ namespace crow {
 	{
 		key_frame inv_bindpose;
 		key_frame tween_frame;
+		DirectX::XMMATRIX mat[30];
 		std::vector<anim_clip> animations;
-		bool is_animating_action = false;
+		bool is_acting = false;
+		bool is_running = false;
+		bool performed_action = false;
+
+		struct anim_type {
+			enum {
+				IDLE = 0,
+				MOVING,
+				DYING,
+				COUNT
+			};
+		};
 
 		unsigned int curr_animation = 0;
 		float t = 0.f;
@@ -96,7 +109,7 @@ namespace crow {
 	private:
 		void update_tween_frame();
 		// returns the multiplications of the inverted bindpose and the updated tween_frame
-		DirectX::XMMATRIX* mult_curr_frame();
+		void mult_curr_frame();
 	};
 
 	// load mesh data from a .bin file and stores it in given mesh
