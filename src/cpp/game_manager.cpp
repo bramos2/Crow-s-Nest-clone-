@@ -237,8 +237,6 @@ namespace crow {
 				// read: 2:11 PM
 			}
 
-			// this should be the last thing that is updated in the state
-
 			break;
 		}
 
@@ -495,6 +493,7 @@ namespace crow {
 
 						// this kills the worker
 						if (current_level.rooms[i][j].oxygen <= 0) {
+							current_level.rooms[i][j].oxygen = 0;
 							game_over();
 							return;
 						}
@@ -510,6 +509,7 @@ namespace crow {
 
 			// this kills the worker
 			if (current_level.pressure <= 0) {
+				current_level.pressure = 0;
 				game_over();
 				return;
 			}
@@ -671,19 +671,9 @@ namespace crow {
 	}
 
 	void game_manager::new_game() {
-		// load all the meshes that we are going to need
-		//all_meshes.resize(3);
-		//load_mesh_data("guy", 0);
-		////load_mesh_data("res/meshes/Run.bin", "res/textures/Run.mat", "", 1);
-		//load_mesh_data("slasher_run", 1);
-		//load_mesh_data("res/meshes/floor1.bin", "res/textures/floor1.mat", "", 2);
-		//scale_matrix(entities.world_matrix[2], 0.1f, 0.1f, 0.1f);
 		load_texture_data();
 		load_all_meshes();
 		load_animation_data();
-
-		//textures.resize(1);
-		//p_impl->create_imgui_texture("res/textures/gui/go.dds", textures[0]);
 
 		//assigning animatiors, could be done inside function if meshes have been initialized
 		all_meshes[mesh_types::PLAYER].animator = &animators[animator_list::PLAYER];
@@ -704,6 +694,8 @@ namespace crow {
 
 	void game_manager::end_game() {
 		audio::stop_bgm();
+		// make sure none of these exist
+		audio::clear_audio_timers();
 		current_level.clean_level();
 		cleanup();
 		entities.pop_all();
@@ -778,13 +770,26 @@ namespace crow {
 			entities.pop_back();
 		}
 
+		// store these temporarily to re-store them later
+		DirectX::XMMATRIX* temp0 = entities.framexbind[0];
+		DirectX::XMMATRIX* temp1 = entities.framexbind[1];
+
 		// reset the sphynx and worker entity data
-		delete entities.framexbind[0];
-		delete entities.framexbind[1];
 		entities.init_entity(0);
 		entities.init_entity(1);
-		entities.mesh_ptrs[0] = &all_meshes[0];
-		entities.mesh_ptrs[1] = &all_meshes[0];
+		entities.mesh_ptrs[0] = &all_meshes[mesh_types::PLAYER];
+		entities.s_resource_view[0] = textures[texture_list::PLAYER];
+		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
+		entities.s_resource_view[1] = textures[texture_list::AI];
+
+		// re-store the framexbind. this is necessary to stop crashes.
+		// we may want to change this approach in the future (reset instead of restore)
+		entities.framexbind[0] = temp0;
+		entities.framexbind[1] = temp1;
+
+		// make sure none of these exist
+		audio::clear_audio_timers();
+
 
 
 		current_level.clean_level();

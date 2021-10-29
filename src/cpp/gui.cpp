@@ -51,6 +51,9 @@ namespace crow {
             ImVec2 s = get_window_size();
             float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
             ImGui::Text("current level: %i: current room: %i", level_number, (imgui_wsize.y / real_size.y));
+            ImGui::SameLine();
+            ImGui::Text("\tpressure: %f", current_level.pressure);
+
             ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
             ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
             ImGui::Text("wpos: %f, %f", wh.x, wh.y);
@@ -328,7 +331,8 @@ namespace crow {
         ImGui::SetCursorPos({wh.x * 0.6f, wh.y * 0.65f});
         if (ImGui::Button("Give up", game_over_button_wh)) {
           crow::audio::play_sfx(crow::audio::MENU_OK);
-          PostQuitMessage(0);
+          current_state = game_state::MAIN_MENU;
+          menu_position = 0;
         }
       }
       ImGui::End();
@@ -430,7 +434,7 @@ namespace crow {
         ImVec2 oxy_bar_wh = { (oxy_window_wh.x * 0.92f) * (current_level.selected_room->oxygen /
                 current_level.selected_room->oxygen_max), oxy_window_wh.y * 0.7f};
         // positioning
-        ImGui::SetCursorPos({oxy_window_wh.x * 0.04f, oxy_window_wh.y * 0.15f});  // positioning
+        if (current_level.selected_room->oxygen) ImGui::SetCursorPos({oxy_window_wh.x * 0.04f, oxy_window_wh.y * 0.15f});  // positioning
 
         ImGui::Button("", oxy_bar_wh);
         ImGui::PopStyleColor(3);
@@ -482,7 +486,7 @@ namespace crow {
         // positioning
         ImGui::SetCursorPos({pressure_window_wh.x * 0.04f, pressure_window_wh.y * 0.15f});  // positioning
 
-        ImGui::Button("", pressure_bar_wh);
+        if (current_level.pressure) ImGui::Button("", pressure_bar_wh);
 
         ImGui::PopStyleColor(3);
 

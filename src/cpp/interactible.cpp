@@ -221,58 +221,52 @@ void door_panel::activate(crow::game_manager& state) {
 	void door::interact(size_t const index, crow::entities& entity) {
 		std::printf("\ninteracted with door, congrats!");
 
-		// This portion has been deprecated as it doesn't changed the proper values, also we are simplifying the door
-		// panel to look at
-		// if this door doesn't have a panel attached, it will check to see if the
-		// neighboring door has a panel this is the reason the neigbor is never locked
-		//crow::door_panel* _panel = panel;
-		//if (!_panel) _panel = neighbor->panel;
-
-		//// notifs are passed up via a "bubble up" method
-		//if (_panel != nullptr) {
-		//  // door is unuseable, open up!
-		//  if (_panel->panel_status == 0) {
-		//    if (current_level) {
-		//      // door can't open, give message to warn that the door is unusable
-		//      current_level->msg = message(
-		//          "The door is broken and needs to be repaired before it can be "
-		//          "used.");
-		//      if (_panel->panel_type == 0) {
-		//        current_level->msg = message(
-		//            "The door isn't working and needs to be reprogrammed before it "
-		//            "can be used.");
-		//      }
-		//    } else {
-		//      std::printf(
-		//          "\nerror! tried to display a message, but the door doesn't have a "
-		//          "reference to the current level!");
-		//    }
-
-		//    return;
-		//    // door has been hacked shut by the player. give message to alert the
-		//    // player of this.
-		//  } else if (_panel->panel_status == 2) {
-		//    if (current_level) {
-		//      current_level->msg = message(
-		//          "You've hacked this door shut. You need to unlock it before you "
-		//          "can use it.");
-		//    } else {
-		//      std::printf(
-		//          "\nerror! tried to display a message, but the door doesn't have a "
-		//          "reference to the current level!");
-		//    }
-		//    return;
-		//  }
-		//}
-
 		// we will be moving the index out of this room
 		if (!roomptr || !neighbor) { // if this returns the doors was not created properly during level creation
+			std::printf("error! the door is not properly configured!");
 			return;
 		}
 
-		if (!this->is_active) { // if the door is closed, dont do anything and just send a message... otherwise handle entity index swapping
-			current_level->msg = message("door is locked");
-			return;
+		// if this door doesn't have a panel attached, it will check to see if the
+		// neighboring door has a panel this is the reason the neigbor is never locked
+		crow::door_panel* _panel = panel;
+		if (!_panel) _panel = neighbor->panel;
+
+		// notifs are passed up via a "bubble up" method
+		if (_panel != nullptr) {
+		  // door is unuseable, open up!
+		  if (_panel->panel_status == 0) {
+		    if (current_level) {
+		      // door can't open, give message to warn that the door is unusable
+		      current_level->msg = message(
+		          "The door is broken and needs to be repaired before it can be "
+		          "used.");
+		      if (_panel->panel_type == 0) {
+		        current_level->msg = message(
+		            "The door isn't working and needs to be reprogrammed before it "
+		            "can be used.");
+		      }
+		    } else {
+		      std::printf(
+		          "\nerror! tried to display a message, but the door doesn't have a "
+		          "reference to the current level!");
+		    }
+
+		    return;
+		    // door has been hacked shut by the player. give message to alert the
+		    // player of this.
+		  } else if (_panel->panel_status == 2) {
+		    if (current_level) {
+		      current_level->msg = message(
+		          "You've hacked this door shut. You need to unlock it before you "
+		          "can use it.");
+		    } else {
+		      std::printf(
+		          "\nerror! tried to display a message, but the door doesn't have a "
+		          "reference to the current level!");
+		    }
+		    return;
+		  }
 		}
 
 		// to move an entity from a room to another we just remove its index from the current room and push it into the neighbor's room
