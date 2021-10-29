@@ -134,6 +134,8 @@ bool audio_timers_includes(bool (*_escape_clause)(crow::game_manager* state));
 // same as above, but returns the index of such
 int audio_timers_index(bool (*_escape_clause)(crow::game_manager* state));
 
+void clear_audio_timers();
+
 // updates every single instance of an audio timer in the audio timer vector
 void update_audio_timers(crow::game_manager* state, float dt);
 

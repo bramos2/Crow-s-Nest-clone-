@@ -133,6 +133,10 @@ namespace crow {
           return -1;
         }
 
+        void clear_audio_timers() {
+            while (audio_timers.size()) audio_timers.pop_back();
+        }
+
         void update_audio_timers(crow::game_manager* state, float dt) {
           for (int i = 0; i < audio_timers.size(); i++) {
             // check for exit clause

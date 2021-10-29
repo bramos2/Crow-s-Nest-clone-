@@ -120,7 +120,7 @@ namespace crow {
                 } else {
                     state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::DOOR_OPEN];
                     // additionally, tick the proper is_active bool
-                    i->is_active = false;
+                    i->is_active = true;
                 }
                 break;
             }
