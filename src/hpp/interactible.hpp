@@ -36,7 +36,7 @@ namespace crow {
 	struct interactible {
 	  virtual void interact(size_t const index, crow::entities& entity);
 	  // similar to interact(), but for objects that require time to activate
-	  virtual void activate();
+	  virtual void activate(crow::game_manager& state);
 	  virtual void dissable();
 	  void set_tile(unsigned int _x, unsigned int _y);
 	  void set_tile(char dir);
@@ -46,6 +46,8 @@ namespace crow {
 	  bool is_active = false;
 	  bool is_broken = false;
 	  int heat = 0;
+	  // location of this object in the entities system, assigned when meshes are generated
+	  int entity_index;
 	  crow::object_type type = crow::object_type::COUNT;
 	  crow::room* roomptr = nullptr;
 	  crow::level* current_level = nullptr;
@@ -62,14 +64,14 @@ namespace crow {
 	struct oxygen_console : public interactible {
 	  // TODO: gives power to a level
 	  virtual void interact(size_t const index, crow::entities& entity);
-	  virtual void activate();
+	  virtual void activate(crow::game_manager& state);
 	  oxygen_console(crow::level* _lv);
 	};
 
 	struct pressure_console : public interactible {
 	  // TODO: gives power to a level
 	  virtual void interact(size_t const index, crow::entities& entity);
-	  virtual void activate();
+	  virtual void activate(crow::game_manager& state);
 	  pressure_console(crow::level* _lv);
 	};
 
@@ -88,7 +90,7 @@ namespace crow {
 
 	struct door_panel : public interactible {
 	  virtual void interact(size_t const index, crow::entities& entity);
-	  virtual void activate(); // this function is not being called anywhere, does it have a purpose?
+	  virtual void activate(crow::game_manager& state);
 	  door_panel(crow::level* _lv);
 
 	  crow::door* door = nullptr;

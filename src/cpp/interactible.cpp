@@ -23,7 +23,7 @@ namespace crow {
 		}
 	}
 
-	void interactible::activate() { printf("something was activated.\n"); }
+void interactible::activate(crow::game_manager& state) { printf("something was activated.\n"); }
 
 	void interactible::dissable() {
 		std::printf("\n*****interactible has been destroyed*****");
@@ -77,9 +77,9 @@ namespace crow {
 		}
 	}
 
-	void oxygen_console::activate() {
-		is_broken = false;
-	}
+void oxygen_console::activate(crow::game_manager& state) {
+    is_broken = false;
+}
 
 	pressure_console::pressure_console(crow::level* _lv) {
 		type = crow::object_type::OXYGEN_CONSOLE;
@@ -98,88 +98,97 @@ namespace crow {
 		}
 	}
 
-	void pressure_console::activate() {
-		is_broken = false;
+void pressure_console::activate(crow::game_manager& state) {
+    is_broken = false;
+}
+
+void door_panel::interact(size_t const index, crow::entities& entity) {
+	// we should only do any of this is the door is not broken
+	if (door->is_broken) {
+		current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
+		return;
 	}
 
-	void door_panel::interact(size_t const index, crow::entities& entity) {
-		std::string text;
-		// we should only do any of this is the door is not broken
-		if (door->is_broken) {
-			current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
-			return;
-		}
+    // this will prevent the game from crashing if the door is improperly configured
+    if (!door->neighbor) {
+        printf("error! the door attached to the panel doesn't have a neighbor attached!\n");
+        return;
+    }
 
-		// we lock/unlock based on the door's status
-		if (door->is_active) {
-			text = "LOCKING...";
-		}
-		else {
-			text = "UNNLOCKING...";
-		}
+    std::string text;
+    switch (panel_type) {
+        // hackable door
+    case 0:
+        // if the door is unusable, make it useable. otherwise, toggle between
+        // open and closed.
+        switch (panel_status) {
+        case 0:
+            text = "ACTIVATING...";
+            break;
+        case 1:
+            text = "LOCKING...";
+            break;
+        case 2:
+            text = "UNLOCKING...";
+            break;
+        }
+        break;
+        // repairable door
+    case 1:
+        if (panel_status == 1) {
+        current_level->msg = message("This door panel is already repaired!");
+        return;
+        } else
+        text = "REPAIRING...";
+        break;
+    }
+    current_level->interacting = this;
+    current_level->msg = message(text, crow::default_message_time - 1.0f,
+                                crow::default_interact_wait);
+}
 
-		// old
-		//switch (panel_type) {
-		//    // hackable door
-		//  case 0:
-		//    // if the door is unusable, make it useable. otherwise, toggle between
-		//    // open and closed.
-		//    switch (panel_status) {
-		//      case 0:
-		//        text = "ACTIVATING...";
-		//        break;
-		//      case 1:
-		//        text = "LOCKING...";
-		//        break;
-		//      case 2:
-		//        text = "UNLOCKING...";
-		//        break;
-		//    }
-		//    break;
-		//    // repairable door
-		//  case 1:
-		//    if (panel_status == 1) {
-		//      current_level->msg = message("This door panel is already repaired!");
-		//      return;
-		//    } else
-		//      text = "REPAIRING...";
-		//    break;
-		//}
+void door_panel::activate(crow::game_manager& state) {
+    switch (panel_type) {
+        // hackable door
+    case 0:
+        // if the door is unusable, make it useable. otherwise, toggle between
+        // open and closed.
+        switch (panel_status) {
+        case 0:
+            panel_status = 1;
+            door->is_active = door->neighbor->is_active = true;
+            break;
+        case 1:
+            panel_status = 2;
+            door->is_active = door->neighbor->is_active = false;
+            break;
+        case 2:
+            panel_status = 1;
+            door->is_active = door->neighbor->is_active = true;
+            break;
+        }
+        break;
+    case 1:
+        // repairable doors can be repaired only. there is nothing to do to it
+        // other than repair it. it shouldn't be able to be activated if it's
+        // already repaired, but if it does get activated nothing will happen
+        panel_status = 1;
+        door->is_active = door->neighbor->is_active = true;
+        break;
+    }
+    
+    if (!door->is_active) {
+        state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+    } else {
+        state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
+    }
 
-		current_level->interacting = this;
-		current_level->msg = message(text, crow::default_message_time - 1.0f, crow::default_interact_wait);
-		//door->is_active = door->neighbor->is_active = !door->is_active;
-	}
-
-	// seems to be unused
-	void door_panel::activate() {
-
-		door->is_active = door->neighbor->is_active = !door->is_active;
-		//switch (panel_type) {
-		//	// hackable door
-		//case 0:
-		//	// if the door is unusable, make it useable. otherwise, toggle between
-		//	// open and closed.
-		//	switch (panel_status) {
-		//	case 0:
-		//		panel_status = 1;
-		//		break;
-		//	case 1:
-		//		panel_status = 2;
-		//		break;
-		//	case 2:
-		//		panel_status = 1;
-		//		break;
-		//	}
-		//	break;
-		//case 1:
-		//	// repairable doors can be repaired only. there is nothing to do to it
-		//	// other than repair it. it shouldn't be able to be activated if it's
-		//	// already repaired, but if it does get activated nothing will happen
-		//	panel_status = 1;
-		//	break;
-		//}
-	}
+    if (!door->neighbor->is_active) {
+        state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+    } else {
+        state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
+    }
+}
 
 	door_panel::door_panel(crow::level* _lv) {
 		type = crow::object_type::DOOR_PANEL;

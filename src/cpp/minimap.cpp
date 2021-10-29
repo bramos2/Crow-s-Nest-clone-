@@ -2,7 +2,7 @@
 #include "../hpp/game_manager.hpp"
 
 void crow::minimap::draw_call(game_manager& state) {
-    ImGui::SetNextWindowBgAlpha(0.02f);
+    ImGui::SetNextWindowBgAlpha(0.3f);
 
     // special processing depending on if the mouse is inside the minimap
     if (inside_minimap(state.mouse_pos_gui)) {
@@ -15,7 +15,7 @@ void crow::minimap::draw_call(game_manager& state) {
         }
 
         // next, draw the minimap not faded out
-        ImGui::SetNextWindowBgAlpha(0.9f);
+        ImGui::SetNextWindowBgAlpha(0.55f);
     }
 
     ImGui::SetNextWindowPos((ImVec2&)window_pos, ImGuiCond_Always);
@@ -75,36 +75,44 @@ void crow::minimap::draw_call(game_manager& state) {
             // so they are the same size even though the rooms are not the same size
         };
 
+        float thickness = 1.f;
+        if (&current_room == current_level->selected_room) thickness = 5.f;
         
-        // proof of concept room outlining. works out of the box if you
-        // uncomment, but atm unnecessary, so it will be left commented until
-        // its time has come
+        // proof of concept room outlining
         ImGui::GetWindowDrawList()->AddLine(
             ImVec2(window_pos.x + room_xy.x, window_pos.y + room_xy.y),
             ImVec2(window_pos.x + room_xy.x + room_wh.x,
                    window_pos.y + room_xy.y),
-            IM_COL32(255, 255, 255, 255), 1.0f);
+            IM_COL32(255, 255, 255, 255), thickness);
         ImGui::GetWindowDrawList()->AddLine(
             ImVec2(window_pos.x + room_xy.x, window_pos.y + room_xy.y),
             ImVec2(window_pos.x + room_xy.x,
                    window_pos.y + room_xy.y + room_wh.y),
-            IM_COL32(255, 255, 255, 255), 1.0f);
+            IM_COL32(255, 255, 255, 255), thickness);
         ImGui::GetWindowDrawList()->AddLine(
             ImVec2(window_pos.x + room_xy.x + room_wh.x,
                    window_pos.y + room_xy.y + room_wh.y),
             ImVec2(window_pos.x + room_xy.x + room_wh.x,
                    window_pos.y + room_xy.y),
-            IM_COL32(255, 255, 255, 255), 1.0f);
+            IM_COL32(255, 255, 255, 255), thickness);
         ImGui::GetWindowDrawList()->AddLine(
             ImVec2(window_pos.x + room_xy.x + room_wh.x,
                    window_pos.y + room_xy.y + room_wh.y),
             ImVec2(window_pos.x + room_xy.x,
                    room_xy.y + window_pos.y + room_wh.y),
-            IM_COL32(255, 255, 255, 255), 1.0f);
+            IM_COL32(255, 255, 255, 255), thickness);
         //
 
         // Set the x, y position of the room:
         ImGui::SetCursorPos(room_xy);
+
+        // change the color of the room button where the player is
+        if (current_room.has_player) {
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.8f, 0.5f, 0.5f, 0.5f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 1.0f, 0.5f, 0.5f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.8f, 0.5f, 0.5f, 1.0f});
+        }
+
         //if (ImGui::Button( "", room_wh)) {
         if (ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh)) {
           if (!is_dragging) {
@@ -116,7 +124,12 @@ void crow::minimap::draw_call(game_manager& state) {
             crow::update_room_cam(current_level->selected_room, state.view);
           }
         }
-        // starting_r_pos.x += r_width + offset;
+        
+        // reset colors
+        if (current_room.has_player) {
+            ImGui::PopStyleColor(3);
+        }
+
       }
       // starting_r_pos.y += r_height + offset;
       // this must be called after all processing for the minimap because it
@@ -131,7 +144,6 @@ void crow::minimap::draw_call(game_manager& state) {
     minimap.dragging = false;*/
   }
   ImGui::End();
-
 }
 
 crow::minimap::minimap() {}
