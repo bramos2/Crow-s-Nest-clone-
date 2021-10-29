@@ -390,10 +390,10 @@ namespace crow {
 
     void game_manager::draw_oxygen_remaining(ImVec2 wh) {
         if (!current_level.oxygen_console || !current_level.oxygen_console->is_broken) return;
-        std::string text = "OXYGEN REMAINING";
 
         float scale = 2;
-
+        
+        std::string text = "OXYGEN REMAINING";
         float text_size =
             wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
 
@@ -401,6 +401,20 @@ namespace crow {
                                 wh.y * 0.02f};
         ImVec2 oxy_window_wh = {text_size + wh.x * 0.3f,
                                 wh.y * 0.048f + wh.y * 0.08f};
+
+        // cgheck to see if the mouse is hovering over the window so that
+        // we can render it more lightly if it is
+        bool hovering = (mouse_pos_gui.x < static_cast<double>(oxy_window_xy.x) + static_cast<double>(oxy_window_wh.x) &&
+          mouse_pos_gui.y < static_cast<double>(oxy_window_xy.y) + static_cast<double>(oxy_window_wh.y) &&
+          mouse_pos_gui.x > static_cast<double>(oxy_window_xy.x) &&
+            static_cast<double>(mouse_pos_gui.y) > static_cast<double>(oxy_window_xy.y));
+        if (hovering) ImGui::SetNextWindowBgAlpha(0.15f);
+        else ImGui::SetNextWindowBgAlpha(0.65f);
+        
+        ImGui::PushStyleColor(ImGuiCol_Button,        { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  { 0.4f, 0.65f, 0.99f, 0.5f});
+
         ImGui::SetNextWindowPos(oxy_window_xy, ImGuiCond_Always);
         ImGui::SetNextWindowSize(oxy_window_wh, ImGuiCond_Always);
         ImGui::Begin("oxy_wind_p", 0,
@@ -419,16 +433,17 @@ namespace crow {
         ImGui::SetCursorPos({oxy_window_wh.x * 0.04f, oxy_window_wh.y * 0.15f});  // positioning
 
         ImGui::Button("", oxy_bar_wh);
+        ImGui::PopStyleColor(3);
 
         ImGui::End();
     }
 
     void game_manager::draw_pressure_remaining(ImVec2 wh) {
         if (!current_level.pressure_console || !current_level.pressure_console->is_broken) return;
-        std::string text = "PRESSURE LEVEL";
 
         float scale = 2;
-
+        
+        std::string text = "PRESSURE LEVEL";
         float text_size =
             wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
 
@@ -436,6 +451,20 @@ namespace crow {
                                 wh.y * 0.02f};
         ImVec2 pressure_window_wh = {text_size + wh.x * 0.3f,
                                 wh.y * 0.048f + wh.y * 0.08f};
+
+        // cgheck to see if the mouse is hovering over the window so that
+        // we can render it more lightly if it is
+        bool hovering = (mouse_pos_gui.x < static_cast<double>(pressure_window_xy.x) + static_cast<double>(pressure_window_wh.x) &&
+          mouse_pos_gui.y < static_cast<double>(pressure_window_xy.y) + static_cast<double>(pressure_window_wh.y) &&
+          mouse_pos_gui.x > static_cast<double>(pressure_window_xy.x) &&
+            static_cast<double>(mouse_pos_gui.y) > static_cast<double>(pressure_window_xy.y));
+        if (hovering) ImGui::SetNextWindowBgAlpha(0.15f);
+        else ImGui::SetNextWindowBgAlpha(0.65f);
+        
+        ImGui::PushStyleColor(ImGuiCol_Button,        { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  { 0.4f, 0.65f, 0.99f, 0.5f});
+
         ImGui::SetNextWindowPos(pressure_window_xy, ImGuiCond_Always);
         ImGui::SetNextWindowSize(pressure_window_wh, ImGuiCond_Always);
         ImGui::Begin("pressure_wind_p", 0,
@@ -454,6 +483,8 @@ namespace crow {
         ImGui::SetCursorPos({pressure_window_wh.x * 0.04f, pressure_window_wh.y * 0.15f});  // positioning
 
         ImGui::Button("", pressure_bar_wh);
+
+        ImGui::PopStyleColor(3);
 
         ImGui::End();
     }

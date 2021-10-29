@@ -1,5 +1,6 @@
 #include "../hpp/view.hpp"
 #include "../hpp/map.hpp"
+#include "../hpp/game_manager.hpp"
 
 namespace crow {
     void level::load_level(std::string filepath) {}
@@ -298,6 +299,7 @@ namespace crow {
               rooms[0][0].tiles.map[i][0]->is_open = false;
               rooms[0][0].tiles.map[i][10]->is_open = false;
             }
+
           }
 
           rooms[0][1].id = 2;

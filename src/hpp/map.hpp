@@ -40,9 +40,17 @@ struct room {
   // std::unordered_map<glm::uvec2, object_type> room_objects;
   std::vector<crow::interactible*> objects;
 
+  // used in level generation only.
+  // this vector is emptied while meshes are being generated for the level
+  std::vector<DirectX::XMMATRIX> furniture_matrices; // matrix for the location of the meshes to be used
+  std::vector<int> furniture_meshes; // mesh indices to be used
+  std::vector<int> furniture_textures; // textures to be used for the meshes
+
+
   // may not be needed as doors will handle ajacencies
   // std::vector<std::shared_ptr<room>> neighbors;
 
+  void generate_debug_collision_display();
   void load_entities(game_manager& state);
   void generate_tilemap();
 
