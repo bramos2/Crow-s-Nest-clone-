@@ -335,22 +335,22 @@ namespace crow {
 		tween_frame.time = t;
 	}
 
-	DirectX::XMMATRIX* animator::mult_curr_frame()
+	void animator::mult_curr_frame()
 	{
-		DirectX::XMMATRIX* result = nullptr;
+		//DirectX::XMMATRIX* result = nullptr;
 		const size_t size = tween_frame.joints.size();
 
 		if (!tween_frame.joints.empty()) {
-			result = new DirectX::XMMATRIX[size];
+			//result = new DirectX::XMMATRIX[size];
 
 			for (size_t i = 0; i < size; ++i)
 			{
 				DirectX::XMMATRIX cMatrix = DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&inv_bindpose.joints[i].transform), DirectX::XMLoadFloat4x4(&tween_frame.joints[i].transform));
 				cMatrix = XMMatrixTranspose(cMatrix);
-				result[i] = cMatrix;
+				mat[i] = cMatrix;
 			}
 		}
-		return result;
+		//return result;
 	}
 
 	void animator::update(DirectX::XMMATRIX*& ent_mat, float dt)
@@ -370,10 +370,11 @@ namespace crow {
 		}
 
 		update_tween_frame();
-		if (ent_mat) {
+		/*if (ent_mat) {
 			delete[] ent_mat;
-		}
-		ent_mat = mult_curr_frame();
+		}*/
+		mult_curr_frame();
+		ent_mat = &mat[0];
 	}
 
 	void animator::switch_animation(unsigned int index)

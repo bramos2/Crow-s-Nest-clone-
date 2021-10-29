@@ -82,6 +82,7 @@ namespace crow {
 	{
 		key_frame inv_bindpose;
 		key_frame tween_frame;
+		DirectX::XMMATRIX mat[30];
 		std::vector<anim_clip> animations;
 		bool is_acting = false;
 		bool is_running = false;
@@ -108,7 +109,7 @@ namespace crow {
 	private:
 		void update_tween_frame();
 		// returns the multiplications of the inverted bindpose and the updated tween_frame
-		DirectX::XMMATRIX* mult_curr_frame();
+		void mult_curr_frame();
 	};
 
 	// load mesh data from a .bin file and stores it in given mesh

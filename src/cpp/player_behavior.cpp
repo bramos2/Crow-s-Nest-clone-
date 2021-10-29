@@ -2,7 +2,7 @@
 
 namespace crow {
 auto reached_destination(float2e const velocity, float2e const position,
-                         float2e const destination) -> bool {
+                         float2e const destination, float const precicion) -> bool {
   if (position == destination) {
     return true;
   }
@@ -18,7 +18,7 @@ auto reached_destination(float2e const velocity, float2e const position,
   if (l2 > l) {
     result = true;
   } else {
-    if (l < 0.2f) {
+    if (l < precicion) {
       result = true;
     }
   }
@@ -104,7 +104,7 @@ void path_through(player_behavior_data& p_data, crow::entities& entities,
                                    dt * entities.velocities[index].z);
 
     if (reached_destination(curr_vel, float2e(curr_pos.x, curr_pos.z),
-                            p_data.path_result.back())) {
+                            p_data.path_result.back(), 0.5f)) {
       p_data.path_result.pop_back();
     }
 

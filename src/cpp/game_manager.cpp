@@ -157,9 +157,9 @@ namespace crow {
 
 	void game_manager::update()
 	{
-		timer.Signal(); double dt = timer.Delta();
-		time_elapsed += dt;
-		p_impl->update(static_cast<float>(dt));
+		timer.Signal(); float dt = static_cast<float>(timer.Delta());
+		time_elapsed += timer.Delta();
+		p_impl->update(dt);
 
 
 		// updates that run irregardless of the game state
@@ -190,11 +190,11 @@ namespace crow {
 		case game_state::PLAYING:
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
-			
+
 
 			// all ai updates (player and enemy) here
 			if (current_level.found_ai) ai_bt.run(dt);
-			
+
 			// animations need to be updated before checking if the player is alive
 			update_animations(dt);
 
@@ -238,7 +238,7 @@ namespace crow {
 			}
 
 			// this should be the last thing that is updated in the state
-			
+
 			break;
 		}
 
@@ -297,9 +297,9 @@ namespace crow {
 
 	void game_manager::update_animations(double dt) {
 		// update all animations for all animated entities
-		for (int i = 0; i < entities.current_size; i++) {
+		for (uint32_t i = 0; i < entities.current_size; i++) {
 			if (entities.mesh_ptrs[i]->animator) {
-				entities.mesh_ptrs[i]->animator->update(entities.framexbind[i], dt);
+				entities.mesh_ptrs[i]->animator->update(entities.framexbind[i], static_cast<float>(dt));
 				//// timer increment
 				//entities.anim_time[i] += dt;
 				//if (entities.anim_time[i] > entities.mesh_ptrs[i]->anim.duration) {
@@ -323,7 +323,7 @@ namespace crow {
 				ImVec2 wh = get_window_size();
 
 				// crow::audio::play_sfx(0);
-				float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+				float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(wh.x), static_cast<int>(wh.y));
 				// y = -1 out of bound
 				if (mouse_point.y != -1) {
 					const float3e player_pos = entities.get_world_position(
@@ -386,7 +386,7 @@ namespace crow {
 			player_data.target = nullptr;
 			ImVec2 wh = get_window_size();
 
-			float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, wh.x, wh.y);
+			float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(wh.x), static_cast<int>(wh.y));
 			if (mouse_point.y == -1) {
 				return true;
 			}
@@ -424,7 +424,7 @@ namespace crow {
 										static_cast<float>(clicked_tile->row) };
 
 					adjacent_tile = adjacent_tile.normalize();
-					for (size_t i = 0; i < 2; i++) {
+					for (int i = 0; i < 2; i++) {
 						if (adjacent_tile[i] >= 0.5f) {
 							adjacent_tile[i] = 1.f;
 							continue;
@@ -491,7 +491,7 @@ namespace crow {
 				for (int j = 0; j < current_level.rooms[i].size(); j++) {
 					if (current_level.rooms[i][j].has_player) {
 						// decreases oxygen level
-						current_level.rooms[i][j].oxygen -= dt;
+						current_level.rooms[i][j].oxygen -= static_cast<float>(dt);
 
 						// this kills the worker
 						if (current_level.rooms[i][j].oxygen <= 0) {
@@ -506,7 +506,7 @@ namespace crow {
 		// pressure console updates
 		if (current_level.pressure_console && current_level.pressure_console->is_broken) {
 			// pressure is decreasing!
-			current_level.pressure -= dt;
+			current_level.pressure -= static_cast<float>(dt);
 
 			// this kills the worker
 			if (current_level.pressure <= 0) {
@@ -552,16 +552,16 @@ namespace crow {
 	void game_manager::game_over() {
 		const size_t index = static_cast<size_t>(entity::WORKER);
 
-		if(		 entities.mesh_ptrs[index]->animator &&
-				!entities.mesh_ptrs[index]->animator->is_acting &&
-				!entities.mesh_ptrs[index]->animator->performed_action) {
+		if (entities.mesh_ptrs[index]->animator &&
+			!entities.mesh_ptrs[index]->animator->is_acting &&
+			!entities.mesh_ptrs[index]->animator->performed_action) {
 
 			entities.mesh_ptrs[index]->animator->switch_animation(animator::anim_type::DYING);
 			entities.mesh_ptrs[index]->animator->performed_action = true;
 		}
 		else if (entities.mesh_ptrs[index]->animator &&
-				 entities.mesh_ptrs [index]->animator->performed_action &&
-				!entities.mesh_ptrs[index]->animator->is_acting) {
+			entities.mesh_ptrs[index]->animator->performed_action &&
+			!entities.mesh_ptrs[index]->animator->is_acting) {
 			end_game();
 			prev_state = current_state = game_state::GAME_OVER;
 			state_time = 0;

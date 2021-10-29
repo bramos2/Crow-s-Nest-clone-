@@ -76,19 +76,23 @@ namespace crow {
 	struct door : public interactible {
 	  // TODO: Make player transition
 	  virtual void interact(size_t const index, crow::entities& entity);
+	  virtual void dissable();
+
 	  door();
 	  door(crow::level* _lv);
 
 	  crow::door* neighbor = nullptr;
+	  // the door does not require a pointer to the panel in the current state as the panel has a pointer to the door
 	  crow::door_panel* panel = nullptr;
 	};
 
 	struct door_panel : public interactible {
 	  virtual void interact(size_t const index, crow::entities& entity);
-	  virtual void activate();
+	  virtual void activate(); // this function is not being called anywhere, does it have a purpose?
 	  door_panel(crow::level* _lv);
 
 	  crow::door* door = nullptr;
+	  // those chars are not needed anymore, they worked for how they were set up but do not take into account the AI's interpretation of interactibles
 	  // 0 = hackable door
 	  // 1 = repairable door
 	  char panel_type = 0;

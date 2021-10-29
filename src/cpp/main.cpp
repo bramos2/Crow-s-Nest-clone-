@@ -142,8 +142,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		bmap[(int)wParam] = false;
 		break;
 	case WM_MOUSEMOVE:
-		mx = GET_X_LPARAM(lParam);
-		my = GET_Y_LPARAM(lParam);
+		//mx = GET_X_LPARAM(lParam);
+		//my = GET_Y_LPARAM(lParam);
 		break;
 	case WM_MOUSEWHEEL:
 		mdelta = GET_WHEEL_DELTA_WPARAM(wParam);
