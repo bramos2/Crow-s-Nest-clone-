@@ -64,11 +64,21 @@ namespace crow {
 		// generally, just applies velocity
 		void entities::update_transform_data(size_t const index, float dt);
 		void entities::update_transform_data(float dt);
-
 	};
 	
-	enum class entity {
-	  WORKER = 0,
-	  SPHYNX = 1,
+	struct entity {
+		enum {
+			WORKER = 0,
+			SPHYNX = 1,
+			FLOOR,
+			WALL_U,
+			WALL_D,
+			WALL_L,
+			WALL_R,
+			COUNT
+		};
 	};
+
+	/*enum class entity {
+	};*/
 } // nam--espace crow

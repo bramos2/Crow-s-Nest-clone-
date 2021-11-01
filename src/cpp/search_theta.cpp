@@ -54,19 +54,19 @@ theta_star::theta_star(crow::tile_map* t_map) : tilemap(t_map) {
     // loading all the nodes
     for (size_t row = 0; row < tilemap->map.size(); ++row) {
       for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
-        node* curr = new node(tilemap->map[row][col], nullptr);
-        nodes[row][col] = curr;
+              node* curr = new node(tilemap->map[row][col], nullptr);
+              nodes[row][col] = curr;
       }
     }
 
+    // my suspicion is that the bad tiles are not being taken out of the equation as they should
     // connecting all neighbor nodes
     for (size_t row = 0; row < tilemap->map.size(); ++row) {
       for (size_t col = 0; col < tilemap->map[row].size(); ++col) {
         tile* curr = tilemap->map[row][col];
 
-        // nodemap[curr]->neighbors.reserve(curr->neighbors.size());
         nodes[row][col]->neighbors.reserve(curr->neighbors.size());
-        for (auto neighbor : curr->neighbors) {
+        for (auto& neighbor : curr->neighbors) {
           if (neighbor->is_open) {
             nodes[row][col]->neighbors.push_back(
                 nodes[neighbor->row][neighbor->col]);
@@ -75,7 +75,6 @@ theta_star::theta_star(crow::tile_map* t_map) : tilemap(t_map) {
       }
     }
   }
-  int debug = 0;
 }
 theta_star::~theta_star() {}
 
@@ -112,9 +111,7 @@ bool theta_star::set_theta_star(tile* _start, tile* _goal) {
   path.clear();
 
   // initialize our start and goal pointers
-  // goal = nodemap[_goal];
   goal = nodes[_goal->row][_goal->col];
-  // start = nodemap[_start];
   start = nodes[_start->row][_start->col];
   start->parent = start;
   start->g = 0;

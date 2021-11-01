@@ -27,8 +27,14 @@ void interactible::activate(crow::game_manager& state) { printf("something was a
 
 	void interactible::dissable() {
 		std::printf("\n*****interactible has been destroyed*****");
-		is_broken = true;
-		is_active = false;
+		
+		if (health <= 0) {
+			is_broken = true;
+			is_active = false;
+		}
+		else {
+			--health;
+		}
 	}
 
 	void interactible::set_tile(unsigned int _x, unsigned int _y) {
@@ -116,78 +122,36 @@ void door_panel::interact(size_t const index, crow::entities& entity) {
     }
 
     std::string text;
-    switch (panel_type) {
-        // hackable door
-    case 0:
-        // if the door is unusable, make it useable. otherwise, toggle between
-        // open and closed.
-        switch (panel_status) {
-        case 0:
-            text = "ACTIVATING...";
-            break;
-        case 1:
-            text = "LOCKING...";
-            break;
-        case 2:
-            text = "UNLOCKING...";
-            break;
-        }
-        break;
-        // repairable door
-    case 1:
-        if (panel_status == 1) {
-        current_level->msg = message("This door panel is already repaired!");
-        return;
-        } else
-        text = "REPAIRING...";
-        break;
-    }
+	// We don't need anything else, stop it, get some help
+	if (door->is_active) {
+		text = "UNLOCKING...";
+	}
+	else {
+		text = "UNLOCKING...";
+	}
+
     current_level->interacting = this;
     current_level->msg = message(text, crow::default_message_time - 1.0f,
                                 crow::default_interact_wait);
 }
 
 void door_panel::activate(crow::game_manager& state) {
-    switch (panel_type) {
-        // hackable door
-    case 0:
-        // if the door is unusable, make it useable. otherwise, toggle between
-        // open and closed.
-        switch (panel_status) {
-        case 0:
-            panel_status = 1;
-            door->is_active = door->neighbor->is_active = true;
-            break;
-        case 1:
-            panel_status = 2;
-            door->is_active = door->neighbor->is_active = false;
-            break;
-        case 2:
-            panel_status = 1;
-            door->is_active = door->neighbor->is_active = true;
-            break;
-        }
-        break;
-    case 1:
-        // repairable doors can be repaired only. there is nothing to do to it
-        // other than repair it. it shouldn't be able to be activated if it's
-        // already repaired, but if it does get activated nothing will happen
-        panel_status = 1;
-        door->is_active = door->neighbor->is_active = true;
-        break;
-    }
+
+	door->is_active = door->neighbor->is_active = !door->is_active;
     
     if (!door->is_active) {
         state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+		state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
     } else {
         state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
+		state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
     }
 
-    if (!door->neighbor->is_active) {
-        state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+    /*if (!door->neighbor->is_active) {
+        
     } else {
-        state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-    }
+       
+    }*/
 }
 
 	door_panel::door_panel(crow::level* _lv) {
@@ -210,7 +174,9 @@ void door_panel::activate(crow::game_manager& state) {
 
 	void player_interact::dissable() {
 		std::printf("\n*****enemy is attacking player\n");
-		interactible::dissable();
+		//interactible::dissable();
+		is_active = false;
+		is_broken = true;
 	}
 
 	player_interact::player_interact() {
@@ -219,7 +185,7 @@ void door_panel::activate(crow::game_manager& state) {
 	}
 
 	void door::interact(size_t const index, crow::entities& entity) {
-		std::printf("\ninteracted with door, congrats!");
+		//std::printf("\ninteracted with door, congrats!");
 
 		// we will be moving the index out of this room
 		if (!roomptr || !neighbor) { // if this returns the doors was not created properly during level creation
@@ -227,46 +193,9 @@ void door_panel::activate(crow::game_manager& state) {
 			return;
 		}
 
-		// if this door doesn't have a panel attached, it will check to see if the
-		// neighboring door has a panel this is the reason the neigbor is never locked
-		crow::door_panel* _panel = panel;
-		if (!_panel) _panel = neighbor->panel;
-
-		// notifs are passed up via a "bubble up" method
-		if (_panel != nullptr) {
-		  // door is unuseable, open up!
-		  if (_panel->panel_status == 0) {
-		    if (current_level) {
-		      // door can't open, give message to warn that the door is unusable
-		      current_level->msg = message(
-		          "The door is broken and needs to be repaired before it can be "
-		          "used.");
-		      if (_panel->panel_type == 0) {
-		        current_level->msg = message(
-		            "The door isn't working and needs to be reprogrammed before it "
-		            "can be used.");
-		      }
-		    } else {
-		      std::printf(
-		          "\nerror! tried to display a message, but the door doesn't have a "
-		          "reference to the current level!");
-		    }
-
-		    return;
-		    // door has been hacked shut by the player. give message to alert the
-		    // player of this.
-		  } else if (_panel->panel_status == 2) {
-		    if (current_level) {
-		      current_level->msg = message(
-		          "You've hacked this door shut. You need to unlock it before you "
-		          "can use it.");
-		    } else {
-		      std::printf(
-		          "\nerror! tried to display a message, but the door doesn't have a "
-		          "reference to the current level!");
-		    }
-		    return;
-		  }
+		if (is_active == false) {
+			// we should play some sort of sound here maybe, the door is visually locked so no point on writting a message
+			return;
 		}
 
 		// to move an entity from a room to another we just remove its index from the current room and push it into the neighbor's room
@@ -310,16 +239,20 @@ void door_panel::activate(crow::game_manager& state) {
 				neighbor->heat--;
 			}
 		}
-
-
 	}
 
+	// when the AI dissables a door it will break it open
 	void door::dissable()
 	{
-		is_active = true;
-		is_broken = true;
-		neighbor->is_active = true;
-		neighbor->is_broken = true;
+		if (health <= 0) {
+			is_active = true;
+			is_broken = true;
+			neighbor->is_active = true;
+			neighbor->is_broken = true;
+		}
+		else {
+			--health;
+		}
 	}
 
 	door::door() {
@@ -328,9 +261,16 @@ void door_panel::activate(crow::game_manager& state) {
 		is_broken = false;
 	}
 
-	door::door(crow::level* _lv) {
+	door::door(bool open)
+	{
 		type = crow::object_type::DOOR;
-		is_active = true;
+		is_active = open;
+		is_broken = false;
+	}
+
+	door::door(crow::level* _lv, bool open) {
+		type = crow::object_type::DOOR;
+		is_active = open;
 		is_broken = false;
 		current_level = _lv;
 	}

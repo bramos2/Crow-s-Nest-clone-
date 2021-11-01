@@ -88,8 +88,8 @@ void set_velocity(float2e destination, crow::entities& entity, size_t index,
 void set_velocity(float2e position, float2e destination,
                   float3e& velocity, float speed) {
   float rad_angle = crow::get_angle(position, destination);
-  float vel_y = std::sin(rad_angle) * speed;
-  float vel_x = std::cos(rad_angle) * speed;
+  float vel_y = std::sinf(rad_angle) * speed;
+  float vel_x = std::cosf(rad_angle) * speed;
   velocity = float3e{vel_x, 0, vel_y};
 }
 

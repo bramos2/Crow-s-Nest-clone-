@@ -12,7 +12,7 @@ struct player_behavior_data {
   const float worker_run_speed = 3.5f;
   super_matrix p_matrix;
   std::vector<float2e> path_result;
-  float worker_speed = 0.f;
+  float worker_speed = 2.f;
   bool interacting = false;
   // unsigned int current_room = 0;
   interactible* target = nullptr;

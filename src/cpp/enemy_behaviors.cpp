@@ -112,7 +112,7 @@ namespace crow {
 		//  }
 		//}
 
-		if (m.curr_room->has_player) {
+		if (m.curr_room->has_player && m.curr_level->p_inter->is_active) {
 			m.target = m.curr_level->p_inter;
 			result = crow::status::PASSED;
 		}
@@ -224,12 +224,27 @@ namespace crow {
 
 	status is_path_currernt(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
-
+		size_t index = static_cast<size_t>(crow::entity::SPHYNX);
 		// we need to check if this path is set to the current target, otherwise we
 		// must clean it and get a new one
 		// non moving target, use its tile
+		float3e curr_pos = m.entities->get_world_position(index);
 		if (m.path.empty() && m.interacting) {
-			result = crow::status::PASSED;
+			
+			float2e target_pos;
+			if (m.target->type == crow::object_type::PLAYER) {
+				float3e p_pos = m.entities->get_world_position(
+					static_cast<size_t>(crow::entity::WORKER));
+				target_pos = { p_pos.x, p_pos.z };
+			}
+			else {
+				target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+			}
+
+			if (crow::reached_destination({ 0.f, 0.f }, { curr_pos.x, curr_pos.z },
+				target_pos, 1.0f)) {
+				result = crow::status::PASSED;
+			}
 		}
 		else {
 			if (m.target->type != crow::object_type::PLAYER) {
@@ -244,11 +259,15 @@ namespace crow {
 					static_cast<size_t>(crow::entity::WORKER));
 				float2e t = { temp.x, temp.z };
 
-				float2e diff = m.path[0] - t;
-				// if not too far appart the path is fine
-				if (std::fabsf(diff.x) <= 1.f && std::fabsf(diff.y) <= 1.f) {
+				if (crow::reached_destination({ 0.f, 0.f }, t, m.path[0], 0.2f)) {
 					result = crow::status::PASSED;
 				}
+
+				//float2e diff = m.path[0] - t;
+				//// if not too far appart the path is fine
+				//if (std::fabsf(diff.x) <= 1.f && std::fabsf(diff.y) <= 1.f) {
+				//	
+				//}
 			}
 		}
 
@@ -317,11 +336,23 @@ namespace crow {
 	status move(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
 		size_t index = static_cast<size_t>(crow::entity::SPHYNX);
+
 		crow::set_velocity(m.path.back(), *m.entities, index, m.roam_speed);
 		float3e curr_pos = m.entities->get_world_position(index);
 
-		float2e curr_vel = float2e(dt * m.entities->velocities[index].x,
+		/*float2e target_pos = { 100000.f, 100000.f };
+		if (m.target) {
+			if (m.target->type == crow::object_type::PLAYER) {
+				float3e p_pos = m.entities->get_world_position(
+					static_cast<size_t>(crow::entity::WORKER));
+				target_pos = { p_pos.x, p_pos.z };
+			}
+			else {
+				target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+			}
+		}*/
 
+		float2e curr_vel = float2e(dt * m.entities->velocities[index].x,
 			dt * m.entities->velocities[index].z);
 		float d = 1.0f;
 		if (m.path.size() > 1) {
@@ -331,9 +362,15 @@ namespace crow {
 		if (crow::reached_destination(curr_vel, float2e(curr_pos.x, curr_pos.z),
 			m.path.back(), d)) {
 			m.path.pop_back();
+
 		}
 
 		result = crow::status::RUNNING;
+
+		/*if (crow::reached_destination({ 0.f, 0.f }, { curr_pos.x, curr_pos.z },
+			target_pos, 0.75f)) {
+			result = status::PASSED;
+		}*/
 
 		//m.print_status("move", result);
 		return result;

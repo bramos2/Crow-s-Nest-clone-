@@ -1,6 +1,8 @@
 #include "../hpp/view.hpp"
 
 namespace crow {
+    
+
     void view_t::init() {
         position.x = 0;
         position.y = 0;
@@ -118,7 +120,7 @@ namespace crow {
     }
 
     void update_room_cam(crow::room* active_room, view_t& camera) {
-        update_room_cam(pac(active_room->cam_pos), pac(active_room->cam_rotation), camera);
+       // update_room_cam(pac(active_room->cam_pos), pac(active_room->cam_rotation), camera);
     }
 
 	void update_room_cam(float3_a position, float3_a rotation, view_t& camera) {

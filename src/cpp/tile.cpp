@@ -1,5 +1,5 @@
 #include "../hpp/tile.hpp"
-
+#include <string>
 #include <cmath>
 
 using fast_int = std::int_fast32_t;
@@ -92,6 +92,40 @@ void tile_map::create_map() {
     }
   }
 }
+
+//void tile_map::debug_print_map(std::vector<tile*>& path) {
+//    for (auto& t: path)
+//    {
+//        t->in_path = true;
+//    }
+//
+//    std::printf("\n");
+//    for (size_t y = 0; y < height; y++)
+//    {
+//        for (size_t x = 0; x < width; x++)
+//        {
+//            tile* curr = map[y][x];
+//            if (curr->in_path && curr->is_open) { // in path and open
+//                std::printf("x");
+//            }
+//            else if (curr->in_path && !curr->is_open) { // in path and closed (bad)
+//                std::printf("b");
+//            }
+//            else if (!curr->in_path && curr->is_open) { // open
+//                std::printf("0");
+//            }
+//            else { // closed
+//                std::printf("#");
+//            }
+//        }
+//        std::printf("\n");
+//    }
+//
+//    for (auto& t : path)
+//    {
+//        t->in_path = false;
+//    }
+//}
 
 float2e tile_map::get_tile_wpos(std::int_fast32_t const x,
                              std::int_fast32_t const y) {

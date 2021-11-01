@@ -121,7 +121,8 @@ void crow::minimap::draw_call(game_manager& state) {
             printf("\nclicked on room: ");
             printf(std::to_string(current_room.id).c_str());
             current_level->selected_room = &current_room;
-            crow::update_room_cam(current_level->selected_room, state.view);
+            //crow::update_room_cam(current_level->selected_room, state.view);
+            crow::update_room_cam(pac(state.cam_pos), pac(state.cam_rotation), state.view);
           }
         }
         

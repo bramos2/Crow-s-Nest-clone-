@@ -166,11 +166,11 @@ namespace crow {
 		current_message.update(dt);
 		if (current_level.interacting && current_message.progress_max &&
 			current_message.progress_max == current_message.progress) {
-		  current_level.interacting->activate(*this);
-		  current_level.interacting = nullptr;
+			current_level.interacting->activate(*this);
+			current_level.interacting = nullptr;
 		}
 		left_click_time += dt;
-		right_click_time += dt;
+		//right_click_time += dt;
 
 		// capture mouse position
 		POINT p;
@@ -193,16 +193,13 @@ namespace crow {
 
 
 			// all ai updates (player and enemy) here
-			if (current_level.found_ai) ai_bt.run(dt);
+			/*if (false) {*/
+			if (current_level.found_ai) { ai_bt.run(dt); }
+			//}
 
+			//current_level.selected_room->tiles.debug_print_map();
 			// animations need to be updated before checking if the player is alive
 			update_animations(dt);
-
-			// check for worker alive to end the game if he is dead
-			if (!player_data.player_interact.is_active) {
-				game_over();
-				break;
-			}
 
 			// input updates should be done if the player is alive
 			l_click_update();
@@ -224,6 +221,13 @@ namespace crow {
 			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
 			ai_bt.e_matrix.update();
 			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
+
+			// check for worker alive to end the game if he is dead
+			if (!player_data.player_interact.is_active) {
+				player_data.path_result.clear();
+				game_over();
+				break;
+			}
 
 			room_updates(dt);
 			audio::update_audio_timers(this, dt);
@@ -279,7 +283,10 @@ namespace crow {
 			view.position.z += translate.z;
 
 
-			if ((GetKeyState('R') & 0x8000) != 0 && current_level.selected_room) crow::update_room_cam(current_level.selected_room, view);
+			if ((GetKeyState('R') & 0x8000) != 0 && current_level.selected_room) {
+				//crow::update_room_cam(current_level.selected_room, view); 
+				crow::update_room_cam(pac(cam_pos), pac(cam_rotation), view);
+			}
 
 			// VERY LAST thing to do should be to update the camera
 			view.update();
@@ -295,7 +302,8 @@ namespace crow {
 
 	void game_manager::update_animations(double dt) {
 		// update all animations for all animated entities
-		for (uint32_t i = 0; i < entities.current_size; i++) {
+		// there is only 2 animated entities so lets only loop 2 times instead of 100+ times
+		for (uint32_t i = 0; i < 2 /*entities.current_size*/; i++) {
 			if (entities.mesh_ptrs[i]->animator) {
 				entities.mesh_ptrs[i]->animator->update(entities.framexbind[i], static_cast<float>(dt));
 				//// timer increment
@@ -313,172 +321,172 @@ namespace crow {
 	bool game_manager::l_click_update() {
 		if (buttons_frame[controls::l_mouse] != 1) return false;
 
-		// processing for left clicks while you are currently playing the game
-		if (current_level.selected_room && current_level.selected_room->has_player) {
-			// these next two lines prevents the player from moving when you click on
-			// the minimap
-			if (!minimap.inside_minimap(mouse_pos_gui)) {
-				ImVec2 wh = get_window_size();
+		crow::room* selected_room = current_level.selected_room;
+		if (!selected_room || !selected_room->has_player) {
+			return true;
+		}
 
-				// crow::audio::play_sfx(0);
-				float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(wh.x), static_cast<int>(wh.y));
-				// y = -1 out of bound
-				if (mouse_point.y != -1) {
-					const float3e player_pos = entities.get_world_position(
-						static_cast<size_t>(crow::entity::WORKER));
-					std::vector<float2e> temporary_results =
-						current_level.selected_room->get_path(
-							float2e(player_pos.x, player_pos.z),
-							float2e(mouse_point.x, mouse_point.z));
+		if (minimap.inside_minimap(mouse_pos_gui)) {
+			return true;
+		}
 
-					if (temporary_results.size()) {
-						// if the clicked position is the same as the previous position,
-						// then we can assume that you've double clicked. thus, the
-						// worker should run instead of walk
-						if (player_data.path_result.size() &&
-							player_data.path_result[0] == temporary_results[0]) {
-							// check to ensure that the clicks were close enough to each
-							// other to count as a double click.
-							if (left_click_time < 0.5f) {
-								// worker starts running to destination
-								player_data.worker_speed = player_data.worker_run_speed;
+		player_data.interacting = false;
+		player_data.target = nullptr;
+		ImVec2 wh = get_window_size();
 
-								// plays footstep sound when worker moves
-								crow::audio::add_footstep_sound(
-									(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-										crow::entity::WORKER)],
-									0.285f);
-							}
-						}
-						else {
-							// worker starts walking to destination
-							player_data.worker_speed = player_data.worker_walk_speed;
+		float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(wh.x), static_cast<int>(wh.y));
+		if (mouse_point.y == -1) {
+			return true;
+		}
+		const crow::tile* clicked_tile =
+			selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
 
-							// plays footstep sound when worker moves
-							crow::audio::add_footstep_sound(
-								(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-									crow::entity::WORKER)], 0.5f);
-						}
-					}
+		if (!clicked_tile) {
+			return true;
+		}
 
-					// set the worker's path
-					player_data.path_result = temporary_results;
-					// disable interaction with object
-					if (current_level.interacting) {
-						current_level.interacting = nullptr;
-						current_message = message();
-					}
+		crow::interactible* target = nullptr;
+
+		for (auto& i : selected_room->objects) {
+			if (clicked_tile->row != i->y || clicked_tile->col != i->x) {
+				continue;
+			}
+
+			// set target to i then break
+			target = i;
+			break;
+		}
+		// the player's position
+		const float3e p_pos = entities.get_world_position(
+			static_cast<size_t>(crow::entity::WORKER));
+
+		// the player's tile
+		const crow::tile* p_tile =
+			selected_room->get_tile_at({ p_pos.x, p_pos.z });
+
+		if (!p_tile) {
+			return true;
+		}
+
+		if (p_tile == clicked_tile) {
+			player_data.path_result.clear();
+			return true;
+		}
+
+		// logic for clicking on an interactible
+		if (target) {
+			// preparing to interact
+			player_data.interacting = true;
+			player_data.target = target;
+
+			// finding the adjacent tile to the interactible
+			float2e adjacent_tile =
+				float2e{ static_cast<float>(p_tile->col) -
+								static_cast<float>(clicked_tile->col),
+							static_cast<float>(p_tile->row) -
+								static_cast<float>(clicked_tile->row) };
+
+			adjacent_tile = adjacent_tile.normalize();
+			for (int i = 0; i < 2; i++) {
+				if (adjacent_tile[i] >= 0.5f) {
+					adjacent_tile[i] = 1.f;
+					continue;
+				}
+				else if (adjacent_tile[i] <= -0.5f) {
+					adjacent_tile[i] = -1.f;
 				}
 			}
+
+			adjacent_tile = {
+				adjacent_tile.x + static_cast<float>(clicked_tile->col),
+				adjacent_tile.y + static_cast<float>(clicked_tile->row) };
+
+			adjacent_tile =
+				selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
+					static_cast<int>(adjacent_tile.y));
+
+			// path finding to a tile next to the interactible
+			std::vector<float2e> temporary_results =
+				selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
+
+			if (!temporary_results.empty() && !player_data.path_result.empty()) {
+				// check for double click on same tile
+				if (player_data.path_result[0] == temporary_results[0]) {
+					// check to ensure that the clicks were close enough to each
+					// other to count as a double click.
+					if (left_click_time < 0.5f) {
+						player_data.worker_speed = player_data.worker_run_speed;
+
+						// plays footstep sound when worker moves
+						crow::audio::add_footstep_sound(
+							(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+								crow::entity::WORKER)],
+							0.285f);
+					}
+				}
+				else {
+					player_data.worker_speed = player_data.worker_walk_speed;
+
+					crow::audio::add_footstep_sound(
+						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+							crow::entity::WORKER)],
+						0.5f);
+				}
+			}
+
+			// set the worker's path
+			player_data.path_result = temporary_results;
 		}
-		left_click_time = 0;
+		else { // normal tile movement
+			std::vector<float2e> temporary_results =
+				current_level.selected_room->get_path(
+					float2e(p_pos.x, p_pos.z),
+					float2e(mouse_point.x, mouse_point.z));
+
+			if (temporary_results.empty()) {
+				return true;
+			}
+
+			// double click check
+			if (!player_data.path_result.empty() &&
+				player_data.path_result[0] == temporary_results[0]) {
+				// time difference to count double click
+				if (left_click_time < 0.5f) { // running
+					player_data.worker_speed = player_data.worker_run_speed;
+
+					// plays footstep sound when worker moves
+					crow::audio::add_footstep_sound(
+						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+							crow::entity::WORKER)],
+						0.285f);
+				}
+			}
+			else { // walking
+				player_data.worker_speed = player_data.worker_walk_speed;
+
+				// plays footstep sound when worker moves
+				crow::audio::add_footstep_sound(
+					(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+						crow::entity::WORKER)], 0.5f);
+			}
+
+			// set the worker's path
+			player_data.path_result = temporary_results;
+		}
+
+		left_click_time = 0.f;
 		return true;
 	}
 
 	bool game_manager::r_click_update() {
-		if (buttons_frame[controls::r_mouse] != 1) return false;
-
-		crow::room* selected_room = current_level.selected_room;
-		if (selected_room && selected_room->has_player) {
-			player_data.interacting = false;
-			player_data.target = nullptr;
-			ImVec2 wh = get_window_size();
-
-			float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(wh.x), static_cast<int>(wh.y));
-			if (mouse_point.y == -1) {
-				return true;
-			}
-			const crow::tile* clicked_tile =
-				selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
-
-			if (!clicked_tile) {
-				return true;
-			}
-
-			for (auto& i : selected_room->objects) {
-				if (clicked_tile->row == i->y && clicked_tile->col == i->x) {
-					player_data.interacting = true;
-					player_data.target = i;
-
-					const float3e p_pos = entities.get_world_position(
-						static_cast<size_t>(crow::entity::WORKER));
-
-					const crow::tile* p_tile =
-						selected_room->get_tile_at({ p_pos.x, p_pos.z });
-
-					if (!p_tile) {
-						return true;
-					}
-
-					if (p_tile == clicked_tile) {
-						player_data.path_result.clear();
-						break;
-					}
-
-					float2e adjacent_tile =
-						float2e{ static_cast<float>(p_tile->col) -
-										static_cast<float>(clicked_tile->col),
-									static_cast<float>(p_tile->row) -
-										static_cast<float>(clicked_tile->row) };
-
-					adjacent_tile = adjacent_tile.normalize();
-					for (int i = 0; i < 2; i++) {
-						if (adjacent_tile[i] >= 0.5f) {
-							adjacent_tile[i] = 1.f;
-							continue;
-						}
-						else if (adjacent_tile[i] <= -0.5f) {
-							adjacent_tile[i] = -1.f;
-						}
-					}
-
-					adjacent_tile = {
-						adjacent_tile.x + static_cast<float>(clicked_tile->col),
-						adjacent_tile.y + static_cast<float>(clicked_tile->row) };
-
-					adjacent_tile =
-						selected_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
-							static_cast<int>(adjacent_tile.y));
-
-
-					std::vector<float2e> temporary_results =
-						selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
-
-					if (!temporary_results.empty() && !player_data.path_result.empty()) {
-						// check for double click on same tile
-						if (player_data.path_result.size() &&
-							player_data.path_result[0] == temporary_results[0]) {
-							// check to ensure that the clicks were close enough to each
-							// other to count as a double click.
-							if (right_click_time < 0.5f) {
-								player_data.worker_speed = player_data.worker_run_speed;
-
-								// plays footstep sound when worker moves
-								crow::audio::add_footstep_sound(
-									(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-										crow::entity::WORKER)],
-									0.285f);
-							}
-						}
-						else {
-							player_data.worker_speed = player_data.worker_walk_speed;
-
-							crow::audio::add_footstep_sound(
-								(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-									crow::entity::WORKER)],
-								0.5f);
-						}
-					}
-
-					// set the worker's path
-					player_data.path_result = temporary_results;
-
-					break;
-				}
-			}
+		if (buttons_frame[controls::r_mouse] != 1) {
+			return false;
 		}
-
-		right_click_time = 0;
+		// stopping the player and resetting interaction handles
+		player_data.path_result.clear();
+		player_data.interacting = false;
+		player_data.target = nullptr;
+		return true;
 		return true;
 	}
 
@@ -597,6 +605,9 @@ namespace crow {
 		}
 		textures.clear();
 
+		animators.clear();
+		all_meshes.clear();
+
 
 	}
 
@@ -680,13 +691,87 @@ namespace crow {
 		all_meshes[mesh_types::AI].animator = &animators[animator_list::AI];
 		all_meshes[mesh_types::EXIT_LIGHT].animator = &animators[animator_list::EXIT_LIGHT];
 
-		// initialize the first two entities
-		entities.allocate_and_init(2);
+		// initializing main entities
+		entities.allocate_and_init(7);
+
+		// creating player entity
 		entities.mesh_ptrs[0] = &all_meshes[mesh_types::PLAYER];
 		entities.s_resource_view[0] = textures[texture_list::PLAYER];
 
+		// creating AI entity
 		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
 		entities.s_resource_view[1] = textures[texture_list::AI];
+
+		// creating floor entity
+		entities.mesh_ptrs[entity::FLOOR] = &all_meshes[mesh_types::CUBE];
+		// default floor texture, must be replaced every time the room has a different texture for floor
+		entities.s_resource_view[entity::FLOOR] = textures[texture_list::FLOOR1];
+		float4x4_a floor_size = (float4x4_a&)entities.world_matrix[entity::FLOOR];
+		floor_size[0][0] = current_level.room_width;
+		floor_size[1][1] = 0.1f;
+		floor_size[2][2] = current_level.room_length;
+		entities.world_matrix[entity::FLOOR] = (DirectX::XMMATRIX&)floor_size;
+
+		// creating wall entities
+		//up wall
+		for (size_t i = entity::WALL_U; i <= entity::WALL_R; ++i) {
+			float4x4_a wall_size = (float4x4_a&)entities.world_matrix[i];
+			wall_size[1][1] = static_cast<float>(current_level.room_height);
+			entities.mesh_ptrs[i] = &all_meshes[game_manager::mesh_types::CUBE];
+			entities.s_resource_view[i] = textures[game_manager::texture_list::FLOOR1];
+
+			float cwidth = static_cast<float>(current_level.room_width);
+			float clenght = static_cast<float>(current_level.room_length);
+
+			switch (i) {
+			case entity::WALL_U: {
+				wall_size[0][0] = cwidth;
+				wall_size[2][2] = 0.1f;
+				wall_size[3][2] = clenght / 2;
+				break;
+			}
+			case entity::WALL_D: {
+				wall_size[0][0] = cwidth;
+				wall_size[2][2] = 0.1f;
+				wall_size[3][2] = -clenght / 2.f;
+				break;
+			}
+			case entity::WALL_L: {
+				wall_size[0][0] = 0.1f;
+				wall_size[2][2] = clenght;
+				wall_size[3][0] = -cwidth / 2;
+				break;
+			}
+			case entity::WALL_R: {
+				wall_size[0][0] = 0.1f;
+				wall_size[2][2] = clenght;
+				wall_size[3][0] = cwidth / 2;
+				break;
+			}
+			}
+
+			entities.world_matrix[i] = (DirectX::XMMATRIX&)wall_size;
+		}
+
+		/*float4x4_a wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_U];
+		wall_size[1][1] = current_level.room_height;
+		entities.mesh_ptrs[entity::WALL_U] = &all_meshes[game_manager::mesh_types::CUBE];
+		entities.s_resource_view[entity::WALL_U] = textures[game_manager::texture_list::FLOOR1];
+
+		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_D];
+		wall_size[1][1] = current_level.room_height;
+		entities.mesh_ptrs[entity::WALL_D] = &all_meshes[game_manager::mesh_types::CUBE];
+		entities.s_resource_view[entity::WALL_D] = textures[game_manager::texture_list::FLOOR1];
+
+		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_L];
+		wall_size[1][1] = current_level.room_height;
+		entities.mesh_ptrs[entity::WALL_L] = &all_meshes[game_manager::mesh_types::CUBE];
+		entities.s_resource_view[entity::WALL_L] = textures[game_manager::texture_list::FLOOR1];
+
+		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_R];
+		wall_size[1][1] = current_level.room_height;
+		entities.mesh_ptrs[entity::WALL_R] = &all_meshes[game_manager::mesh_types::CUBE];
+		entities.s_resource_view[entity::WALL_R] = textures[game_manager::texture_list::FLOOR1];*/
 
 		load_level(level_number);
 		audio::play_bgm(audio::BGM::NORMAL);
@@ -742,7 +827,8 @@ namespace crow {
 
 		// auto-load the first room
 		current_level.select_default_room();
-		crow::update_room_cam(current_level.selected_room, view);
+		//crow::update_room_cam(current_level.selected_room, view);
+		crow::update_room_cam(pac(cam_pos), pac(cam_rotation), view);
 		current_level.p_inter = &player_data.player_interact;
 
 		// setting up minimap
@@ -766,7 +852,7 @@ namespace crow {
 
 	void game_manager::unload_level() {
 		// remove all entities except for the sphynx and worker
-		while (entities.current_size > 2) {
+		while (entities.current_size > entity::COUNT) {
 			entities.pop_back();
 		}
 
@@ -789,8 +875,6 @@ namespace crow {
 
 		// make sure none of these exist
 		audio::clear_audio_timers();
-
-
 
 		current_level.clean_level();
 		ai_bt.clean_tree();

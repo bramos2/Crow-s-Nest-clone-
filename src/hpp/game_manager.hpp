@@ -44,7 +44,7 @@ namespace crow {
 		bool debug_mode = 0;
 
 		float left_click_time = 0.f;
-		float right_click_time = 0.f;
+		//float right_click_time = 0.f;
 		int menu_position = 0;
 		int level_number = 0;
 		int mwheel_delta = 0;
@@ -59,6 +59,10 @@ namespace crow {
 		level current_level;
 		crow::minimap minimap;
 		crow::message current_message;
+
+		// camera values
+		float3e cam_pos = float3e(0.f, 20.f, -2.f);
+		float3e cam_rotation = float3e(-85.f, 0.f, 0.f);
 
 		// list of every single drawable mesh that is currently loaded
 		std::vector<mesh_info> all_meshes;

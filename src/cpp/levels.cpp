@@ -14,7 +14,7 @@ namespace crow {
         oxygen_console = nullptr;
         pressure_console = nullptr;
         pressure = pressure_max = 230;
-
+        // TODO MAKE LEVEL TILE MAP BASED ON THE LEVEL'S ROOM DIMMENSIONS AND REMOVE EXTRA DATA FROM ROOM STRUCT
       switch (lv) {
         case 1: {
           x = 4;
@@ -268,7 +268,7 @@ namespace crow {
           }
 
           rooms[0][0].id = 1;
-          crow::door* door1 = new door(this);
+          crow::door* door1 = new door(this, false);
           crow::door_panel* door1p = new door_panel(this);
           //crow::oxygen_console* oxy = new crow::oxygen_console(this);
           crow::pressure_console* press = new crow::pressure_console(this);
@@ -280,7 +280,7 @@ namespace crow {
             rooms[0][0].objects.push_back(door1);
 
             door1p->door = door1;
-            door1->panel = door1p;
+            //door1->panel = door1p;
             
             //rooms[3][1].objects.push_back(oxy);
             //oxygen_console = oxy;
@@ -292,6 +292,7 @@ namespace crow {
             // worker start position
             rooms[0][0].object_indices.push_back(0);
 
+            // here is the damn issue
             rooms[0][0].generate_tilemap();
 
             // build level design (invisible)
@@ -299,11 +300,11 @@ namespace crow {
               rooms[0][0].tiles.map[i][0]->is_open = false;
               rooms[0][0].tiles.map[i][10]->is_open = false;
             }
-
+           // rooms[0][0].initialize_pather();
           }
 
           rooms[0][1].id = 2;
-          crow::door* door2 = new door();
+          crow::door* door2 = new door(false);
           crow::door* door2_2 = new door();
           {
             door2->set_tile('l');
@@ -323,6 +324,7 @@ namespace crow {
               rooms[0][1].tiles.map[i][7]->is_open = false;
               rooms[0][1].tiles.map[7][i]->is_open = false;
             }
+           // rooms[0][1].initialize_pather();
           }
 
           rooms[1][1].id = 3;
@@ -465,6 +467,9 @@ namespace crow {
                             j.has_ai = true;
                         }
                     }
+                }
+                if (j.id != 0) {
+                    j.initialize_pather();
                 }
             }
         }

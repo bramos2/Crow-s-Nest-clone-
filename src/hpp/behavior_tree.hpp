@@ -51,7 +51,7 @@ struct behavior_tree {
   };
 
   class root_node : public behavior_tree::decorator_node {
-    friend class behavior_tree;
+    friend struct behavior_tree;
     virtual status run(float dt, crow::ai_manager& m);
   };
 

@@ -72,7 +72,9 @@ namespace crow
 	// the returned ray will always be -1. if not, then it will always be 0.
 	float3e ray_to_floor(float3e ray_direction, float3e ray_position);
 
-	void update_room_cam(crow::room* active_room, view_t& camera);
+	//void update_room_cam(crow::room* active_room, view_t& camera);
+
+	//void update_room_cam(float3e cam_pos, float3e cam)
 
 	void update_room_cam(float3_a position, float3_a rotation, view_t& camera);
 }

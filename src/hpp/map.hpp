@@ -30,8 +30,8 @@ struct room {
   crow::tile_map tiles;
   crow::theta_star pather;
 
-  float3e cam_pos = float3e(0.f, 20.f, -2.f);
-  float3e cam_rotation = float3e(-85.f, 0.f, 0.f);
+  /*float3e cam_pos = float3e(0.f, 20.f, -2.f);
+  float3e cam_rotation = float3e(-85.f, 0.f, 0.f);*/
 
   // contains the entity index of every object that is in this room
   std::vector<size_t> object_indices;
@@ -53,6 +53,7 @@ struct room {
   void generate_debug_collision_display();
   void load_entities(game_manager& state);
   void generate_tilemap();
+  void initialize_pather();
 
   float2e get_tile_wpos(unsigned int const x, unsigned int const y);
   float2e get_tile_wpos(tile* const tile);
@@ -71,6 +72,11 @@ struct level {
   unsigned int x = 0;
   unsigned int y = 0;
   unsigned int id = 0;
+
+  unsigned int room_length = 15;
+  unsigned int room_width = 25;
+  unsigned int room_height = 50;
+
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
   bool found_ai = false;
