@@ -52,7 +52,7 @@ namespace crow {
             float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
             ImGui::Text("current level: %i: current room: %i", level_number, (imgui_wsize.y / real_size.y));
             ImGui::SameLine();
-            ImGui::Text("\tpressure: %f", current_level.pressure);
+            ImGui::Text("\tpressure: %f", current_level.pressure_console->pressure);
 
             ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
             ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
@@ -443,7 +443,7 @@ namespace crow {
     }
 
     void game_manager::draw_pressure_remaining(ImVec2 wh) {
-        if (!current_level.pressure_console || !current_level.pressure_console->is_broken) return;
+        if (!current_level.pressure_console || !current_level.pressure_console->is_broken) { return; }
 
         float scale = 2;
         
@@ -481,12 +481,12 @@ namespace crow {
 
         // draw the bar using a button, just because we can
         // TODO::load a texture instead of something as hilarious as a BUTTON
-        ImVec2 pressure_bar_wh = { (pressure_window_wh.x * 0.92f) * (current_level.pressure /
-                current_level.pressure_max), pressure_window_wh.y * 0.7f};
+        ImVec2 pressure_bar_wh = { (pressure_window_wh.x * 0.92f) * (current_level.pressure_console->pressure /
+                current_level.pressure_console->pressure_max), pressure_window_wh.y * 0.7f};
         // positioning
         ImGui::SetCursorPos({pressure_window_wh.x * 0.04f, pressure_window_wh.y * 0.15f});  // positioning
 
-        if (current_level.pressure) ImGui::Button("", pressure_bar_wh);
+        if (current_level.pressure_console->pressure) ImGui::Button("", pressure_bar_wh);
 
         ImGui::PopStyleColor(3);
 

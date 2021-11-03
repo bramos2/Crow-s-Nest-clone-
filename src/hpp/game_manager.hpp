@@ -135,7 +135,7 @@ namespace crow {
 		void update_animations(double dt);
 		bool l_click_update();
 		bool r_click_update();
-		// updates room metadata such as oxygen remaining, pressure, etc
+		// updates room metadata such as oxygen remaining, pressure, doors, etc
 		void room_updates(double dt);
 
 		void render();
