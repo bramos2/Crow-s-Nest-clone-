@@ -26,15 +26,15 @@ class ai_manager {
   // the current path finding result
   std::vector<float2e> path;
   // used when player is not the target, will increase over time
-  float roam_speed = 2.f;
+  float roam_speed = 2.5f;
   // the speed at which the AI pursues the player
   const float run_speed = 8.f;
   // The current interactible the ai is chasing
   crow::interactible *target = nullptr;
   // this will be used for the AI's decision making process.
-  crow::interactible *prev_target = nullptr;
+  //crow::interactible *prev_target = nullptr;
   // This variable is used to determine when the AI will break a console or door
-  unsigned int counter = 5;
+  unsigned int counter = 0;
   // used for cleanup purposes later on, will store ALL nodes
   //  std::vector<crow::behavior_tree::node*> nodes;
   bool interacting = false;
@@ -43,7 +43,8 @@ class ai_manager {
   // used to check for how long we have roammed
   float roam_timer = 0.f;
   // the total amount of time we will be roaming
-  float roam_total = 10.f;
+  float roam_total = 3.f;
+  bool debug_mode = false;
 
   // init/creation methods
   // TODO: all methods to initialize and prepare the manager and behavior tree

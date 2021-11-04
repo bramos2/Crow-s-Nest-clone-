@@ -78,7 +78,7 @@ namespace crow {
 	status has_target(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
 		if (m.target && !m.curr_room->has_player) {
-			if (m.target->roomptr == m.curr_room) {
+			if (m.target->roomptr == m.curr_room) { // we don't need this as we reset target anyways
 				result = crow::status::PASSED;
 			}
 			else {
@@ -124,10 +124,14 @@ namespace crow {
 	status target_console(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
 
-		if (m.counter == 0) {
+		if (m.counter <= 0) {
 			for (auto& obj : m.curr_room->objects) {
 				// will need to check for the different consoles going forward
-				if (obj->type == crow::object_type::POWER_CONSOLE) {
+				if (obj->is_broken) {
+					continue;
+				}
+
+				if (obj->type == crow::object_type::POWER_CONSOLE || obj->type == crow::object_type::PRESSURE_CONSOLE || obj->type == crow::object_type::OXYGEN_CONSOLE) {
 					m.target = obj;
 					// m.interacting = true;
 					result = crow::status::PASSED;
@@ -136,7 +140,7 @@ namespace crow {
 			}
 		}
 
-		//m.print_status("target_console", result);
+		//m.print_status("\ntarget_console", result);
 		return result;
 	}
 
@@ -146,63 +150,65 @@ namespace crow {
 		// we will store a pointer to all doors in this room
 		std::vector<crow::interactible*> room_doors;
 
+		// making a list of all the doors in this room
 		for (auto& obj : m.curr_room->objects) {
 			if (obj->type == crow::object_type::DOOR) {
 				room_doors.push_back(obj);
 			}
 		}
 
+		// fail if there is no doors
 		if (room_doors.empty()) {
 			return result;
 		}
 
-		//crow::interactible* selected_door = room_doors.back();
-
-		// we will eliminate any previously used doors to avoid just going back and
-		// forth, currently won't work as pre_t is in another room
-		// if (room_doors.size() > 1) {
-		//  for (auto& d : room_doors) {
-		//    if (d == m.prev_target) {
-		//      d = nullptr;
-		//    }
-		//  }
-		//} else {
-		//  selected_door = room_doors.back();
-		//}
-
-		// std::srand(std::time(0));
-
-		//// time to select a new door
-		// while (!selected_door) {
-		//  size_t i = static_cast<size_t>((rand() % room_doors.size()));
-		//  selected_door = room_doors[i];
-		//}
-
+		// list of indices used to pick a random door
 		std::vector<size_t> tinx;
-		tinx.push_back(0);
+		//tinx.push_back(0);
 
+		// filtering doors
 		for (size_t i = 0; i < room_doors.size(); i++) {
-			if (i != tinx.back()) {
+			bool add_door = false; // use primarely for locked doors
+			if (!room_doors[i]->is_active) {
+				int num = rand() % 100 + 1;
+				if (num >= 50) {
+					add_door = true;
+				}
+			}
+			else {
+				add_door = true;
+			}
+
+			if (!add_door) { continue; }
+
+			if (tinx.empty()) {
+				tinx.push_back(i);
+			}
+
+			if (i != tinx.back()) { // checking for a door that is not already in the list
 				if (room_doors[i]->heat > room_doors[tinx.back()]->heat) {
+					// if the next door has a higher heat than the doors already in the list, clear the list and add new door
+					// TODO: Handle locked doors here instead
+
+
+
 					tinx.clear();
 					tinx.push_back(i);
 				}
 				else if (room_doors[i]->heat == room_doors[tinx.back()]->heat) {
+					// otherwise if the door has the same heat, add it to the list
 					tinx.push_back(i);
 				}
+				// we ignore any doors with lower heat values
 			}
 		}
 
+		// we pick a random index inside the index list
 		size_t choice = rand() % tinx.size();
 
-		// selected_door = 
-
+		// the target is set and the test passes
 		result = crow::status::PASSED;
 		m.target = room_doors[tinx[choice]];
-		//  m.interacting = true;
-
-		// we should probably do this after interacting with a target
-		// m.prev_target = m.target;
 
 		//m.print_status("target_door", result);
 		return result;
@@ -230,7 +236,7 @@ namespace crow {
 		// non moving target, use its tile
 		float3e curr_pos = m.entities->get_world_position(index);
 		if (m.path.empty() && m.interacting) {
-			
+
 			float2e target_pos;
 			if (m.target->type == crow::object_type::PLAYER) {
 				float3e p_pos = m.entities->get_world_position(
@@ -239,6 +245,7 @@ namespace crow {
 			}
 			else {
 				target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+				result = crow::status::PASSED;
 			}
 
 			if (crow::reached_destination({ 0.f, 0.f }, { curr_pos.x, curr_pos.z },
@@ -248,11 +255,12 @@ namespace crow {
 		}
 		else {
 			if (m.target->type != crow::object_type::PLAYER) {
-				float2e temp = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+				//float2e temp = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
 
-				if (temp == m.path[0]) {
+				/*if (temp == m.path[0]) {
 					result = crow::status::PASSED;
-				}
+				}*/
+				result = crow::status::PASSED;
 			}
 			else {  // for player use entities
 				float3e temp = m.entities->get_world_position(
@@ -289,7 +297,36 @@ namespace crow {
 			target_pos = { p_pos.x, p_pos.z };
 		}
 		else {
-			target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
+			const crow::tile* ai_tile =
+				m.curr_room->get_tile_at({ temp_ai_pos.x, temp_ai_pos.z });
+
+			// finding the adjacent tile to the interactible
+			float2e adjacent_tile =
+				float2e{ static_cast<float>(ai_tile->col) -
+								static_cast<float>(m.target->x),
+							static_cast<float>(ai_tile->row) -
+								static_cast<float>(m.target->y) };
+
+			adjacent_tile = adjacent_tile.normalize();
+			for (int i = 0; i < 2; i++) {
+				if (adjacent_tile[i] >= 0.5f) {
+					adjacent_tile[i] = 1.f;
+					continue;
+				}
+				else if (adjacent_tile[i] <= -0.5f) {
+					adjacent_tile[i] = -1.f;
+				}
+			}
+
+			adjacent_tile = {
+				adjacent_tile.x + static_cast<float>(m.target->x),
+				adjacent_tile.y + static_cast<float>(m.target->y) };
+
+			adjacent_tile =
+				m.curr_room->get_tile_wpos(static_cast<int>(adjacent_tile.x),
+					static_cast<int>(adjacent_tile.y));
+
+			target_pos = adjacent_tile;
 		}
 
 		m.path = m.curr_room->get_path(float2e(temp_ai_pos.x, temp_ai_pos.y),
@@ -319,7 +356,7 @@ namespace crow {
 		 // || crow::reached_destination({0.f, 0.f}, {curr_pos.x, curr_pos.z},
 		 // target_pos)
 		if (m.path.empty()) {
-			size_t index = static_cast<size_t>(crow::entity::SPHYNX);
+			size_t index = crow::entity::SPHYNX;
 			result = crow::status::PASSED;
 			m.entities->velocities[index] = {
 				0.f, 0.f, 0.f };
@@ -335,7 +372,8 @@ namespace crow {
 
 	status move(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
-		size_t index = static_cast<size_t>(crow::entity::SPHYNX);
+		size_t index = crow::entity::SPHYNX;
+
 
 		crow::set_velocity(m.path.back(), *m.entities, index, m.roam_speed);
 		float3e curr_pos = m.entities->get_world_position(index);
@@ -395,7 +433,7 @@ namespace crow {
 	status handle_door(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
 		const size_t index = static_cast<size_t>(crow::entity::SPHYNX);
-		if (!m.entities->mesh_ptrs[index]->animator->is_acting) {
+		if (!m.entities->mesh_ptrs[index]->animator->is_acting) { // animtion finished playing
 			//// door is closed
 			if (m.target->is_active == false) {
 				//    // TODO: check logic for closed door as it always seems to destroy the door
@@ -438,25 +476,29 @@ namespace crow {
 				//    }
 
 				m.target->dissable();
-				m.target->interact(index, *m.entities);
-
+				if (!m.target->is_broken) {
+					return crow::status::RUNNING;
+				}
+				//m.target->interact(index, *m.entities);
 			}
-			else {
+			else { // door is open
 				m.target->interact(index, *m.entities);
+				m.target = nullptr;
+				m.interacting = false;
+				m.is_roaming = true;
+				m.roam_timer = 0.f;
+				m.entities->mesh_ptrs[index]->animator->performed_action = false;
+				result = crow::status::PASSED;
 				/*m.prev_target = m.target;
 				m.target = nullptr;*/
 			}
-			m.prev_target = m.target;
-			m.target = nullptr;
+
+			//m.prev_target = m.target;
+
 
 			m.room_check(); // BEWARE IF YOU DISSABLE THIS IT WILL BREAK THE AI
-			m.interacting = false;
-			m.is_roaming = true;
-			m.roam_timer = 0.f;
-			m.entities->mesh_ptrs[index]->animator->performed_action = false;
-			result = crow::status::PASSED;
 		}
-		else {
+		else { // animation is playing
 			result = crow::status::RUNNING;
 		}
 
@@ -470,19 +512,27 @@ namespace crow {
 
 		if (m.entities->mesh_ptrs[index]->animator && !m.entities->mesh_ptrs[index]->animator->is_acting) {
 
-			m.target->dissable();
-			m.prev_target = m.target;
-			m.target = nullptr;
-			m.counter--;
-			m.interacting = false;
-			m.entities->mesh_ptrs[index]->animator->performed_action = false;
-			result = crow::status::PASSED;
+			if (m.target->type == crow::object_type::PLAYER && m.debug_mode) {
+				m.target = nullptr;
+				m.counter--;
+				m.interacting = false;
+				m.entities->mesh_ptrs[index]->animator->performed_action = false;
+				result = crow::status::PASSED;
+			}
+			else {
+				m.target->dissable();
+				m.target = nullptr;
+				m.counter--;
+				m.interacting = false;
+				m.entities->mesh_ptrs[index]->animator->performed_action = false;
+				result = crow::status::PASSED;
+			}
 		}
 		else {
 			result = crow::status::RUNNING;
 		}
 
-		//m.print_status("destroy_target", result);
+		//m.print_status("\ndestroy_target", result);
 		return result;
 	}
 
@@ -506,6 +556,7 @@ namespace crow {
 		entities = ent;
 		curr_level = level;
 		this->room_check();
+		srand(time(0));
 	}
 
 	void ai_manager::print_status(std::string behavior, status b_status)

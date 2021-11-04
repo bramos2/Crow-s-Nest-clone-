@@ -192,23 +192,39 @@ namespace crow {
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
 
-
 			// all ai updates (player and enemy) here
-			/*if (false) {*/
-			if (current_level.found_ai) { ai_bt.run(dt); }
+			//if (false) {
+				if (current_level.found_ai) { ai_bt.run(dt); }
+			//}
+
+			// making AI model face its velocity
+			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update();
+			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 			//}
 
 			//current_level.selected_room->tiles.debug_print_map();
 			// animations need to be updated before checking if the player is alive
 			update_animations(dt);
+			entities.update_transform_data(dt);
+
+			// check for worker alive to end the game if he is dead
+			if (!player_data.player_interact.is_active) {
+				player_data.path_result.clear();
+				game_over();
+				break;
+			}
 
 			// input updates should be done if the player is alive
-			l_click_update();
-			r_click_update();
+			if (player_data.player_interact.is_active) {
+				l_click_update();
+				r_click_update();
+			}
 
 			// movement update should be done if the player is still alive
 			crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
-			entities.update_transform_data(dt);
+			current_level.selected_room->update_room_doors(textures, entities);
 
 			// all this just to update the angle of the model of the player
 			player_data.p_matrix.scale = { 0.25f, 0.25f, 0.25f };
@@ -216,12 +232,6 @@ namespace crow {
 			player_data.p_matrix.update_position(entities.world_matrix[(int)crow::entity::WORKER]);
 			player_data.p_matrix.update();
 			entities.world_matrix[(int)crow::entity::WORKER] = player_data.p_matrix.final_matrix;
-
-			// same for the enemy model
-			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
-			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
-			ai_bt.e_matrix.update();
-			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
@@ -248,7 +258,7 @@ namespace crow {
 		// debug mode updates
 		if (debug_mode) {
 			float4e translate = { 0, 0, 0, 0 };
-
+			ai_m.debug_mode = true;
 			// debug camera controls
 			/* WASD = basic movement                                                     */
 			/* ARROW KEYS = rotate camera                                                */
@@ -492,20 +502,43 @@ namespace crow {
 	}
 
 	void game_manager::room_updates(double dt) {
-		// oxygen console updates
-		if (current_level.oxygen_console && current_level.oxygen_console->is_broken) {
-			for (int i = 0; i < current_level.rooms.size(); i++) {
-				for (int j = 0; j < current_level.rooms[i].size(); j++) {
-					if (current_level.rooms[i][j].has_player) {
-						// decreases oxygen level
-						current_level.rooms[i][j].oxygen -= static_cast<float>(dt);
+		// updating the heat values for the doors in the level and oxygen
+		for (auto& rv : current_level.rooms) {
+			for (auto& r : rv) {
+				if (r.id <= 0) { // not valid room
+					continue;
+				}
 
-						// this kills the worker
-						if (current_level.rooms[i][j].oxygen <= 0) {
-							current_level.rooms[i][j].oxygen = 0;
-							game_over();
-							return;
-						}
+				// updating oxygen less optimal as checked every loop but saves me the trouble of having to loop twice to keep doors updated
+				if (current_level.oxygen_console && r.has_player && current_level.oxygen_console->is_broken) {
+					// decreases oxygen level
+					r.oxygen -= static_cast<float>(dt);
+
+					// this kills the worker
+					if (r.oxygen <= 0) {
+						r.oxygen = 0;
+						//game_over();
+						player_data.player_interact.dissable();
+						return;
+					}
+				}
+
+				for (auto& o : r.objects) {
+					if (o->type != crow::object_type::DOOR) {
+						continue;
+					}
+					/*std::string hval = "\nheat: " + std::to_string(o->heat);*/
+					// for doors update the heat value
+					if (o->heat > 0.0005f) {
+						o->heat -= static_cast<float>(dt) * 0.01f;
+						/*std::printf(hval.c_str());*/
+					}
+					else if (o->heat < 0.0005f) {
+						o->heat += static_cast<float>(dt) * 0.01f;
+						/*std::printf(hval.c_str());*/
+					}
+					else {
+						o->heat = 0.f;
 					}
 				}
 			}
@@ -514,12 +547,13 @@ namespace crow {
 		// pressure console updates
 		if (current_level.pressure_console && current_level.pressure_console->is_broken) {
 			// pressure is decreasing!
-			current_level.pressure -= static_cast<float>(dt);
+			current_level.pressure_console->pressure -= static_cast<float>(dt);
 
 			// this kills the worker
-			if (current_level.pressure <= 0) {
-				current_level.pressure = 0;
-				game_over();
+			if (current_level.pressure_console->pressure <= 0.f) {
+				current_level.pressure_console->pressure = 0.f;
+				//game_over();
+				player_data.player_interact.dissable();
 				return;
 			}
 		}
@@ -560,7 +594,8 @@ namespace crow {
 
 	void game_manager::game_over() {
 		const size_t index = static_cast<size_t>(entity::WORKER);
-
+		/*player_data.path_result.clear();*/
+		entities.velocities[index] = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 		if (entities.mesh_ptrs[index]->animator &&
 			!entities.mesh_ptrs[index]->animator->is_acting &&
 			!entities.mesh_ptrs[index]->animator->performed_action) {

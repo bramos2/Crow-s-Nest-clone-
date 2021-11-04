@@ -178,6 +178,20 @@ namespace crow {
 		pather = crow::theta_star(&tiles);
 	}
 
+	void room::update_room_doors(std::vector<ID3D11ShaderResourceView*>& textures, entities& entities)
+	{
+		for (auto& o : objects) {
+			if (o->type == crow::object_type::DOOR || o->type == crow::object_type::EXIT) {
+				if (o->is_active) {
+					entities.s_resource_view[o->entity_index] = textures[game_manager::texture_list::DOOR_OPEN];
+				}
+				else {
+					entities.s_resource_view[o->entity_index] = textures[game_manager::texture_list::DOOR_CLOSED];
+				}
+			}
+		}
+	}
+
 	float2e room::get_tile_wpos(unsigned int const x, unsigned int const y) {
 		return tiles.get_tile_wpos(x, y);
 	}

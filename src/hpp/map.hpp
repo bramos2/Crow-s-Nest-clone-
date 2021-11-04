@@ -55,18 +55,13 @@ struct room {
   void generate_tilemap();
   void initialize_pather();
 
+  void update_room_doors(std::vector<ID3D11ShaderResourceView*>& textures, entities& entities);
+
   float2e get_tile_wpos(unsigned int const x, unsigned int const y);
   float2e get_tile_wpos(tile* const tile);
   tile* get_tile_at(float2e const pos);
   std::vector<float2e> get_path(float2e start, float2e goal);
 };
-
-// struct door {
-//  // the rooms this door is connected to
-//  std::vector<std::shared_ptr<room>> rooms;
-//
-//  void move_entity(const size_t entity_indx, int const room_number);
-//};
 
 struct level {
   unsigned int x = 0;
@@ -80,10 +75,10 @@ struct level {
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
   bool found_ai = false;
-  float pressure;
-  float pressure_max;
+  
   player_interact* p_inter = nullptr;
   crow::room* selected_room = nullptr;
+  // all valid rooms must have a valid ID that is greater than 0
   std::vector<std::vector<room>> rooms;
   std::vector<door> doors;
   // message to display on the screen. will be read by the game manager to

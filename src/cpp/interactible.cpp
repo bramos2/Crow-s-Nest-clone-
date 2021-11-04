@@ -23,18 +23,18 @@ namespace crow {
 		}
 	}
 
-void interactible::activate(crow::game_manager& state) { printf("something was activated.\n"); }
+	void interactible::activate(crow::game_manager& state) { printf("something was activated.\n"); }
 
 	void interactible::dissable() {
 		std::printf("\n*****interactible has been destroyed*****");
-		
-		if (health <= 0) {
-			is_broken = true;
-			is_active = false;
-		}
-		else {
-			--health;
-		}
+		is_broken = true;
+		//if (health <= 0) {
+		//	is_broken = true;
+		//	//is_active = false;
+		//}
+		//else {
+		//	--health;
+		//}
 	}
 
 	void interactible::set_tile(unsigned int _x, unsigned int _y) {
@@ -53,6 +53,21 @@ void interactible::activate(crow::game_manager& state) { printf("something was a
 
 	interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
 
+	// self destruct console
+	void sd_console::interact(size_t const index, crow::entities& entity) {
+		if (!is_broken) {
+			std::printf("\n*****interacted with sd_console*****\n");
+		}
+		else {
+			std::printf("\n*****fixing sd_console*****\n");
+			is_broken = false;
+		}
+		is_active = true;
+	}
+
+	sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
+
+	// power generator console
 	void pg_console::interact(size_t const index, crow::entities& entity) {
 		if (!is_broken) {
 			std::printf("\n*****interacted with pg_console*****\n");
@@ -66,6 +81,7 @@ void interactible::activate(crow::game_manager& state) { printf("something was a
 
 	pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
 
+	// oxygen console
 	oxygen_console::oxygen_console(crow::level* _lv) {
 		type = crow::object_type::OXYGEN_CONSOLE;
 		current_level = _lv;
@@ -83,14 +99,16 @@ void interactible::activate(crow::game_manager& state) { printf("something was a
 		}
 	}
 
-void oxygen_console::activate(crow::game_manager& state) {
-    is_broken = false;
-}
+	void oxygen_console::activate(crow::game_manager& state) {
+		is_broken = false;
+	}
 
+	// preassure console
 	pressure_console::pressure_console(crow::level* _lv) {
 		type = crow::object_type::OXYGEN_CONSOLE;
 		current_level = _lv;
-		is_broken = true;
+		is_broken = false;
+		health = 1;
 	}
 
 	void pressure_console::interact(size_t const index, crow::entities& entity) {
@@ -104,86 +122,66 @@ void oxygen_console::activate(crow::game_manager& state) {
 		}
 	}
 
-void pressure_console::activate(crow::game_manager& state) {
-    is_broken = false;
-}
-
-void door_panel::interact(size_t const index, crow::entities& entity) {
-	// we should only do any of this is the door is not broken
-	if (door->is_broken) {
-		current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
-		return;
+	void pressure_console::activate(crow::game_manager& state) {
+		is_broken = false;
 	}
 
-    // this will prevent the game from crashing if the door is improperly configured
-    if (!door->neighbor) {
-        printf("error! the door attached to the panel doesn't have a neighbor attached!\n");
-        return;
-    }
-
-    std::string text;
-	// We don't need anything else, stop it, get some help
-	if (door->is_active) {
-		text = "UNLOCKING...";
-	}
-	else {
-		text = "UNLOCKING...";
+	void pressure_console::dissable()
+	{
+		is_broken = true;
+		pressure = pressure_max;
 	}
 
-    current_level->interacting = this;
-    current_level->msg = message(text, crow::default_message_time - 1.0f,
-                                crow::default_interact_wait);
-}
+	// door panel
+	void door_panel::interact(size_t const index, crow::entities& entity) {
+		// we should only do any of this is the door is not broken
+		if (door->is_broken) {
+			current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
+			return;
+		}
 
-void door_panel::activate(crow::game_manager& state) {
+		// this will prevent the game from crashing if the door is improperly configured
+		if (!door->neighbor) {
+			printf("error! the door attached to the panel doesn't have a neighbor attached!\n");
+			return;
+		}
 
-	door->is_active = door->neighbor->is_active = !door->is_active;
-    
-    if (!door->is_active) {
-        state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-		state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-    } else {
-        state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-		state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-    }
+		std::string text;
+		// We don't need anything else, stop it, get some help
+		if (door->is_active) {
+			text = "UNLOCKING...";
+		}
+		else {
+			text = "UNLOCKING...";
+		}
 
-    /*if (!door->neighbor->is_active) {
-        
-    } else {
-       
-    }*/
-}
+		current_level->interacting = this;
+		current_level->msg = message(text, crow::default_message_time - 1.0f,
+			crow::default_interact_wait);
+	}
+
+	// we may not need to pass in the game state anymore
+	void door_panel::activate(crow::game_manager& state) {
+
+		door->is_active = door->neighbor->is_active = !door->is_active;
+
+		// this is done in the update function
+		/*if (!door->is_active) {
+			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
+		}
+		else {
+			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
+			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
+		}*/
+	}
 
 	door_panel::door_panel(crow::level* _lv) {
 		type = crow::object_type::DOOR_PANEL;
 		current_level = _lv;
 	}
 
-	void sd_console::interact(size_t const index, crow::entities& entity) {
-		if (!is_broken) {
-			std::printf("\n*****interacted with sd_console*****\n");
-		}
-		else {
-			std::printf("\n*****fixing sd_console*****\n");
-			is_broken = false;
-		}
-		is_active = true;
-	}
-
-	sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
-
-	void player_interact::dissable() {
-		std::printf("\n*****enemy is attacking player\n");
-		//interactible::dissable();
-		is_active = false;
-		is_broken = true;
-	}
-
-	player_interact::player_interact() {
-		type = crow::object_type::PLAYER;
-		is_active = true;
-	}
-
+	// door
 	void door::interact(size_t const index, crow::entities& entity) {
 		//std::printf("\ninteracted with door, congrats!");
 
@@ -229,14 +227,12 @@ void door_panel::activate(crow::game_manager& state) {
 			if (index == static_cast<size_t>(crow::entity::WORKER)) {
 				roomptr->has_player = false;
 				neighbor->roomptr->has_player = true;
-				heat++;
-				neighbor->heat++;
+				heat = neighbor->heat = 2.f;
 			}
 			else {
 				roomptr->has_ai = false;
 				neighbor->roomptr->has_ai = true;
-				heat--;
-				neighbor->heat--;
+				heat = neighbor->heat = -2.f;
 			}
 		}
 	}
@@ -253,6 +249,8 @@ void door_panel::activate(crow::game_manager& state) {
 		else {
 			--health;
 		}
+
+
 	}
 
 	door::door() {
@@ -275,6 +273,7 @@ void door_panel::activate(crow::game_manager& state) {
 		current_level = _lv;
 	}
 
+	// exit door
 	void exit::interact(size_t const index, crow::entities& entity) {
 		std::printf("\ninteracted with exit, congrats! loaded level: %i",
 			level_num + 1);
@@ -289,4 +288,16 @@ void door_panel::activate(crow::game_manager& state) {
 		level_num = _level_num;
 	}
 
+	// player
+	void player_interact::dissable() {
+		std::printf("\n*****enemy is attacking player\n");
+		//interactible::dissable();
+		is_active = false;
+		is_broken = true;
+	}
+
+	player_interact::player_interact() {
+		type = crow::object_type::PLAYER;
+		is_active = true;
+	}
 }  // namespace crow
