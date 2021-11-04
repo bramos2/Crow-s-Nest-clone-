@@ -77,8 +77,8 @@ namespace crow {
 	// target branch
 	status has_target(float dt, crow::ai_manager& m) {
 		status result = crow::status::FAILED;
-		if (m.target && !m.curr_room->has_player) {
-			if (m.target->roomptr == m.curr_room) { // we don't need this as we reset target anyways
+		if (m.target && m.target->type != crow::object_type::PLAYER && !m.curr_room->has_player) {
+			if (m.target->roomptr == m.curr_room) {
 				result = crow::status::PASSED;
 			}
 			else {
@@ -100,17 +100,6 @@ namespace crow {
 		if (!m.curr_room) {
 			return result;
 		}
-
-		// will require that the room with the player has an interactible for the
-		// player in it at all times
-		// for (auto& obj : m.curr_room->objects) {
-		//  if (obj->type == crow::object_type::PLAYER) {
-		//    m.target = obj;
-		//   // m.interacting = true;
-		//    result = crow::status::PASSED;
-		//    break;
-		//  }
-		//}
 
 		if (m.curr_room->has_player && m.curr_level->p_inter->is_active) {
 			m.target = m.curr_level->p_inter;
@@ -266,8 +255,8 @@ namespace crow {
 				float3e temp = m.entities->get_world_position(
 					static_cast<size_t>(crow::entity::WORKER));
 				float2e t = { temp.x, temp.z };
-
-				if (crow::reached_destination({ 0.f, 0.f }, t, m.path[0], 0.2f)) {
+				// changing the last value will determine how much the player has to move from its initial position before the AI makes a different path
+				if (crow::reached_destination({ 0.f, 0.f }, t, m.path[0], 3.0f)) { 
 					result = crow::status::PASSED;
 				}
 
@@ -393,14 +382,13 @@ namespace crow {
 		float2e curr_vel = float2e(dt * m.entities->velocities[index].x,
 			dt * m.entities->velocities[index].z);
 		float d = 1.0f;
-		if (m.path.size() > 1) {
-			d = 0.2f;
-		}
+		/*if (m.path.size() > 1) {
+			d = 0.5f;
+		}*/
 
 		if (crow::reached_destination(curr_vel, float2e(curr_pos.x, curr_pos.z),
 			m.path.back(), d)) {
 			m.path.pop_back();
-
 		}
 
 		result = crow::status::RUNNING;

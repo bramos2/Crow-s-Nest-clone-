@@ -304,6 +304,7 @@ namespace crow {
 		if (debug_mode) {
 			float4e translate = { 0, 0, 0, 0 };
 			ai_m.debug_mode = true;
+			p_impl->draw_path(ai_m.path, crow::float4e(1.f, 0.f, 0.f, 1.f));
 			// debug camera controls
 			/* WASD = basic movement                                                     */
 			/* ARROW KEYS = rotate camera                                                */
@@ -608,6 +609,7 @@ namespace crow {
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
+		
 
 		switch (current_state) {
 		case game_state::SETTINGS:

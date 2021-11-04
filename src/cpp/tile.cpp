@@ -7,7 +7,7 @@ using fast_int = std::int_fast32_t;
 namespace crow {
 // tile functions
 float tile::m_distance(tile* const to) const {
-  return static_cast<float>((this->col - to->col) + (this->row - to->row));
+    return std::fabsf(static_cast<float>(this->col - to->col)) + fabsf(static_cast<float>(this->row - to->row));
 }
 
 bool tile::line_of_sight(tile* const to,

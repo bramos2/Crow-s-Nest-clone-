@@ -189,6 +189,7 @@ namespace crow
 		/* DEV5 helper functions
 		* *****
 		*/
+		void draw_path(std::vector<float2e> path, float4e color);
 		
 		//draws joint with given translation
 		void drawJointTransform(j_x joint, float3e translation);
