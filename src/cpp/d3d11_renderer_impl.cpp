@@ -192,7 +192,17 @@ namespace crow {
 	//	}
 	//}
 
-	void impl_t::drawJointTransform(j_x joint, float3e translation)
+void impl_t::draw_path(std::vector<float2e> path, float4e color)
+{
+	for (auto& p : path) {
+		float3e pos = float3e(p.x, 0.f, p.y);
+		float3e des = float3e(p.x, 1.f, p.y);
+
+		crow::debug_renderer::add_line(pos, des, color);
+	}
+}
+
+void impl_t::drawJointTransform(j_x joint, float3e translation)
 	{
 		float3e pos = float3e(joint.transform.m[3][0] + translation.x, joint.transform.m[3][1] + translation.y,
 			joint.transform.m[3][2] + translation.z);

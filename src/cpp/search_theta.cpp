@@ -166,10 +166,10 @@ void theta_star::search_theta_star() {
 
 void theta_star::update_vertex(node* s, node* neighbor) {
   if (s->parent->tileptr->line_of_sight(neighbor->tileptr, tilemap->map)) {
-    if (s->parent->g + s->parent->tileptr->m_distance(neighbor->tileptr) <
+    if (s->parent->g + s->parent->tileptr->m_distance(neighbor->tileptr) * weight <
         neighbor->g) {
       neighbor->g =
-          s->parent->g + s->parent->tileptr->m_distance(neighbor->tileptr);
+          s->parent->g + s->parent->tileptr->m_distance(neighbor->tileptr) * weight;
       neighbor->parent = s->parent;
       if (std::find(open.begin(), open.end(), neighbor) != open.end()) {
         open.erase(std::remove(open.begin(), open.end(), neighbor),
@@ -180,8 +180,8 @@ void theta_star::update_vertex(node* s, node* neighbor) {
     }
 
   } else {
-    if (s->g + s->tileptr->m_distance(neighbor->tileptr) < neighbor->g) {
-      neighbor->g = s->g + s->tileptr->m_distance(neighbor->tileptr);
+    if (s->g + s->tileptr->m_distance(neighbor->tileptr) * weight < neighbor->g) {
+      neighbor->g = s->g + s->tileptr->m_distance(neighbor->tileptr) * weight;
       neighbor->parent = s;
       if (std::find(open.begin(), open.end(), neighbor) != open.end()) {
         open.erase(std::remove(open.begin(), open.end(), neighbor),
