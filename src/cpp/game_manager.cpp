@@ -257,7 +257,7 @@ namespace crow {
 		// debug mode updates
 		if (debug_mode) {
 			float4e translate = { 0, 0, 0, 0 };
-
+			ai_m.debug_mode = true;
 			// debug camera controls
 			/* WASD = basic movement                                                     */
 			/* ARROW KEYS = rotate camera                                                */

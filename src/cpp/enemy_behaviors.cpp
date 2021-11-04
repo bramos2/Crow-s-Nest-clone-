@@ -512,13 +512,21 @@ namespace crow {
 
 		if (m.entities->mesh_ptrs[index]->animator && !m.entities->mesh_ptrs[index]->animator->is_acting) {
 
-			m.target->dissable();
-			//m.prev_target = m.target;
-			m.target = nullptr;
-			m.counter--;
-			m.interacting = false;
-			m.entities->mesh_ptrs[index]->animator->performed_action = false;
-			result = crow::status::PASSED;
+			if (m.target->type == crow::object_type::PLAYER && m.debug_mode) {
+				m.target = nullptr;
+				m.counter--;
+				m.interacting = false;
+				m.entities->mesh_ptrs[index]->animator->performed_action = false;
+				result = crow::status::PASSED;
+			}
+			else {
+				m.target->dissable();
+				m.target = nullptr;
+				m.counter--;
+				m.interacting = false;
+				m.entities->mesh_ptrs[index]->animator->performed_action = false;
+				result = crow::status::PASSED;
+			}
 		}
 		else {
 			result = crow::status::RUNNING;

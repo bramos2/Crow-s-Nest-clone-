@@ -26,7 +26,7 @@ class ai_manager {
   // the current path finding result
   std::vector<float2e> path;
   // used when player is not the target, will increase over time
-  float roam_speed = 5.f;
+  float roam_speed = 2.5f;
   // the speed at which the AI pursues the player
   const float run_speed = 8.f;
   // The current interactible the ai is chasing
@@ -43,7 +43,8 @@ class ai_manager {
   // used to check for how long we have roammed
   float roam_timer = 0.f;
   // the total amount of time we will be roaming
-  float roam_total = 1.f;
+  float roam_total = 3.f;
+  bool debug_mode = false;
 
   // init/creation methods
   // TODO: all methods to initialize and prepare the manager and behavior tree

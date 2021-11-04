@@ -52,7 +52,9 @@ namespace crow {
             float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
             ImGui::Text("current level: %i: current room: %i", level_number, (imgui_wsize.y / real_size.y));
             ImGui::SameLine();
-            ImGui::Text("\tpressure: %f", current_level.pressure_console->pressure);
+            if (current_level.pressure_console) {
+                ImGui::Text("\tpressure: %f", current_level.pressure_console->pressure);
+            }
 
             ImGui::Text("clicked on : %f %f %f", p.x, p.y, p.z);
             ImGui::Text("mpos: %f, %f", mouse_pos.x, mouse_pos.y);
