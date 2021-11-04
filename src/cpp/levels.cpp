@@ -87,7 +87,7 @@ namespace crow {
 				
 				float4x4_a furns2 = IdentityM_a();
 				furns2 = XrotationM(furns2, 90);
-				furns2[3][0] = 21.f - rooms[2][0].width * 0.5f + 0.5f; furns2[3][2] = 3.5f - rooms[2][0].length * 0.5f + 0.5f;
+				furns2[3][0] = 22.f - rooms[2][0].width * 0.5f + 0.5f; furns2[3][2] = 3.5f - rooms[2][0].length * 0.5f + 0.5f;
 				
 				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns2);
 				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
@@ -96,7 +96,7 @@ namespace crow {
 				float4x4_a furns3 = IdentityM_a();
 				furns3 = YrotationM(furns3, 180);
 				furns3 = XrotationM(furns3, 90);
-				furns3[3][0] = 21.f - rooms[2][0].width * 0.5f + 0.5f; furns3[3][2] = 13.5f - rooms[2][0].length * 0.5f + 0.5f;
+				furns3[3][0] = 22.f - rooms[2][0].width * 0.5f + 0.5f; furns3[3][2] = 13.5f - rooms[2][0].length * 0.5f + 0.5f;
 				
 				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns3);
 				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
