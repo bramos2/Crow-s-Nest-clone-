@@ -39,8 +39,6 @@ namespace crow {
 				rooms[2][1].objects.push_back(lv1_door1_l);
 				rooms[2][1].objects.push_back(lv1_door1_u);
 				rooms[2][1].objects.push_back(lv1_door1_r);
-				// spawn the worker here
-				rooms[2][1].object_indices.push_back(0);
 
 				rooms[2][1].generate_tilemap();
 				// build level design (invisible)
@@ -77,7 +75,42 @@ namespace crow {
 
 				rooms[2][0].objects.push_back(lv1_door3_r);
 
+				
+				float4x4_a furns1 = IdentityM_a();
+				furns1 = YrotationM(furns1, -90);
+				furns1 = XrotationM(furns1, 90);
+				furns1[3][0] = 18.5f - rooms[2][0].width * 0.5f + 0.5f; furns1[3][2] = 7.f - rooms[2][0].length * 0.5f + 0.5f;
+				
+				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
+				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
+				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
+				
+				float4x4_a furns2 = IdentityM_a();
+				furns2 = XrotationM(furns2, 90);
+				furns2[3][0] = 21.f - rooms[2][0].width * 0.5f + 0.5f; furns2[3][2] = 3.5f - rooms[2][0].length * 0.5f + 0.5f;
+				
+				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns2);
+				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
+				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
+
+				float4x4_a furns3 = IdentityM_a();
+				furns3 = YrotationM(furns3, 180);
+				furns3 = XrotationM(furns3, 90);
+				furns3[3][0] = 21.f - rooms[2][0].width * 0.5f + 0.5f; furns3[3][2] = 13.5f - rooms[2][0].length * 0.5f + 0.5f;
+				
+				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns3);
+				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
+				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
+
+				// spawn the worker here
+				rooms[2][0].object_indices.push_back(0);
+
 				rooms[2][0].generate_tilemap();
+
+				for (int i = 0; i < 5; i++) {
+					rooms[2][0].tiles.map[0][i + 21]->is_open = false;
+					rooms[2][0].tiles.map[0][i + 21]->is_open = false;
+				}
 			}
 
 			rooms[2][2].id = 4;
@@ -286,6 +319,15 @@ namespace crow {
 				//oxygen_console = oxy;
 				//oxy->set_tile('d');
 
+				
+				float4x4_a furns1 = IdentityM_a();
+				furns1 = YrotationM(furns1, 90);
+				furns1 = XrotationM(furns1, 90);
+				furns1[3][0] = 9.5 - rooms[0][0].width * 0.5f + 0.5f; furns1[3][2] = 7 - rooms[0][0].length * 0.5f + 0.5f;
+				
+				rooms[0][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
+				rooms[0][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
+				rooms[0][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
 
 				// worker start position
 				rooms[0][0].object_indices.push_back(0);
@@ -294,9 +336,10 @@ namespace crow {
 				rooms[0][0].generate_tilemap();
            // rooms[0][0].initialize_pather();
 				// build level design (invisible)
-				for (int i = 5; i < 14; i++) {
+				for (int i = 5; i < 15; i++) {
 					rooms[0][0].tiles.map[i][0]->is_open = false;
 					rooms[0][0].tiles.map[i][10]->is_open = false;
+					rooms[0][0].tiles.map[i][9]->is_open = false;
 				}
 				// rooms[0][0].initialize_pather();
 			}

@@ -82,6 +82,13 @@ namespace crow {
 				EXIT_LIGHT,
 				CONSOLE1,
 				CONSOLE2,
+				BED1,
+				CHAIR1,
+				ELECTRIC_BOX1,
+				SERVER_BOX1,
+				SOFA1,
+				SOFA2,
+				SOFA3,
 				COUNT
 			};
 		};
@@ -99,6 +106,13 @@ namespace crow {
 				CONSOLE1_D,
 				CONSOLE1_S,
 				CONSOLE2,
+				BED1,
+				CHAIR1,
+				ELECTRIC_BOX1,
+				SERVER_BOX1,
+				SOFA1,
+				SOFA2,
+				SOFA3,
 				GUI_PAUSE,
 				COUNT
 			};

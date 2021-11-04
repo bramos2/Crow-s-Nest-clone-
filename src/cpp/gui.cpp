@@ -108,6 +108,7 @@ namespace crow {
                 if (level_number != 0) {
                     menu_position = 3;
                 } else {
+                    level_number = 1;
                     new_game();
                     save_game();
                 }

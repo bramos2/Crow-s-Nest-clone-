@@ -79,11 +79,46 @@ namespace crow {
 		load_bin_data("res/meshes/console1.bin", temp);
 		all_meshes[mesh_types::CONSOLE1].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE1].vertex_buffer, all_meshes[mesh_types::CONSOLE1].index_buffer, *all_meshes[mesh_types::CONSOLE1].s_mesh);
-
+		
 		// loading console2 mesh
 		load_bin_data("res/meshes/console2.bin", temp);
 		all_meshes[mesh_types::CONSOLE2].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE2].vertex_buffer, all_meshes[mesh_types::CONSOLE2].index_buffer, *all_meshes[mesh_types::CONSOLE2].s_mesh);
+
+		// bed
+		load_bin_data("res/meshes/bed1.bin", temp);
+		all_meshes[mesh_types::BED1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::BED1].vertex_buffer, all_meshes[mesh_types::BED1].index_buffer, *all_meshes[mesh_types::BED1].s_mesh);
+		
+		// chair
+		load_bin_data("res/meshes/chair1.bin", temp);
+		all_meshes[mesh_types::CHAIR1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::CHAIR1].vertex_buffer, all_meshes[mesh_types::CHAIR1].index_buffer, *all_meshes[mesh_types::CHAIR1].s_mesh);
+		
+		// electric box
+		load_bin_data("res/meshes/electric_box1.bin", temp);
+		all_meshes[mesh_types::ELECTRIC_BOX1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::ELECTRIC_BOX1].vertex_buffer, all_meshes[mesh_types::ELECTRIC_BOX1].index_buffer, *all_meshes[mesh_types::ELECTRIC_BOX1].s_mesh);
+
+		// server
+		load_bin_data("res/meshes/server_box1.bin", temp);
+		all_meshes[mesh_types::SERVER_BOX1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::SERVER_BOX1].vertex_buffer, all_meshes[mesh_types::SERVER_BOX1].index_buffer, *all_meshes[mesh_types::SERVER_BOX1].s_mesh);
+
+		// sofa 1
+		load_bin_data("res/meshes/sofa1.bin", temp);
+		all_meshes[mesh_types::SOFA1].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA1].vertex_buffer, all_meshes[mesh_types::SOFA1].index_buffer, *all_meshes[mesh_types::SOFA1].s_mesh);
+
+		// sofa 2
+		load_bin_data("res/meshes/sofa2.bin", temp);
+		all_meshes[mesh_types::SOFA2].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA2].vertex_buffer, all_meshes[mesh_types::SOFA2].index_buffer, *all_meshes[mesh_types::SOFA2].s_mesh);
+
+		// sofa 3
+		load_bin_data("res/meshes/sofa3.bin", temp);
+		all_meshes[mesh_types::SOFA3].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA3].vertex_buffer, all_meshes[mesh_types::SOFA3].index_buffer, *all_meshes[mesh_types::SOFA3].s_mesh);
 	}
 
 	void game_manager::load_texture_data() {
@@ -99,6 +134,16 @@ namespace crow {
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
+		
+		p_impl->create_texture("res/textures/bed1.dds", textures[texture_list::BED1]);
+		p_impl->create_texture("res/textures/chair1.dds", textures[texture_list::CHAIR1]);
+		p_impl->create_texture("res/textures/electric_box1.dds", textures[texture_list::ELECTRIC_BOX1]);
+		p_impl->create_texture("res/textures/server_box1.dds", textures[texture_list::SERVER_BOX1]);
+		p_impl->create_texture("res/textures/sofa1.dds", textures[texture_list::SOFA1]);
+		p_impl->create_texture("res/textures/sofa2.dds", textures[texture_list::SOFA2]);
+		p_impl->create_texture("res/textures/sofa3.dds", textures[texture_list::SOFA3]);
+
+
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
 	}
 
