@@ -53,9 +53,9 @@ void crow::minimap::draw_call(game_manager& state) {
         was_dragging = true;
     }
     // colors of the imgui minimap buttons (default)
-    ImGui::PushStyleColor(ImGuiCol_Button, { 0.5f, 0.5f, 0.8f, 0.5f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.5f, 0.5f, 0.8f, 1.0f});
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.5f, 0.5f, 0.8f, 1.0f});
+        ImGui::PushStyleColor(ImGuiCol_Button, { 0.19f, 0.40f, 0.63f, 0.35f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.25f, 0.58f, 0.98f, 0.7f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.25f, 0.58f, 0.98f, 0.7f});
 
   // float2e starting_r_pos = {0.f, 0.f};
   if (current_level) {
@@ -117,9 +117,9 @@ void crow::minimap::draw_call(game_manager& state) {
         // change the color of the room button where the player is
         if (current_room.has_player) {
             ImGui::PopStyleColor(3);
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.8f, 0.5f, 0.5f, 0.5f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.8f, 0.5f, 0.5f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.8f, 0.5f, 0.5f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.65f, 0.25f, 0.25f, 0.35f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.85f, 0.37f, 0.37f, 0.7f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.85f, 0.37f, 0.37f, 0.7f});
         }
 
         //if (ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh)) {
@@ -139,9 +139,9 @@ void crow::minimap::draw_call(game_manager& state) {
         // reset colors
         if (current_room.has_player) {
             ImGui::PopStyleColor(3);
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.5f, 0.5f, 0.8f, 0.5f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.5f, 0.5f, 0.8f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.5f, 0.5f, 0.8f, 1.0f});
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.19f, 0.40f, 0.63f, 0.35f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.25f, 0.58f, 0.98f, 0.7f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.25f, 0.58f, 0.98f, 0.7f});
         }
 
       }

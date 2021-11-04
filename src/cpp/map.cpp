@@ -111,6 +111,19 @@ namespace crow {
 			case object_type::DOOR_PANEL:
 				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE2];
 				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE2];
+				// automatically rotate this thing based on its position
+				if (i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, -90.f);
+				} else if (i->x == 0) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f);
+				} else if (i->y == this->height - 1) {
+					// default orientation
+				} else {
+					// face it down
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 180.f);
+				}
+
+				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
 				break;
 			case object_type::DOOR:
 			{
