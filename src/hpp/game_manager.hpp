@@ -99,6 +99,7 @@ namespace crow {
 				CONSOLE1_D,
 				CONSOLE1_S,
 				CONSOLE2,
+				GUI_PAUSE,
 				COUNT
 			};
 		};

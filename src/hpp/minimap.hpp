@@ -52,6 +52,7 @@ namespace crow {
 		void calculate_extents(bool recenter = true);
 
 		auto inside_minimap(float2e& mouse_pos) -> bool;
+		auto inside_pos(float2e& mouse_pos, ImVec2 pos, ImVec2 wh) -> bool;
 
 		//private:
 		bool is_dragging = false;

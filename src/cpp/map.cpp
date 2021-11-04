@@ -108,6 +108,10 @@ namespace crow {
 
 			switch (i->type)
 			{
+			case object_type::DOOR_PANEL:
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE2];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE2];
+				break;
 			case object_type::DOOR:
 			{
 				crow::door* _i = (crow::door*)(i);

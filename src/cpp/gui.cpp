@@ -63,6 +63,8 @@ namespace crow {
             ImGui::NewLine();
             ImGui::Text("mousedrag: %f, %f", minimap.mouse_position.x, minimap.mouse_position.y);
             ImGui::Text("mousewheel: %i", mwheel_delta);
+            ImGui::SameLine();
+            ImGui::Text("   rclick: %i", io.MouseDown[1]);
 		    if (ImGui::Button("click me")) audio::play_sfx(0);
         }
 
@@ -105,6 +107,7 @@ namespace crow {
                     menu_position = 3;
                 } else {
                     new_game();
+                    save_game();
                 }
                 crow::audio::play_sfx(crow::audio::MENU_OK);
             }
@@ -166,6 +169,7 @@ namespace crow {
             if (ImGui::Button("Yes", confirm_button_wh)) {
                 level_number = 0;
                 new_game();
+                save_game();
                 crow::audio::play_sfx(crow::audio::MENU_OK);
             }
             ImGui::SetCursorPos({confirm_window_wh.x * 0.6f, confirm_window_wh.y * 0.65f});
@@ -197,17 +201,24 @@ namespace crow {
       ImVec2 pause_button_wh = {0.0333333f * wh.x, 0.0592592592592593f * wh.y};
       ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
       ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
-      // finally create the pause button
-      ImGui::Begin("Pause", nullptr, texture_flag);
-      if (ImGui::ImageButton(nullptr /*texture goes here*/, pause_button_wh, { 0, 0 }, { 1, 1 }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 0.8f })) {
-        crow::audio::play_sfx(crow::audio::MENU_OK);
-        current_state = crow::game_manager::game_state::PAUSED;
-      }
+        // color for bg of button
+        ImGui::PushStyleColor(ImGuiCol_Button,        { 0.0f, 0.0f, 0.0f, 0.0f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 1.f, 1.f, 1.f, 0.1f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  { 0.9f, 1.f, 0.85f, 0.2f});
 
-      ImGui::End();
-      //// all texture-only GUI items should be before this line as it resets
-      /// the / GUI window styling back to default
-      ImGui::PopStyleVar(4);
+        // finally create the pause button
+        ImGui::Begin("Pause", nullptr, texture_flag);
+        if (ImGui::ImageButton(textures[texture_list::GUI_PAUSE], pause_button_wh, { 0, 0 }, { 1, 1 }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 0.8f })) {
+            crow::audio::play_sfx(crow::audio::MENU_OK);
+            current_state = crow::game_manager::game_state::PAUSED;
+        }
+
+        ImGui::End();
+        //// all texture-only GUI items should be before this line as it resets
+        /// the / GUI window styling back to default
+        ImGui::PopStyleVar(4);
+        // pop the color too
+        ImGui::PopStyleColor(3);
     }
 
     void game_manager::draw_pause_menu(ImVec2 wh) {  // set size parameters for the pause
@@ -375,17 +386,15 @@ namespace crow {
           ImGui::NewLine();
           ImGui::NewLine();
           {
-            std::string ptext = "Click on rooms in minimap";
+            std::string ptext = "Right click on the rooms in";
             float text_size = ImGui::GetFontSize() * ptext.size() / 2;
             ImGui::SameLine();
             ImGui::Text(ptext.c_str());
           }
           ImGui::NewLine();
           {
-            std::string ptext = "to switch views";
-            float text_size = ImGui::GetFontSize() * ptext.size() / 2;
-            ImGui::SameLine(ImGui::GetWindowSize().x / 2.0f - text_size +
-                            (text_size / 2.0f));
+            std::string ptext = "the minimap to switch views.";
+            ImGui::SameLine();
             ImGui::Text(ptext.c_str());
           }
 

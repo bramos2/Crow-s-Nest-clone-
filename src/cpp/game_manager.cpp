@@ -99,6 +99,7 @@ namespace crow {
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
+		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
 	}
 
 	void crow::game_manager::load_animation_data()
@@ -326,9 +327,9 @@ namespace crow {
 			return true;
 		}
 
-		if (minimap.inside_minimap(mouse_pos_gui)) {
-			return true;
-		}
+		//if (minimap.inside_minimap(mouse_pos_gui)) {
+		//	return true;
+		//}
 
 		player_data.interacting = false;
 		player_data.target = nullptr;
