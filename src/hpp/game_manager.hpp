@@ -82,6 +82,7 @@ namespace crow {
 				EXIT_LIGHT,
 				CONSOLE1,
 				CONSOLE2,
+				DISK,
 				COUNT
 			};
 		};
@@ -99,6 +100,7 @@ namespace crow {
 				CONSOLE1_D,
 				CONSOLE1_S,
 				CONSOLE2,
+				SHADOW,
 				COUNT
 			};
 		};

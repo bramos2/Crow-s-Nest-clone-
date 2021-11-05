@@ -84,6 +84,11 @@ namespace crow {
 		load_bin_data("res/meshes/console2.bin", temp);
 		all_meshes[mesh_types::CONSOLE2].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE2].vertex_buffer, all_meshes[mesh_types::CONSOLE2].index_buffer, *all_meshes[mesh_types::CONSOLE2].s_mesh);
+
+		// loading disk mesh
+		load_bin_data("res/meshes/disk.bin", temp);
+		all_meshes[mesh_types::DISK].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::DISK].vertex_buffer, all_meshes[mesh_types::DISK].index_buffer, *all_meshes[mesh_types::DISK].s_mesh);
 	}
 
 	void game_manager::load_texture_data() {
@@ -99,6 +104,7 @@ namespace crow {
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
+		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
 	}
 
 	void crow::game_manager::load_animation_data()
@@ -120,6 +126,7 @@ namespace crow {
 		load_anim_data("res/animations/slasher_attack.anim", animators[i].animations[1]);
 		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
 
+		// this animation is broken
 		i = animator_list::EXIT_LIGHT;
 		animators[i].animations.resize(1);
 		load_anim_data("res/animations/exit_light.anim", animators[i].animations[0]);
@@ -193,7 +200,7 @@ namespace crow {
 
 			// all ai updates (player and enemy) here
 			//if (false) {
-				if (current_level.found_ai) { ai_bt.run(dt); }
+			if (current_level.found_ai) { ai_bt.run(dt); }
 			//}
 
 			// making AI model face its velocity
@@ -565,6 +572,7 @@ namespace crow {
 		p_impl->set_render_target_view();
 		
 
+
 		switch (current_state) {
 		case game_state::SETTINGS:
 			// case falls if in-game, draw nothing otherwise
@@ -587,8 +595,25 @@ namespace crow {
 		//p_impl->draw_mesh(view);
 
 		if (current_level.selected_room && entities.current_size > 0) {
-			for (size_t i = 0; i < current_level.selected_room->object_indices.size(); ++i) {
-				p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
+			p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
+
+			std::vector<size_t> svec;
+			svec.push_back(crow::entity::SHADOW);
+			if (current_level.selected_room->has_player) {
+				/*DirectX::XMFLOAT4X4 temp;
+				DirectX::XMStoreFloat4x4(&temp, entities.world_matrix[crow::entity::WORKER]);
+				entities.set_world_position(svec.back(), temp.m[3][0], 0.1f, temp.m[3][2]);*/
+				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::WORKER];
+				entities.scale_world_matrix(crow::entity::SHADOW, 1.6f, 4.f, 1.2f);
+				entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+				p_impl->draw_entities(entities, svec, view);
+			}
+
+			if (current_level.selected_room->has_ai) {
+				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::SPHYNX];
+				entities.scale_world_matrix(crow::entity::SHADOW, 0.5f, 1.f, 0.3f);
+				entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+				p_impl->draw_entities(entities, svec, view);
 			}
 		}
 	}
@@ -729,15 +754,21 @@ namespace crow {
 		all_meshes[mesh_types::EXIT_LIGHT].animator = &animators[animator_list::EXIT_LIGHT];
 
 		// initializing main entities
-		entities.allocate_and_init(7);
+		entities.allocate_and_init(crow::entity::COUNT);
 
 		// creating player entity
-		entities.mesh_ptrs[0] = &all_meshes[mesh_types::PLAYER];
-		entities.s_resource_view[0] = textures[texture_list::PLAYER];
+		entities.mesh_ptrs[crow::entity::WORKER] = &all_meshes[mesh_types::PLAYER];
+		entities.s_resource_view[crow::entity::WORKER] = textures[texture_list::PLAYER];
 
 		// creating AI entity
-		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
-		entities.s_resource_view[1] = textures[texture_list::AI];
+		entities.mesh_ptrs[crow::entity::SPHYNX] = &all_meshes[mesh_types::AI];
+		entities.s_resource_view[crow::entity::SPHYNX] = textures[texture_list::AI];
+
+		// creating shadow entity
+		entities.mesh_ptrs[crow::entity::SHADOW] = &all_meshes[mesh_types::DISK];
+		entities.world_matrix[crow::entity::SHADOW];
+		//entities.scale_world_matrix(crow::entity::SHADOW, 0.3f, 0.1f, 0.3f);
+		entities.s_resource_view[crow::entity::SHADOW] = textures[texture_list::SHADOW];
 
 		// creating floor entity
 		entities.mesh_ptrs[entity::FLOOR] = &all_meshes[mesh_types::CUBE];

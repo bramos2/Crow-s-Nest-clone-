@@ -289,6 +289,10 @@ namespace crow {
 			const crow::tile* ai_tile =
 				m.curr_room->get_tile_at({ temp_ai_pos.x, temp_ai_pos.z });
 
+			if (!ai_tile) {
+				return crow::status::FAILED;
+			}
+
 			// finding the adjacent tile to the interactible
 			float2e adjacent_tile =
 				float2e{ static_cast<float>(ai_tile->col) -
