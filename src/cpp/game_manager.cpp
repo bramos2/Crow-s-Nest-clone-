@@ -104,6 +104,7 @@ namespace crow {
 		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
 		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
 		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
+		p_impl->create_texture("res/textures/door_exit.dds", textures[texture_list::DOOR_EXIT]);
 		p_impl->create_texture("res/textures/exit_light_d.dds", textures[texture_list::EXIT_LIGHT_D]);
 		p_impl->create_texture("res/textures/exit_light_s.dds", textures[texture_list::EXIT_LIGHT_S]);
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
@@ -183,7 +184,7 @@ namespace crow {
 			current_level.interacting->activate(*this);
 			current_level.interacting = nullptr;
 		}
-		left_click_time += dt;
+		//left_click_time += dt;
 		//right_click_time += dt;
 
 		// capture mouse position
@@ -359,6 +360,9 @@ namespace crow {
 	bool game_manager::l_click_update() {
 		if (buttons_frame[controls::l_mouse] != 1) return false;
 
+		current_message = crow::message();
+
+
 		crow::room* selected_room = current_level.selected_room;
 		if (!selected_room || !selected_room->has_player) {
 			return true;
@@ -447,31 +451,6 @@ namespace crow {
 			std::vector<float2e> temporary_results =
 				selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
 
-			if (!temporary_results.empty() && !player_data.path_result.empty()) {
-				// check for double click on same tile
-				if (player_data.path_result[0] == temporary_results[0]) {
-					// check to ensure that the clicks were close enough to each
-					// other to count as a double click.
-					if (left_click_time < 0.5f) {
-						player_data.worker_speed = player_data.worker_run_speed;
-
-						// plays footstep sound when worker moves
-						crow::audio::add_footstep_sound(
-							(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-								crow::entity::WORKER)],
-							0.285f);
-					}
-				}
-				else {
-					player_data.worker_speed = player_data.worker_walk_speed;
-
-					crow::audio::add_footstep_sound(
-						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-							crow::entity::WORKER)],
-						0.5f);
-				}
-			}
-
 			// set the worker's path
 			player_data.path_result = temporary_results;
 		}
@@ -485,34 +464,16 @@ namespace crow {
 				return true;
 			}
 
-			// double click check
-			if (!player_data.path_result.empty() &&
-				player_data.path_result[0] == temporary_results[0]) {
-				// time difference to count double click
-				if (left_click_time < 0.5f) { // running
-					player_data.worker_speed = player_data.worker_run_speed;
-
-					// plays footstep sound when worker moves
-					crow::audio::add_footstep_sound(
-						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-							crow::entity::WORKER)],
-						0.285f);
-				}
-			}
-			else { // walking
-				player_data.worker_speed = player_data.worker_walk_speed;
-
-				// plays footstep sound when worker moves
-				crow::audio::add_footstep_sound(
-					(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-						crow::entity::WORKER)], 0.5f);
-			}
-
 			// set the worker's path
 			player_data.path_result = temporary_results;
 		}
 
-		left_click_time = 0.f;
+		if (!player_data.path_result.empty()) {
+			crow::audio::add_footstep_sound(
+				(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+					crow::entity::WORKER)], 0.5f);
+		}
+
 		return true;
 	}
 
@@ -524,6 +485,7 @@ namespace crow {
 		player_data.path_result.clear();
 		player_data.interacting = false;
 		player_data.target = nullptr;
+		current_message = crow::message();
 		return true;
 		return true;
 	}

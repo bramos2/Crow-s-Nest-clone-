@@ -149,7 +149,7 @@ namespace crow {
 		std::string text;
 		// We don't need anything else, stop it, get some help
 		if (door->is_active) {
-			text = "UNLOCKING...";
+			text = "LOCKING..."; 
 		}
 		else {
 			text = "UNLOCKING...";
@@ -162,18 +162,7 @@ namespace crow {
 
 	// we may not need to pass in the game state anymore
 	void door_panel::activate(crow::game_manager& state) {
-
 		door->is_active = door->neighbor->is_active = !door->is_active;
-
-		// this is done in the update function
-		/*if (!door->is_active) {
-			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-		}
-		else {
-			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-		}*/
 	}
 
 	door_panel::door_panel(crow::level* _lv) {

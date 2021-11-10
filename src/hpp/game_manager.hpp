@@ -44,7 +44,7 @@ namespace crow {
 		bool debug_mode = 0;
 		bool pressing_key = false;
 
-		float left_click_time = 0.f;
+		//float left_click_time = 0.f;
 		//float right_click_time = 0.f;
 		int menu_position = 0;
 		int level_number = 0;
@@ -98,6 +98,7 @@ namespace crow {
 				WALL1,
 				DOOR_OPEN,
 				DOOR_CLOSED,
+				DOOR_EXIT,
 				EXIT_LIGHT_D,
 				EXIT_LIGHT_S,
 				CONSOLE1_D,
