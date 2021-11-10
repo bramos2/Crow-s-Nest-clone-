@@ -105,7 +105,7 @@ namespace crow {
 
 	// preassure console
 	pressure_console::pressure_console(crow::level* _lv) {
-		type = crow::object_type::OXYGEN_CONSOLE;
+		type = crow::object_type::PRESSURE_CONSOLE;
 		current_level = _lv;
 		is_broken = false;
 		health = 1;

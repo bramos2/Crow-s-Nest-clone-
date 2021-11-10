@@ -42,6 +42,7 @@ namespace crow {
 		animator ai_animator;
 
 		bool debug_mode = 0;
+		bool pressing_key = false;
 
 		float left_click_time = 0.f;
 		//float right_click_time = 0.f;
@@ -72,6 +73,7 @@ namespace crow {
 
 		// a list of every animatior each containing all the animations respective to their model
 		std::vector<animator> animators;
+		float shadow_spawn_timer = 0.f;
 
 		struct mesh_types {
 			enum {

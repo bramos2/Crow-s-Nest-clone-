@@ -117,7 +117,7 @@ namespace crow {
 		load_anim_data("res/animations/guy.anim", pbindpose);
 		load_anim_data("res/animations/guyf.anim", animators[i].animations[0]);
 		load_anim_data("res/animations/jogging.anim", animators[i].animations[1]);
-		load_anim_data("res/animations/dying.anim", animators[i].animations[2]);
+		load_anim_data("res/animations/dying_2.anim", animators[i].animations[2]);
 		get_inverted_bind_pose(pbindpose.frames[0], animators[i]);
 
 		i = animator_list::AI;
@@ -187,9 +187,22 @@ namespace crow {
 		mouse_pos.y = (float)p.y;
 
 		// debug mode toggle, allows debug camera
-		if (!debug_mode && (GetKeyState(VK_F1))) {
-			printf("\nDEBUG MODE ENABLED\n");
-			debug_mode = true;
+		if (GetKeyState(VK_F1) & 0x8000) {
+			// prevents toggle while the key is held down
+			if (!pressing_key) {
+				pressing_key = true;
+				debug_mode = ai_m.debug_mode = !debug_mode;
+				if (debug_mode) {
+					printf("\nDEBUG MODE ENABLED\n");
+				} 
+				else {
+					printf("\nDEBUG MODE DISSABLED\n");
+				}
+			}
+		}
+		else {
+			// resets press after letting go of the key
+			pressing_key = false;
 		}
 
 		// game state update
@@ -264,8 +277,8 @@ namespace crow {
 		// debug mode updates
 		if (debug_mode) {
 			float4e translate = { 0, 0, 0, 0 };
-			ai_m.debug_mode = true;
 			p_impl->draw_path(ai_m.path, crow::float4e(1.f, 0.f, 0.f, 1.f));
+			p_impl->draw_path(player_data.path_result, crow::float4e(0.f, 0.f, 1.f, 1.f));
 			// debug camera controls
 			/* WASD = basic movement                                                     */
 			/* ARROW KEYS = rotate camera                                                */
@@ -566,12 +579,9 @@ namespace crow {
 		}
 	}
 
-
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
-		
-
 
 		switch (current_state) {
 		case game_state::SETTINGS:
@@ -595,24 +605,60 @@ namespace crow {
 		//p_impl->draw_mesh(view);
 
 		if (current_level.selected_room && entities.current_size > 0) {
+			// drawing all entities
 			p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
 
+			// vector storing the index of the shadow blob entity used for the player and AI
 			std::vector<size_t> svec;
 			svec.push_back(crow::entity::SHADOW);
+
+			// drawing shadow at player's position
 			if (current_level.selected_room->has_player) {
-				/*DirectX::XMFLOAT4X4 temp;
-				DirectX::XMStoreFloat4x4(&temp, entities.world_matrix[crow::entity::WORKER]);
-				entities.set_world_position(svec.back(), temp.m[3][0], 0.1f, temp.m[3][2]);*/
+				// we must copy the player's matrix
 				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::WORKER];
-				entities.scale_world_matrix(crow::entity::SHADOW, 1.6f, 4.f, 1.2f);
-				entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
-				p_impl->draw_entities(entities, svec, view);
+
+				// if the player is alive
+				if (player_data.player_interact.is_active) {
+					// scale and position the shadow
+					entities.scale_world_matrix(crow::entity::SHADOW, 1.6f, 4.f, 1.2f);
+					entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+
+					// draw call for only the shadow
+					p_impl->draw_entities(entities, svec, view);
+				}
+				else {
+					// updating shadow spawn time
+					shadow_spawn_timer += static_cast<float>(timer.Delta());
+					crow::float3e foward;
+					DirectX::XMFLOAT4X4 w;
+					DirectX::XMStoreFloat4x4(&w, entities.world_matrix[crow::entity::SHADOW]);
+
+					// retrieving the forward of our matrix
+					foward.x = w.m[2][0];
+					foward.y = w.m[2][1];
+					foward.z = w.m[2][2];
+					foward = foward.normalize(foward);
+
+					// scaling and moving the shadow to match the body
+					entities.scale_world_matrix(crow::entity::SHADOW, 1.2f, 4.f, 3.f);
+					float xpos = w.m[3][0] + foward.x * 2;
+					float zpos = w.m[3][2] + foward.z * 2;
+					entities.set_world_position(crow::entity::SHADOW, xpos, 0.055f, zpos, false);
+
+					// drawing the shadow after a second has passed
+					if (shadow_spawn_timer >= 1.0f) {
+						p_impl->draw_entities(entities, svec, view);
+					}
+				}
 			}
 
+			// drawing shadow at AI's position
 			if (current_level.selected_room->has_ai) {
 				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::SPHYNX];
+				// scaling and moving shadow to match the AI
 				entities.scale_world_matrix(crow::entity::SHADOW, 0.5f, 1.f, 0.3f);
 				entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+				// drawing just the shadow again
 				p_impl->draw_entities(entities, svec, view);
 			}
 		}
@@ -637,7 +683,6 @@ namespace crow {
 			state_time = 0;
 		}
 	}
-
 
 	void game_manager::cleanup() {
 		// delete all meshes and associated data
