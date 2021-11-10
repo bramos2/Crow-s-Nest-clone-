@@ -85,6 +85,11 @@ namespace crow {
 		all_meshes[mesh_types::CONSOLE2].s_mesh = new mesh_s(clip_mesh(temp));
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE2].vertex_buffer, all_meshes[mesh_types::CONSOLE2].index_buffer, *all_meshes[mesh_types::CONSOLE2].s_mesh);
 
+		// loading console3 mesh
+		load_bin_data("res/meshes/console3.bin", temp);
+		all_meshes[mesh_types::CONSOLE3].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE3].vertex_buffer, all_meshes[mesh_types::CONSOLE3].index_buffer, *all_meshes[mesh_types::CONSOLE3].s_mesh);
+
 		// loading disk mesh
 		load_bin_data("res/meshes/disk.bin", temp);
 		all_meshes[mesh_types::DISK].s_mesh = new mesh_s(clip_mesh(temp));
@@ -104,6 +109,8 @@ namespace crow {
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
+		p_impl->create_texture("res/textures/console3_d.dds", textures[texture_list::CONSOLE3]);
+		p_impl->create_texture("res/textures/console3_s.dds", textures[texture_list::CONSOLE3_E]);
 		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
 	}
 
