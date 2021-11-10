@@ -27,44 +27,77 @@ namespace crow {
 			}
         // TODO MAKE LEVEL TILE MAP BASED ON THE LEVEL'S ROOM DIMMENSIONS AND REMOVE EXTRA DATA FROM ROOM STRUCT
 			rooms[2][1].id = 1;
-			crow::door* lv1_door1_u = new door();
-			crow::door* lv1_door1_l = new door();
-			crow::door* lv1_door1_r = new door();
+			crow::door* lv1_door1_u = new door(this);
+			crow::door* lv1_door1_l = new door(this);
+			crow::door* lv1_door1_r = new door(this, false);
+			crow::door_panel* lv1_doorp1_r = new door_panel(this);
 			{
 				lv1_door1_l->set_tile('l');
 				lv1_door1_u->set_tile('u');
 				lv1_door1_r->set_tile('r');
+				lv1_doorp1_r->set_tile('r'); lv1_doorp1_r->y += 2;
 				lv1_door1_l->roomptr = lv1_door1_u->roomptr = lv1_door1_r->roomptr =
 					&rooms[2][1];
 				rooms[2][1].objects.push_back(lv1_door1_l);
 				rooms[2][1].objects.push_back(lv1_door1_u);
 				rooms[2][1].objects.push_back(lv1_door1_r);
+				rooms[2][1].objects.push_back(lv1_doorp1_r);
+
+
+				// door panel
+				lv1_doorp1_r->door = lv1_door1_r;
 
 				rooms[2][1].generate_tilemap();
-				// build level design (invisible)
-				for (int i = 4; i < 11; i++) {
-					rooms[2][1].tiles.map[i][4]->is_open = false;
-					rooms[2][1].tiles.map[i][9]->is_open = false;
-				}
+				
+				place_table(rooms[2][1], { 12.5f, 7.5f }, 'u', 1);
+				place_table(rooms[2][1], { 16.5f, 7.5f }, 'u', 1);
+				place_table(rooms[2][1], { 8.5f, 7.5f }, 'u', 1);
 			}
 
 			rooms[1][1].id = 2;
-			crow::door* lv1_door2_d = new door();
+			crow::door* lv1_door2_d = new door(this, true);
+			crow::door_panel* lv1_doorp2_d = new door_panel(this);
 			{
 				lv1_door2_d->set_tile('d');
+				lv1_doorp2_d->set_tile('d'); lv1_doorp2_d->x += 2;
 				lv1_door2_d->roomptr = &rooms[1][1];
 
 				// neighbors
 				lv1_door2_d->neighbor = lv1_door1_u;
 				lv1_door1_u->neighbor = lv1_door2_d;
 
+				lv1_doorp2_d->door = lv1_door2_d;
+
 				rooms[1][1].objects.push_back(lv1_door2_d);
+				rooms[1][1].objects.push_back(lv1_doorp2_d);
 
 				rooms[1][1].generate_tilemap();
+
+				// i hope you like boxes w
+				place_lightbox(rooms[1][1], { 1, 14 }, 0);
+				place_lightbox(rooms[1][1], { 10, 14 }, 0);
+				place_lightbox(rooms[1][1], { 11, 14 }, 30);
+				int b1 = place_lightbox(rooms[1][1], { 11, 14 }, 0);
+
+				place_lightbox(rooms[1][1], { 14, 7 }, 50);
+
+				place_lightbox(rooms[1][1], { 24, 14 }, 0);
+				place_lightbox(rooms[1][1], { 23, 14 }, 0);
+				place_lightbox(rooms[1][1], { 24, 13 }, 0);
+				place_lightbox(rooms[1][1], { 3, 2 }, 0);
+
+				place_lightbox(rooms[1][1], { 22, 4 }, 0);
+				place_lightbox(rooms[1][1], { 22, 5 }, 0);
+				place_lightbox(rooms[1][1], { 21, 4 }, 15);
+
+				// move this thing up
+				float4x4_a* _b1 = (float4x4_a*)&rooms[1][1].furniture_matrices[b1];
+				(*_b1)[3][1] += 1;
+				(*_b1)[3][2] -= 0.5f;
 			}
 
 			rooms[2][0].id = 3;
-			crow::door* lv1_door3_r = new door();
+			crow::door* lv1_door3_r = new door(this);
 			{
 				lv1_door3_r->set_tile('r');
 				lv1_door3_r->roomptr = &rooms[2][0];
@@ -75,48 +108,22 @@ namespace crow {
 
 				rooms[2][0].objects.push_back(lv1_door3_r);
 
-				
-				float4x4_a furns1 = IdentityM_a();
-				furns1 = YrotationM(furns1, -90);
-				furns1 = XrotationM(furns1, 90);
-				furns1[3][0] = 18.5f - rooms[2][0].width * 0.5f + 0.5f; furns1[3][2] = 7.f - rooms[2][0].length * 0.5f + 0.5f;
-				
-				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
-				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
-				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
-				
-				float4x4_a furns2 = IdentityM_a();
-				furns2 = XrotationM(furns2, 90);
-				furns2[3][0] = 22.f - rooms[2][0].width * 0.5f + 0.5f; furns2[3][2] = 3.5f - rooms[2][0].length * 0.5f + 0.5f;
-				
-				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns2);
-				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
-				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
-
-				float4x4_a furns3 = IdentityM_a();
-				furns3 = YrotationM(furns3, 180);
-				furns3 = XrotationM(furns3, 90);
-				furns3[3][0] = 22.f - rooms[2][0].width * 0.5f + 0.5f; furns3[3][2] = 13.5f - rooms[2][0].length * 0.5f + 0.5f;
-				
-				rooms[2][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns3);
-				rooms[2][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
-				rooms[2][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
-
 				// spawn the worker here
 				rooms[2][0].object_indices.push_back(0);
 
 				rooms[2][0].generate_tilemap();
+				
+				place_couch(rooms[2][0], { 9.5f, 7.5f }, 'r', 1);
 
-				for (int i = 0; i < 5; i++) {
-					rooms[2][0].tiles.map[0][i + 21]->is_open = false;
-					rooms[2][0].tiles.map[0][i + 21]->is_open = false;
-				}
+				place_table(rooms[2][0], { 22.5f, 2.5f }, 'u', 1);
+				place_table(rooms[2][0], { 20.5f, 7.5f }, 'r', 1);
+				place_table(rooms[2][0], { 22.5f, 10.5f }, 'u', 1);
 			}
 
 			rooms[2][2].id = 4;
-			crow::door* lv1_door4_l = new door();
-			crow::door* lv1_door4_u = new door();
-			crow::door* lv1_door4_r = new door();
+			crow::door* lv1_door4_l = new door(this);
+			crow::door* lv1_door4_u = new door(this);
+			crow::door* lv1_door4_r = new door(this);
 			{
 				lv1_door4_l->set_tile('l');
 				lv1_door4_u->set_tile('u');
@@ -133,11 +140,20 @@ namespace crow {
 				rooms[2][2].objects.push_back(lv1_door4_r);
 
 				rooms[2][2].generate_tilemap();
+
+				place_table(rooms[2][2], { 14.5f, 3.5f }, 'd', 0);
+				place_table(rooms[2][2], { 17.5f, 4.5f }, 'r', 0);
+				place_table(rooms[2][2], { 17.5f, 8.5f }, 'r', 1);
+
+				place_chair(rooms[2][2], { 14, 2 }, 'u');
+				place_chair(rooms[2][2], { 19, 4 }, 'l');
+
+				place_chair(rooms[2][2], { 21, 14 }, 'r');
 			}
 
 			rooms[2][3].id = 5;
-			crow::door* lv1_door5_l = new door();
-			crow::door* lv1_door5_u = new door();
+			crow::door* lv1_door5_l = new door(this);
+			crow::door* lv1_door5_u = new door(this);
 			{
 				lv1_door5_l->set_tile('l');
 				lv1_door5_u->set_tile('u');
@@ -151,12 +167,24 @@ namespace crow {
 				rooms[2][3].objects.push_back(lv1_door5_u);
 
 				rooms[2][3].generate_tilemap();
+
+				place_electricbox(rooms[2][3], { 23.5f, 13.5f }, 'd');
+				place_serverbox(rooms[2][3], { 3.5f, 13.5f }, 'd');
+				place_serverbox(rooms[2][3], { 7.5f, 13.5f }, 'd');
+
+				place_serverbox(rooms[2][3], { 17.5f, 13.5f }, 'd');
+				place_serverbox(rooms[2][3], { 21.5f, 13.5f }, 'd');
+
+				place_table(rooms[2][3], { 19.5f, 4.5f }, 'u', 1);
+				place_chair(rooms[2][3], { 21, 3 }, 'u');
+				place_chair(rooms[2][3], { 18, 6 }, 'l');
+
 			}
 
 			rooms[1][3].id = 6;
-			crow::door* lv1_door6_l = new door();
-			crow::door* lv1_door6_u = new door();
-			crow::door* lv1_door6_d = new door();
+			crow::door* lv1_door6_l = new door(this);
+			crow::door* lv1_door6_u = new door(this);
+			crow::door* lv1_door6_d = new door(this);
 			{
 				lv1_door6_l->set_tile('l');
 				lv1_door6_u->set_tile('u');
@@ -173,27 +201,59 @@ namespace crow {
 				rooms[1][3].objects.push_back(lv1_door6_d);
 
 				rooms[1][3].generate_tilemap();
+
+				
+				place_table(rooms[1][3], { 5.5f, 2.5f }, 'u', 1);
+				place_table(rooms[1][3], { 9.5f, 2.5f }, 'u', 1);
+				place_table(rooms[1][3], { 13.5f, 2.5f }, 'u', 1);
+				place_table(rooms[1][3], { 17.5f, 2.5f }, 'u', 1);
+
+				place_table(rooms[1][3], { 5.5f, 11.5f }, 'u', 1);
+				place_table(rooms[1][3], { 9.5f, 11.5f }, 'u', 1);
+				place_table(rooms[1][3], { 13.5f, 11.5f }, 'u', 1);
+				place_table(rooms[1][3], { 17.5f, 11.5f }, 'u', 1);
+
+				int b1 = place_table(rooms[1][3], { 4.5f, 5.5f }, 'r', 1);
+				int b2 = place_table(rooms[1][3], { 4.5f, 9.5f }, 'l', 1);
+				
+				// squish these so that it looks slightly nicer
+				float4x4_a* _b1 = (float4x4_a*)&rooms[1][3].furniture_matrices[b1];
+				float4x4_a* _b2 = (float4x4_a*)&rooms[1][3].furniture_matrices[b2];
+				
+				(*_b1)[2][2] *= 0.875f;
+				(*_b2)[2][2] *= 0.875f;
+				(*_b1)[3][2] -= 0.25f;
+				(*_b2)[3][2] -= 0.675f;
 			}
 
 			rooms[0][3].id = 7;
-			crow::door* lv1_door7_d = new door();
+			crow::door* lv1_door7_d = new door(this);
+			crow::door_panel* lv1_doorp9_l = new door_panel(this);
 			{
 				lv1_door7_d->set_tile('d');
 				lv1_door7_d->roomptr = &rooms[0][3];
+				lv1_doorp9_l->set_tile('u'); lv1_doorp9_l->x += 8;
 
 				// neighbors
 				lv1_door7_d->neighbor = lv1_door6_u;
 				lv1_door6_u->neighbor = lv1_door7_d;
 
 				rooms[0][3].objects.push_back(lv1_door7_d);
+				rooms[0][3].objects.push_back(lv1_doorp9_l);
+
+				// spawn the "sphynx" here
+				rooms[0][3].object_indices.push_back(1);
 
 				rooms[0][3].generate_tilemap();
+
+				place_crate1(rooms[0][3], { 12, 12 }, 'h');
+
 			}
 
 			rooms[1][2].id = 8;
-			crow::door* lv1_door8_u = new door();
-			crow::door* lv1_door8_r = new door();
-			crow::door* lv1_door8_d = new door();
+			crow::door* lv1_door8_u = new door(this);
+			crow::door* lv1_door8_r = new door(this);
+			crow::door* lv1_door8_d = new door(this);
 			{
 				lv1_door8_u->set_tile('u');
 				lv1_door8_r->set_tile('r');
@@ -212,11 +272,17 @@ namespace crow {
 				rooms[1][2].objects.push_back(lv1_door8_d);
 
 				rooms[1][2].generate_tilemap();
+
+				place_crate2(rooms[1][2], { 18, 11 }, 0);
+				place_crate2(rooms[1][2], {  6, 11 }, 0);
+				place_crate2(rooms[1][2], { 18,  3 }, 0);
+				place_crate2(rooms[1][2], {  6,  3 }, 0);
+
 			}
 
 			rooms[0][2].id = 9;
-			crow::door* lv1_door9_l = new door();
-			crow::door* lv1_door9_d = new door();
+			crow::door* lv1_door9_l = new door(this, false);
+			crow::door* lv1_door9_d = new door(this);
 			{
 				lv1_door9_l->set_tile('l');
 				lv1_door9_d->set_tile('d');
@@ -226,15 +292,42 @@ namespace crow {
 				lv1_door9_d->neighbor = lv1_door8_u;
 				lv1_door8_u->neighbor = lv1_door9_d;
 
+				// ???!???
+				lv1_doorp9_l->door = lv1_door9_l;
+
 				rooms[0][2].objects.push_back(lv1_door9_l);
 				rooms[0][2].objects.push_back(lv1_door9_d);
 
 				rooms[0][2].generate_tilemap();
+				
+				place_table(rooms[0][2], { 10.5f, 5.5f }, 'u', 1);
+				place_table(rooms[0][2], { 14.5f, 5.5f }, 'u', 1);
+				place_table(rooms[0][2], { 10.5f, 7.5f }, 'u', 1);
+				place_table(rooms[0][2], { 14.5f, 7.5f }, 'u', 1);
+				
+				place_chair(rooms[0][2], { 8, 6 }, 'r');
+				place_chair(rooms[0][2], { 8, 7 }, 'r');
+
+				place_chair(rooms[0][2], { 17, 6 }, 'l');
+				place_chair(rooms[0][2], { 17, 7 }, 'l');
+				
+				place_chair(rooms[0][2], {  9, 4 }, 'u');
+				place_chair(rooms[0][2], { 11, 4 }, 'u');
+				place_chair(rooms[0][2], { 13, 4 }, 'u');
+				place_chair(rooms[0][2], { 15, 4 }, 'u');
+
+				place_chair(rooms[0][2], { 10, 9 }, 'd');
+				place_chair(rooms[0][2], { 12, 9 }, 'd');
+				place_chair(rooms[0][2], { 14, 9 }, 'd');
+				place_chair(rooms[0][2], { 16, 9 }, 'd');
+
+
+
 			}
 
 			rooms[0][1].id = 10;
-			crow::door* lv1_door10_l = new door();
-			crow::door* lv1_door10_r = new door();
+			crow::door* lv1_door10_l = new door(this);
+			crow::door* lv1_door10_r = new door(this);
 			{
 				lv1_door10_l->set_tile('l');
 				lv1_door10_r->set_tile('r');
@@ -248,11 +341,28 @@ namespace crow {
 				rooms[0][1].objects.push_back(lv1_door10_r);
 
 				rooms[0][1].generate_tilemap();
+				
+				place_chair(rooms[0][1], {  0, 14 }, 'd');
+				place_chair(rooms[0][1], {  6, 14 }, 'r');
+				place_chair(rooms[0][1], {  7, 14 }, 'u');
+				place_chair(rooms[0][1], { 12, 14 }, 'r');
+				place_chair(rooms[0][1], { 10, 14 }, 'd');
+				place_chair(rooms[0][1], { 18, 14 }, 'd');
+				place_chair(rooms[0][1], { 24, 14 }, 'l');
+
+				place_chair(rooms[0][1], {  6, 0 }, 'u');
+				place_chair(rooms[0][1], {  9, 0 }, 'r');
+				place_chair(rooms[0][1], { 16, 0 }, 'r');
+				place_chair(rooms[0][1], { 17, 0 }, 'r');
+				place_chair(rooms[0][1], { 19, 0 }, 'r');
+				place_chair(rooms[0][1], { 20, 0 }, 'l');
+				place_chair(rooms[0][1], { 21, 0 }, 'd');
+				place_chair(rooms[0][1], { 25, 0 }, 'l');
 			}
 
 			rooms[0][0].id = 11;
-			crow::door* lv1_door11_r = new door();
-			crow::door* lv1_door11_d = new door();
+			crow::door* lv1_door11_r = new door(this);
+			crow::door* lv1_door11_d = new door(this);
 			{
 				lv1_door11_r->set_tile('r');
 				lv1_door11_d->set_tile('d');
@@ -266,10 +376,24 @@ namespace crow {
 				rooms[0][0].objects.push_back(lv1_door11_d);
 
 				rooms[0][0].generate_tilemap();
+				
+				place_serverbox(rooms[0][0], {  3.5f, 13.5f }, 'd');
+				place_serverbox(rooms[0][0], {  7.5f, 13.5f }, 'd');
+				place_serverbox(rooms[0][0], { 11.5f, 13.5f }, 'd');
+				place_serverbox(rooms[0][0], { 15.5f, 13.5f }, 'd');
+				place_serverbox(rooms[0][0], { 19.5f, 13.5f }, 'd');
+				place_serverbox(rooms[0][0], { 23.5f, 13.5f }, 'd');
+
+				place_serverbox(rooms[0][0], { 0.5f, 11.5f }, 'r');
+				place_serverbox(rooms[0][0], { 0.5f, 7.5f }, 'r');
+				place_serverbox(rooms[0][0], { 0.5f, 3.5f }, 'r');
+
+				place_electricbox(rooms[0][0], { 11.5f, 8.5f }, 'd');
+				place_electricbox(rooms[0][0], { 13.5f, 8.5f }, 'd');
 			}
 
 			rooms[1][0].id = 12;
-			crow::door* lv1_door12_u = new door();
+			crow::door* lv1_door12_u = new door(this);
 			crow::exit* floor1_exit = new exit(state, this, lv);
 			{
 				lv1_door12_u->set_tile('u');
@@ -285,6 +409,18 @@ namespace crow {
 				rooms[1][0].objects.push_back(floor1_exit);
 
 				rooms[1][0].generate_tilemap();
+				
+				place_couch(rooms[1][0], { 16.5f, 7.5f }, 'l', 1);
+
+				place_crate2(rooms[1][0], { 16, 1 }, 0);
+
+				place_barrel(rooms[1][0], { 12, 4 }, 'v', 1);
+				place_barrel(rooms[1][0], { 10, 4 }, 'l', 0);
+				place_crate2(rooms[1][0], {  7, 12 }, 12);
+				place_crate2(rooms[1][0], { 22, 2 }, 30);
+
+				place_crate2(rooms[1][0], { 23,  9 }, 0);
+				place_crate2(rooms[1][0], { 23, 12 }, 0);
 			}
 
 			break;
@@ -318,16 +454,6 @@ namespace crow {
 				//rooms[3][1].objects.push_back(oxy);
 				//oxygen_console = oxy;
 				//oxy->set_tile('d');
-
-				
-				float4x4_a furns1 = IdentityM_a();
-				furns1 = YrotationM(furns1, 90);
-				furns1 = XrotationM(furns1, 90);
-				furns1[3][0] = 9.5 - rooms[0][0].width * 0.5f + 0.5f; furns1[3][2] = 7 - rooms[0][0].length * 0.5f + 0.5f;
-				
-				rooms[0][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
-				rooms[0][0].furniture_meshes.push_back(game_manager::mesh_types::SOFA2);
-				rooms[0][0].furniture_textures.push_back(game_manager::texture_list::SOFA2);
 
 				// worker start position
 				rooms[0][0].object_indices.push_back(0);

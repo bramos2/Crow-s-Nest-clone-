@@ -3,46 +3,11 @@
 
 namespace crow {
 
-	// made changes to the loading process
-	void game_manager::load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index) {
-		//// load either as static mesh or as animated mesh based on whether or not we have an .anim file
-		//if (s_anim.length()) {
-		//	all_meshes[index].a_mesh = new mesh_a();
-		//	load_bin_data(s_bin.c_str(), *all_meshes[index].a_mesh);
-
-		//	anim_clip animc;
-		//	load_anim_data(s_anim.c_str(), animc);
-		//	invert_bind_pose(animc);
-		//	all_meshes[index].anim = animc;
-
-		//	// create vertex buffer
-		//	p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].a_mesh);
-		//} else {
-		//	// static mesh
-		//	mesh_a temp;
-		//	load_bin_data(s_bin.c_str(), temp);
-		//	all_meshes[index].s_mesh = new mesh_s(clip_mesh(temp));
-
-		//	// create vertex buffer
-		//	p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].s_mesh);
-		//}
-		//
-		//// load textures if textures are provided
-		//if (s_mat.length()) {
-		//	std::vector<std::string> paths;
-		//	std::vector<material_a> mats;
-		//	load_mat_data(s_mat.c_str(), paths, mats);
-
-		//	// load textures
-		//	p_impl->create_text_sresources(paths, all_meshes[index]);
-		//}
-	}
-
-	void game_manager::load_mesh_data(std::string filename, int index) {
-		std::string s_bin = "res/meshes/" + filename + ".bin";
-		std::string s_mat = "res/textures/" + filename + ".mat";
-		std::string s_anim = "res/animations/" + filename + ".anim";
-		load_mesh_data(s_bin, s_mat, s_anim, index);
+	void game_manager::load_mesh_data(std::string filename, mesh_a& temp, int index) {
+		// this method currently is only configured to take static meshes
+		load_bin_data(filename.c_str(), temp);
+		all_meshes[index].s_mesh = new mesh_s(clip_mesh(temp));
+		p_impl->create_vertex_buffer(all_meshes[index].vertex_buffer, all_meshes[index].index_buffer, *all_meshes[index].s_mesh);
 	}
 
 	void game_manager::load_all_meshes()
@@ -59,66 +24,30 @@ namespace crow {
 		load_bin_data("res/meshes/slasher_run.bin", *all_meshes[mesh_types::AI].a_mesh);
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI].vertex_buffer, all_meshes[mesh_types::AI].index_buffer, *all_meshes[mesh_types::AI].a_mesh);
 
-		// loading texture cube mesh
+		// loading non-animated meshes
 		mesh_a temp;
-		load_bin_data("res/meshes/floor1.bin", temp);
-		all_meshes[mesh_types::CUBE].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::CUBE].vertex_buffer, all_meshes[mesh_types::CUBE].index_buffer, *all_meshes[mesh_types::CUBE].s_mesh);
-
-		// loading door mesh
-		load_bin_data("res/meshes/door2.bin", temp);
-		all_meshes[mesh_types::DOOR].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::DOOR].vertex_buffer, all_meshes[mesh_types::DOOR].index_buffer, *all_meshes[mesh_types::DOOR].s_mesh);
-
-		// loading exit light mesh
-		all_meshes[mesh_types::EXIT_LIGHT].a_mesh = new mesh_a();
-		load_bin_data("res/meshes/exit_light.bin", *all_meshes[mesh_types::EXIT_LIGHT].a_mesh);
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::EXIT_LIGHT].vertex_buffer, all_meshes[mesh_types::EXIT_LIGHT].index_buffer, *all_meshes[mesh_types::EXIT_LIGHT].a_mesh);
-
-		// loading console1 mesh
-		load_bin_data("res/meshes/console1.bin", temp);
-		all_meshes[mesh_types::CONSOLE1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE1].vertex_buffer, all_meshes[mesh_types::CONSOLE1].index_buffer, *all_meshes[mesh_types::CONSOLE1].s_mesh);
-		
-		// loading console2 mesh
-		load_bin_data("res/meshes/console2.bin", temp);
-		all_meshes[mesh_types::CONSOLE2].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::CONSOLE2].vertex_buffer, all_meshes[mesh_types::CONSOLE2].index_buffer, *all_meshes[mesh_types::CONSOLE2].s_mesh);
-
-		// bed
-		load_bin_data("res/meshes/bed1.bin", temp);
-		all_meshes[mesh_types::BED1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::BED1].vertex_buffer, all_meshes[mesh_types::BED1].index_buffer, *all_meshes[mesh_types::BED1].s_mesh);
-		
-		// chair
-		load_bin_data("res/meshes/chair1.bin", temp);
-		all_meshes[mesh_types::CHAIR1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::CHAIR1].vertex_buffer, all_meshes[mesh_types::CHAIR1].index_buffer, *all_meshes[mesh_types::CHAIR1].s_mesh);
-		
-		// electric box
-		load_bin_data("res/meshes/electric_box1.bin", temp);
-		all_meshes[mesh_types::ELECTRIC_BOX1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::ELECTRIC_BOX1].vertex_buffer, all_meshes[mesh_types::ELECTRIC_BOX1].index_buffer, *all_meshes[mesh_types::ELECTRIC_BOX1].s_mesh);
-
-		// server
-		load_bin_data("res/meshes/server_box1.bin", temp);
-		all_meshes[mesh_types::SERVER_BOX1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::SERVER_BOX1].vertex_buffer, all_meshes[mesh_types::SERVER_BOX1].index_buffer, *all_meshes[mesh_types::SERVER_BOX1].s_mesh);
-
-		// sofa 1
-		load_bin_data("res/meshes/sofa1.bin", temp);
-		all_meshes[mesh_types::SOFA1].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA1].vertex_buffer, all_meshes[mesh_types::SOFA1].index_buffer, *all_meshes[mesh_types::SOFA1].s_mesh);
-
-		// sofa 2
-		load_bin_data("res/meshes/sofa2.bin", temp);
-		all_meshes[mesh_types::SOFA2].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA2].vertex_buffer, all_meshes[mesh_types::SOFA2].index_buffer, *all_meshes[mesh_types::SOFA2].s_mesh);
-
-		// sofa 3
-		load_bin_data("res/meshes/sofa3.bin", temp);
-		all_meshes[mesh_types::SOFA3].s_mesh = new mesh_s(clip_mesh(temp));
-		p_impl->create_vertex_buffer(all_meshes[mesh_types::SOFA3].vertex_buffer, all_meshes[mesh_types::SOFA3].index_buffer, *all_meshes[mesh_types::SOFA3].s_mesh);
+		load_mesh_data("res/meshes/floor1.bin", temp, mesh_types::CUBE);
+		load_mesh_data("res/meshes/door2.bin", temp, mesh_types::DOOR);
+		load_mesh_data("res/meshes/exit_light.bin", temp, mesh_types::EXIT_LIGHT);
+		load_mesh_data("res/meshes/console1.bin", temp, mesh_types::CONSOLE1);
+		load_mesh_data("res/meshes/console2.bin", temp, mesh_types::CONSOLE2);
+		load_mesh_data("res/meshes/bed1.bin", temp, mesh_types::BED1);
+		load_mesh_data("res/meshes/chair1.bin", temp, mesh_types::CHAIR1);
+		load_mesh_data("res/meshes/electric_box1.bin", temp, mesh_types::ELECTRIC_BOX1);
+		load_mesh_data("res/meshes/server_box1.bin", temp, mesh_types::SERVER_BOX1);
+		load_mesh_data("res/meshes/sofa1.bin", temp, mesh_types::SOFA1);
+		load_mesh_data("res/meshes/sofa2.bin", temp, mesh_types::SOFA2);
+		load_mesh_data("res/meshes/sofa3.bin", temp, mesh_types::SOFA3);
+		load_mesh_data("res/meshes/barrel1.bin", temp, mesh_types::BARREL1);
+		load_mesh_data("res/meshes/barrel2.bin", temp, mesh_types::BARREL2);
+		load_mesh_data("res/meshes/barrel3.bin", temp, mesh_types::BARREL3);
+		load_mesh_data("res/meshes/crate1.bin", temp, mesh_types::CRATE1);
+		load_mesh_data("res/meshes/crate2.bin", temp, mesh_types::CRATE2);
+		load_mesh_data("res/meshes/crate3.bin", temp, mesh_types::CRATE3);
+		load_mesh_data("res/meshes/desk1.bin", temp, mesh_types::DESK1);
+		load_mesh_data("res/meshes/desk2.bin", temp, mesh_types::DESK2);
+		load_mesh_data("res/meshes/desk3.bin", temp, mesh_types::DESK3);
+		load_mesh_data("res/meshes/light_box.bin", temp, mesh_types::LIGHT_BOX);
 	}
 
 	void game_manager::load_texture_data() {
@@ -143,6 +72,11 @@ namespace crow {
 		p_impl->create_texture("res/textures/sofa2.dds", textures[texture_list::SOFA2]);
 		p_impl->create_texture("res/textures/sofa3.dds", textures[texture_list::SOFA3]);
 
+		p_impl->create_texture("res/textures/crates_barrels.dds", textures[texture_list::CRATE_BARREL]);
+		p_impl->create_texture("res/textures/crates_barrels_e.dds", textures[texture_list::CRATE_BARREL_E]);
+		p_impl->create_texture("res/textures/desk1_2.dds", textures[texture_list::DESK12]);
+		p_impl->create_texture("res/textures/desk3.dds", textures[texture_list::DESK3]);
+		p_impl->create_texture("res/textures/light_box.dds", textures[texture_list::LIGHT_BOX]);
 
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
 	}

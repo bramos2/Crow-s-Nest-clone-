@@ -72,7 +72,7 @@ namespace crow {
           sound_path = "res/sfx/footstep00.ogg";
           load_sfx(sound_path, 0);
 
-          sound_path = "res/sfx/bong_001.ogg";
+          sound_path = "res/sfx/Menu_Select.wav";
           load_sfx(sound_path, 1);
 
           // loading bgm one by one

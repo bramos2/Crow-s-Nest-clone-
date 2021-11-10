@@ -17,7 +17,7 @@ namespace crow {
 	}
 
 	void room::load_entities(game_manager& state) {
-		generate_debug_collision_display();
+		//generate_debug_collision_display();
 
 		// first we need to know what our entity and total indices will be
 		size_t initial_index = state.entities.current_size;
@@ -86,6 +86,11 @@ namespace crow {
 			state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[furniture_meshes.back()];
 			if (furniture_textures.back() == -1) state.entities.s_resource_view[object_indices.back()] = nullptr;
 			else state.entities.s_resource_view[object_indices.back()] = state.textures[furniture_textures.back()];
+
+			// bruteforcing to ensure barrels and crates use their emmissive texture
+			//if (furniture_textures.back() == game_manager::texture_list::CRATE_BARREL) {
+			//	state.entities.emissive[object_indices.back()] = state.textures[game_manager::texture_list::CRATE_BARREL_E];
+			//}
 
 			furniture_matrices.pop_back();
 			furniture_textures.pop_back();

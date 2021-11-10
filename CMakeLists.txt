@@ -85,6 +85,7 @@ set(CPP_FILES
   src/cpp/gui.cpp
   src/cpp/interactible.cpp
   src/cpp/levels.cpp
+  src/cpp/level_helper.cpp
   src/cpp/main.cpp
   src/cpp/map.cpp
   src/cpp/mesh.cpp

@@ -105,6 +105,7 @@ namespace crow {
         ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.45f});
         if (ImGui::Button("New Game", mm_button_wh)) {
             if (menu_position == 0) {
+                crow::audio::play_sfx(crow::audio::MENU_OK);
                 if (level_number != 0) {
                     menu_position = 3;
                 } else {
@@ -112,15 +113,14 @@ namespace crow {
                     new_game();
                     save_game();
                 }
-                crow::audio::play_sfx(crow::audio::MENU_OK);
             }
         }
 
         ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.55f});
         if (ImGui::Button("Continue", mm_button_wh)) {
             if (menu_position == 0) {
-                new_game();
                 crow::audio::play_sfx(crow::audio::MENU_OK);
+                new_game();
             }
         }
 

@@ -450,6 +450,13 @@ namespace crow
 		return MultiplyM(temp, m);
 
 	}
+	
+	inline void scale_matrix(float4x4_a& m, float x, float y, float z)
+	{
+		m[0][0] *= x;
+		m[1][1] *= y;
+		m[2][2] *= z;
+	}
 
 	inline float3_a pac(float3e in) {
 		float3_a temp;
@@ -468,7 +475,7 @@ namespace crow
 
 		return temp;
 	}
-
+	
 	inline float clampf(float in, float min, float max) {
 		return in < min ? min : (in > max ? max : in);
 	}

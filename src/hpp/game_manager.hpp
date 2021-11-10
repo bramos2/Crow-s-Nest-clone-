@@ -89,6 +89,16 @@ namespace crow {
 				SOFA1,
 				SOFA2,
 				SOFA3,
+				BARREL1,
+				BARREL2,
+				BARREL3,
+				CRATE1,
+				CRATE2,
+				CRATE3,
+				LIGHT_BOX,
+				DESK1,
+				DESK2,
+				DESK3,
 				COUNT
 			};
 		};
@@ -113,6 +123,11 @@ namespace crow {
 				SOFA1,
 				SOFA2,
 				SOFA3,
+				CRATE_BARREL,
+				CRATE_BARREL_E,
+				LIGHT_BOX,
+				DESK12,
+				DESK3,
 				GUI_PAUSE,
 				COUNT
 			};
@@ -137,8 +152,7 @@ namespace crow {
 		// s_anim = filepath to anim file to load (optional)
 		// if s_anim is provided, the model will be loaded as an animated mesh
 		// pass in "" for either s_mat or s_anim if they aren't to be used
-		void load_mesh_data(std::string s_bin, std::string s_mat, std::string s_anim, int index);
-		void load_mesh_data(std::string filename, int index);
+		void load_mesh_data(std::string filename, mesh_a& temp, int index);
 		void load_all_meshes();
 		void load_texture_data();
 		void load_animation_data();
