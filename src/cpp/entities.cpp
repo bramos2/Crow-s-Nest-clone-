@@ -77,13 +77,26 @@ namespace crow {
 	}
 
 	void entities::set_world_position(size_t const index, float const x, float const y,
-							float const z) {
+							float const z, bool const zero) {
 		if (index < current_size) {
 			DirectX::XMFLOAT4X4 w;
 			DirectX::XMStoreFloat4x4(&w, world_matrix[index]);
-			w.m[3][0] = x;
-			w.m[3][1] = y;
-			w.m[3][2] = z;
+			if (zero) {
+				w.m[3][0] = x;
+				w.m[3][1] = y;
+				w.m[3][2] = z;
+			}
+			else {
+				if (x != 0.f) {
+					w.m[3][0] = x;
+				}
+				if (y != 0.f) {
+					w.m[3][1] = y;
+				}
+				if (z != 0.f) {
+					w.m[3][2] = z;
+				}
+			}
 		
 			world_matrix[index] = DirectX::XMLoadFloat4x4(&w);
 		}
@@ -112,6 +125,13 @@ namespace crow {
 	{
 		if (index < current_size) {
 			world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixScaling(scale, scale, scale), world_matrix[index]);
+		}
+	}
+
+	void entities::scale_world_matrix(size_t const index, float x, float y, float z)
+	{
+		if (index < current_size) {
+			world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixScaling(x, y, z), world_matrix[index]);
 		}
 	}
 

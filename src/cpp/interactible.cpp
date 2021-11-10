@@ -105,7 +105,7 @@ namespace crow {
 
 	// preassure console
 	pressure_console::pressure_console(crow::level* _lv) {
-		type = crow::object_type::OXYGEN_CONSOLE;
+		type = crow::object_type::PRESSURE_CONSOLE;
 		current_level = _lv;
 		is_broken = false;
 		health = 1;
@@ -162,18 +162,7 @@ namespace crow {
 
 	// we may not need to pass in the game state anymore
 	void door_panel::activate(crow::game_manager& state) {
-
 		door->is_active = door->neighbor->is_active = !door->is_active;
-
-		// this is done in the update function
-		/*if (!door->is_active) {
-			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_CLOSED];
-		}
-		else {
-			state.entities.s_resource_view[door->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-			state.entities.s_resource_view[door->neighbor->entity_index] = state.textures[game_manager::texture_list::DOOR_OPEN];
-		}*/
 	}
 
 	door_panel::door_panel(crow::level* _lv) {

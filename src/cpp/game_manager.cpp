@@ -48,6 +48,8 @@ namespace crow {
 		load_mesh_data("res/meshes/desk2.bin", temp, mesh_types::DESK2);
 		load_mesh_data("res/meshes/desk3.bin", temp, mesh_types::DESK3);
 		load_mesh_data("res/meshes/light_box.bin", temp, mesh_types::LIGHT_BOX);
+		load_mesh_data("res/meshes/console3.bin", temp, mesh_types::CONSOLE3);
+		load_mesh_data("res/meshes/disk.bin", temp, mesh_types::DISK);
 	}
 
 	void game_manager::load_texture_data() {
@@ -58,6 +60,7 @@ namespace crow {
 		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
 		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
 		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
+		p_impl->create_texture("res/textures/door_exit.dds", textures[texture_list::DOOR_EXIT]);
 		p_impl->create_texture("res/textures/exit_light_d.dds", textures[texture_list::EXIT_LIGHT_D]);
 		p_impl->create_texture("res/textures/exit_light_s.dds", textures[texture_list::EXIT_LIGHT_S]);
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
@@ -78,6 +81,10 @@ namespace crow {
 		p_impl->create_texture("res/textures/desk3.dds", textures[texture_list::DESK3]);
 		p_impl->create_texture("res/textures/light_box.dds", textures[texture_list::LIGHT_BOX]);
 
+		p_impl->create_texture("res/textures/console3_d.dds", textures[texture_list::CONSOLE3]);
+		p_impl->create_texture("res/textures/console3_s.dds", textures[texture_list::CONSOLE3_E]);
+		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
+
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
 	}
 
@@ -91,7 +98,7 @@ namespace crow {
 		load_anim_data("res/animations/guy.anim", pbindpose);
 		load_anim_data("res/animations/guyf.anim", animators[i].animations[0]);
 		load_anim_data("res/animations/jogging.anim", animators[i].animations[1]);
-		load_anim_data("res/animations/dying.anim", animators[i].animations[2]);
+		load_anim_data("res/animations/dying_2.anim", animators[i].animations[2]);
 		get_inverted_bind_pose(pbindpose.frames[0], animators[i]);
 
 		i = animator_list::AI;
@@ -100,6 +107,7 @@ namespace crow {
 		load_anim_data("res/animations/slasher_attack.anim", animators[i].animations[1]);
 		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
 
+		// this animation is broken
 		i = animator_list::EXIT_LIGHT;
 		animators[i].animations.resize(1);
 		load_anim_data("res/animations/exit_light.anim", animators[i].animations[0]);
@@ -149,7 +157,7 @@ namespace crow {
 			current_level.interacting->activate(*this);
 			current_level.interacting = nullptr;
 		}
-		left_click_time += dt;
+		//left_click_time += dt;
 		//right_click_time += dt;
 
 		// capture mouse position
@@ -160,9 +168,22 @@ namespace crow {
 		mouse_pos.y = (float)p.y;
 
 		// debug mode toggle, allows debug camera
-		if (!debug_mode && (GetKeyState(VK_F1))) {
-			printf("\nDEBUG MODE ENABLED\n");
-			debug_mode = true;
+		if (GetKeyState(VK_F1) & 0x8000) {
+			// prevents toggle while the key is held down
+			if (!pressing_key) {
+				pressing_key = true;
+				debug_mode = ai_m.debug_mode = !debug_mode;
+				if (debug_mode) {
+					printf("\nDEBUG MODE ENABLED\n");
+				} 
+				else {
+					printf("\nDEBUG MODE DISSABLED\n");
+				}
+			}
+		}
+		else {
+			// resets press after letting go of the key
+			pressing_key = false;
 		}
 
 		// game state update
@@ -173,7 +194,7 @@ namespace crow {
 
 			// all ai updates (player and enemy) here
 			//if (false) {
-				if (current_level.found_ai) { ai_bt.run(dt); }
+			if (current_level.found_ai) { ai_bt.run(dt); }
 			//}
 
 			// making AI model face its velocity
@@ -237,8 +258,8 @@ namespace crow {
 		// debug mode updates
 		if (debug_mode) {
 			float4e translate = { 0, 0, 0, 0 };
-			ai_m.debug_mode = true;
 			p_impl->draw_path(ai_m.path, crow::float4e(1.f, 0.f, 0.f, 1.f));
+			p_impl->draw_path(player_data.path_result, crow::float4e(0.f, 0.f, 1.f, 1.f));
 			// debug camera controls
 			/* WASD = basic movement                                                     */
 			/* ARROW KEYS = rotate camera                                                */
@@ -311,6 +332,9 @@ namespace crow {
 
 	bool game_manager::l_click_update() {
 		if (buttons_frame[controls::l_mouse] != 1) return false;
+
+		current_message = crow::message();
+
 
 		crow::room* selected_room = current_level.selected_room;
 		if (!selected_room || !selected_room->has_player) {
@@ -400,31 +424,6 @@ namespace crow {
 			std::vector<float2e> temporary_results =
 				selected_room->get_path(float2e(p_pos.x, p_pos.z), adjacent_tile);
 
-			if (!temporary_results.empty() && !player_data.path_result.empty()) {
-				// check for double click on same tile
-				if (player_data.path_result[0] == temporary_results[0]) {
-					// check to ensure that the clicks were close enough to each
-					// other to count as a double click.
-					if (left_click_time < 0.5f) {
-						player_data.worker_speed = player_data.worker_run_speed;
-
-						// plays footstep sound when worker moves
-						crow::audio::add_footstep_sound(
-							(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-								crow::entity::WORKER)],
-							0.285f);
-					}
-				}
-				else {
-					player_data.worker_speed = player_data.worker_walk_speed;
-
-					crow::audio::add_footstep_sound(
-						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-							crow::entity::WORKER)],
-						0.5f);
-				}
-			}
-
 			// set the worker's path
 			player_data.path_result = temporary_results;
 		}
@@ -438,34 +437,16 @@ namespace crow {
 				return true;
 			}
 
-			// double click check
-			if (!player_data.path_result.empty() &&
-				player_data.path_result[0] == temporary_results[0]) {
-				// time difference to count double click
-				if (left_click_time < 0.5f) { // running
-					player_data.worker_speed = player_data.worker_run_speed;
-
-					// plays footstep sound when worker moves
-					crow::audio::add_footstep_sound(
-						(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-							crow::entity::WORKER)],
-						0.285f);
-				}
-			}
-			else { // walking
-				player_data.worker_speed = player_data.worker_walk_speed;
-
-				// plays footstep sound when worker moves
-				crow::audio::add_footstep_sound(
-					(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
-						crow::entity::WORKER)], 0.5f);
-			}
-
 			// set the worker's path
 			player_data.path_result = temporary_results;
 		}
 
-		left_click_time = 0.f;
+		if (!player_data.path_result.empty()) {
+			crow::audio::add_footstep_sound(
+				(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+					crow::entity::WORKER)], 0.5f);
+		}
+
 		return true;
 	}
 
@@ -477,6 +458,7 @@ namespace crow {
 		player_data.path_result.clear();
 		player_data.interacting = false;
 		player_data.target = nullptr;
+		current_message = crow::message();
 		return true;
 		return true;
 	}
@@ -539,11 +521,9 @@ namespace crow {
 		}
 	}
 
-
 	void game_manager::render()
 	{
 		p_impl->set_render_target_view();
-		
 
 		switch (current_state) {
 		case game_state::SETTINGS:
@@ -567,8 +547,61 @@ namespace crow {
 		//p_impl->draw_mesh(view);
 
 		if (current_level.selected_room && entities.current_size > 0) {
-			for (size_t i = 0; i < current_level.selected_room->object_indices.size(); ++i) {
-				p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
+			// drawing all entities
+			p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
+
+			// vector storing the index of the shadow blob entity used for the player and AI
+			std::vector<size_t> svec;
+			svec.push_back(crow::entity::SHADOW);
+
+			// drawing shadow at player's position
+			if (current_level.selected_room->has_player) {
+				// we must copy the player's matrix
+				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::WORKER];
+
+				// if the player is alive
+				if (player_data.player_interact.is_active) {
+					// scale and position the shadow
+					entities.scale_world_matrix(crow::entity::SHADOW, 1.6f, 4.f, 1.2f);
+					entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+
+					// draw call for only the shadow
+					p_impl->draw_entities(entities, svec, view);
+				}
+				else {
+					// updating shadow spawn time
+					shadow_spawn_timer += static_cast<float>(timer.Delta());
+					crow::float3e foward;
+					DirectX::XMFLOAT4X4 w;
+					DirectX::XMStoreFloat4x4(&w, entities.world_matrix[crow::entity::SHADOW]);
+
+					// retrieving the forward of our matrix
+					foward.x = w.m[2][0];
+					foward.y = w.m[2][1];
+					foward.z = w.m[2][2];
+					foward = foward.normalize(foward);
+
+					// scaling and moving the shadow to match the body
+					entities.scale_world_matrix(crow::entity::SHADOW, 1.2f, 4.f, 3.f);
+					float xpos = w.m[3][0] + foward.x * 2;
+					float zpos = w.m[3][2] + foward.z * 2;
+					entities.set_world_position(crow::entity::SHADOW, xpos, 0.055f, zpos, false);
+
+					// drawing the shadow after a second has passed
+					if (shadow_spawn_timer >= 1.0f) {
+						p_impl->draw_entities(entities, svec, view);
+					}
+				}
+			}
+
+			// drawing shadow at AI's position
+			if (current_level.selected_room->has_ai) {
+				entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[crow::entity::SPHYNX];
+				// scaling and moving shadow to match the AI
+				entities.scale_world_matrix(crow::entity::SHADOW, 0.5f, 1.f, 0.3f);
+				entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+				// drawing just the shadow again
+				p_impl->draw_entities(entities, svec, view);
 			}
 		}
 	}
@@ -592,7 +625,6 @@ namespace crow {
 			state_time = 0;
 		}
 	}
-
 
 	void game_manager::cleanup() {
 		// delete all meshes and associated data
@@ -709,15 +741,21 @@ namespace crow {
 		all_meshes[mesh_types::EXIT_LIGHT].animator = &animators[animator_list::EXIT_LIGHT];
 
 		// initializing main entities
-		entities.allocate_and_init(7);
+		entities.allocate_and_init(crow::entity::COUNT);
 
 		// creating player entity
-		entities.mesh_ptrs[0] = &all_meshes[mesh_types::PLAYER];
-		entities.s_resource_view[0] = textures[texture_list::PLAYER];
+		entities.mesh_ptrs[crow::entity::WORKER] = &all_meshes[mesh_types::PLAYER];
+		entities.s_resource_view[crow::entity::WORKER] = textures[texture_list::PLAYER];
 
 		// creating AI entity
-		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
-		entities.s_resource_view[1] = textures[texture_list::AI];
+		entities.mesh_ptrs[crow::entity::SPHYNX] = &all_meshes[mesh_types::AI];
+		entities.s_resource_view[crow::entity::SPHYNX] = textures[texture_list::AI];
+
+		// creating shadow entity
+		entities.mesh_ptrs[crow::entity::SHADOW] = &all_meshes[mesh_types::DISK];
+		entities.world_matrix[crow::entity::SHADOW];
+		//entities.scale_world_matrix(crow::entity::SHADOW, 0.3f, 0.1f, 0.3f);
+		entities.s_resource_view[crow::entity::SHADOW] = textures[texture_list::SHADOW];
 
 		// creating floor entity
 		entities.mesh_ptrs[entity::FLOOR] = &all_meshes[mesh_types::CUBE];

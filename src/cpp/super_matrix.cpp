@@ -2,9 +2,9 @@
 
 namespace crow {
     super_matrix::super_matrix() {
-        scale.x = scale.y = scale.z = 1;
-        rotation.x = rotation.y = rotation.z = 0;
-        position.x = position.y = position.z = 0;
+        scale.x = scale.y = scale.z = 1.f;
+        rotation.x = rotation.y = rotation.z = 0.f;
+        position.x = position.y = position.z = 0.f;
     }
 
     void super_matrix::update() {

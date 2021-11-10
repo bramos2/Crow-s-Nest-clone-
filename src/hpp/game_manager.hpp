@@ -42,8 +42,9 @@ namespace crow {
 		animator ai_animator;
 
 		bool debug_mode = 0;
+		bool pressing_key = false;
 
-		float left_click_time = 0.f;
+		//float left_click_time = 0.f;
 		//float right_click_time = 0.f;
 		int menu_position = 0;
 		int level_number = 0;
@@ -72,6 +73,7 @@ namespace crow {
 
 		// a list of every animatior each containing all the animations respective to their model
 		std::vector<animator> animators;
+		float shadow_spawn_timer = 0.f;
 
 		struct mesh_types {
 			enum {
@@ -99,6 +101,8 @@ namespace crow {
 				DESK1,
 				DESK2,
 				DESK3,
+				CONSOLE3,
+				DISK,
 				COUNT
 			};
 		};
@@ -111,6 +115,7 @@ namespace crow {
 				WALL1,
 				DOOR_OPEN,
 				DOOR_CLOSED,
+				DOOR_EXIT,
 				EXIT_LIGHT_D,
 				EXIT_LIGHT_S,
 				CONSOLE1_D,
@@ -129,6 +134,9 @@ namespace crow {
 				DESK12,
 				DESK3,
 				GUI_PAUSE,
+				CONSOLE3,
+				CONSOLE3_E,
+				SHADOW,
 				COUNT
 			};
 		};

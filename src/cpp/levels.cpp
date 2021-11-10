@@ -460,14 +460,6 @@ namespace crow {
 
 				// here is the damn issue
 				rooms[0][0].generate_tilemap();
-           // rooms[0][0].initialize_pather();
-				// build level design (invisible)
-				for (int i = 5; i < 15; i++) {
-					rooms[0][0].tiles.map[i][0]->is_open = false;
-					rooms[0][0].tiles.map[i][10]->is_open = false;
-					rooms[0][0].tiles.map[i][9]->is_open = false;
-				}
-				// rooms[0][0].initialize_pather();
 			}
 
 			rooms[0][1].id = 2;
@@ -488,7 +480,7 @@ namespace crow {
 
 				// build level design (invisible)
 				for (int i = 5; i < 10; i++) {
-					rooms[0][1].tiles.map[i][7]->is_open = false;
+					//rooms[0][1].tiles.map[i][7]->is_open = false;
 					rooms[0][1].tiles.map[7][i]->is_open = false;
 				}
 				// rooms[0][1].initialize_pather();
@@ -512,7 +504,6 @@ namespace crow {
 
 				// build level design (invisible)
 				for (int i = 4; i < 11; i++) {
-					rooms[1][1].tiles.map[i][4]->is_open = false;
 					rooms[1][1].tiles.map[i][9]->is_open = false;
 				}
 			}
@@ -592,7 +583,7 @@ namespace crow {
 				rooms[2][2].generate_tilemap();
 
 				// build level design (invisible)
-				for (int i = 2; i < 13; i++) {
+				for (int i = 8; i < 17; i++) {
 					rooms[2][2].tiles.map[7][i]->is_open = false;
 				}
 			}
@@ -614,7 +605,6 @@ namespace crow {
 
 				rooms[2][3].generate_tilemap();
 			}
-
 			break;
 		}
 

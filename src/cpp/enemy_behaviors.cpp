@@ -256,7 +256,7 @@ namespace crow {
 					static_cast<size_t>(crow::entity::WORKER));
 				float2e t = { temp.x, temp.z };
 				// changing the last value will determine how much the player has to move from its initial position before the AI makes a different path
-				if (crow::reached_destination({ 0.f, 0.f }, t, m.path[0], 3.0f)) { 
+				if (crow::reached_destination({ 0.f, 0.f }, t, m.path[0], 3.0f)) {
 					result = crow::status::PASSED;
 				}
 
@@ -277,17 +277,20 @@ namespace crow {
 
 		m.path.clear();
 		float3e temp_ai_pos =
-			m.entities->get_world_position(static_cast<size_t>(crow::entity::SPHYNX));
+			m.entities->get_world_position(crow::entity::SPHYNX);
 
 		float2e target_pos;
 		if (m.target->type == crow::object_type::PLAYER) {
-			float3e p_pos = m.entities->get_world_position(
-				static_cast<size_t>(crow::entity::WORKER));
+			float3e p_pos = m.entities->get_world_position(crow::entity::WORKER);
 			target_pos = { p_pos.x, p_pos.z };
 		}
 		else {
 			const crow::tile* ai_tile =
 				m.curr_room->get_tile_at({ temp_ai_pos.x, temp_ai_pos.z });
+
+			if (!ai_tile || !ai_tile->is_open) {
+				return crow::status::FAILED;
+			}
 
 			// finding the adjacent tile to the interactible
 			float2e adjacent_tile =
@@ -318,11 +321,12 @@ namespace crow {
 			target_pos = adjacent_tile;
 		}
 
-		m.path = m.curr_room->get_path(float2e(temp_ai_pos.x, temp_ai_pos.y),
+		m.path = m.curr_room->get_path(float2e(temp_ai_pos.x, temp_ai_pos.z),
 			target_pos);
+
 		m.interacting = true;
 		result = crow::status::PASSED;
-
+		
 		//m.print_status("get_path", result);
 		return result;
 	}
@@ -352,6 +356,7 @@ namespace crow {
 			if (!m.entities->mesh_ptrs[index]->animator->is_acting && !m.entities->mesh_ptrs[index]->animator->performed_action) {
 				m.entities->mesh_ptrs[index]->animator->switch_animation(1);
 				m.entities->mesh_ptrs[index]->animator->performed_action = true;
+				//std::printf("\nAI: playing action animation");
 			}
 		}
 
@@ -363,28 +368,15 @@ namespace crow {
 		status result = crow::status::FAILED;
 		size_t index = crow::entity::SPHYNX;
 
-
 		crow::set_velocity(m.path.back(), *m.entities, index, m.roam_speed);
 		float3e curr_pos = m.entities->get_world_position(index);
-
-		/*float2e target_pos = { 100000.f, 100000.f };
-		if (m.target) {
-			if (m.target->type == crow::object_type::PLAYER) {
-				float3e p_pos = m.entities->get_world_position(
-					static_cast<size_t>(crow::entity::WORKER));
-				target_pos = { p_pos.x, p_pos.z };
-			}
-			else {
-				target_pos = m.curr_room->get_tile_wpos(m.target->x, m.target->y);
-			}
-		}*/
 
 		float2e curr_vel = float2e(dt * m.entities->velocities[index].x,
 			dt * m.entities->velocities[index].z);
 		float d = 1.0f;
-		/*if (m.path.size() > 1) {
+		if (m.path.size() > 1) {
 			d = 0.5f;
-		}*/
+		}
 
 		if (crow::reached_destination(curr_vel, float2e(curr_pos.x, curr_pos.z),
 			m.path.back(), d)) {
@@ -392,11 +384,6 @@ namespace crow {
 		}
 
 		result = crow::status::RUNNING;
-
-		/*if (crow::reached_destination({ 0.f, 0.f }, { curr_pos.x, curr_pos.z },
-			target_pos, 0.75f)) {
-			result = status::PASSED;
-		}*/
 
 		//m.print_status("move", result);
 		return result;
@@ -483,7 +470,7 @@ namespace crow {
 
 			//m.prev_target = m.target;
 
-
+			m.entities->mesh_ptrs[index]->animator->switch_animation(0);
 			m.room_check(); // BEWARE IF YOU DISSABLE THIS IT WILL BREAK THE AI
 		}
 		else { // animation is playing
@@ -515,6 +502,7 @@ namespace crow {
 				m.entities->mesh_ptrs[index]->animator->performed_action = false;
 				result = crow::status::PASSED;
 			}
+			m.entities->mesh_ptrs[index]->animator->switch_animation(0);
 		}
 		else {
 			result = crow::status::RUNNING;

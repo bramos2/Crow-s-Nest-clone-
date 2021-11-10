@@ -6,7 +6,20 @@ namespace crow {
 	void room::generate_debug_collision_display() {
 		for (unsigned int i = 0; i < tiles.get_height(); i++) {
 			for (unsigned int j = 0; j < tiles.get_width(); j++) {
-				if (get_tile_at(get_tile_wpos(j, i))->is_open) continue;
+				if (get_tile_at(get_tile_wpos(j, i))->is_open) {
+					continue;
+				}
+				bool skip = false;
+				for (auto& o : objects) {
+					if (o->x == j && o->y == i) {
+						skip = true;
+					}
+				}
+
+				if (skip) {
+					continue;
+				}
+
 				float2e pos = get_tile_wpos(j, i);
 				float4x4_a furns1 = IdentityM_a(); furns1[3][0] = pos.x; furns1[3][2] = pos.y;
 				furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
@@ -143,9 +156,16 @@ namespace crow {
 
 				state.entities.scale_world_matrix(object_indices.back(), 0.075f);
 				break;
+			case object_type::PRESSURE_CONSOLE: {
+				state.entities.scale_world_matrix(object_indices.back(), 0.04f);
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D];
+				state.entities.specular[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_S];
+				break;
+			}
 			case object_type::DOOR:
 			{
-				crow::door* _i = (crow::door*)(i);
+				//crow::door* _i = (crow::door*)(i);
 				if (i->x == 0 || i->x == this->width - 1) {
 					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f);
 				}
