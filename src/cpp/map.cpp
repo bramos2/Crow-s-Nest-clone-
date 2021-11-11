@@ -20,22 +20,17 @@ namespace crow {
 					continue;
 				}
 
-				//float4x4_a furns1 = IdentityM_a(); furns1[3][0] = 10 - rooms[0][0].width * 0.5f + 0.5f; furns1[3][2] = 14 - rooms[0][0].length * 0.5f + 0.5f;
 				float2e pos = get_tile_wpos(j, i);
 				float4x4_a furns1 = IdentityM_a(); furns1[3][0] = pos.x; furns1[3][2] = pos.y;
 				furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
 				furniture_meshes.push_back(game_manager::mesh_types::CUBE);
 				furniture_textures.push_back(-1);
-				//rooms[0][0].furniture_matrices.push_back((DirectX::XMMATRIX&)furns1);
-				//rooms[0][0].furniture_meshes.push_back(game_manager::mesh_types::CUBE);
-				//rooms[0][0].furniture_textures.push_back(-1);
 			}
 		}
 	}
 
 	void room::load_entities(game_manager& state) {
-		// temporary. this should not be called in the final version at all
-		generate_debug_collision_display();
+		//generate_debug_collision_display();
 
 		// first we need to know what our entity and total indices will be
 		size_t initial_index = state.entities.current_size;
@@ -102,8 +97,13 @@ namespace crow {
 			object_indices.push_back(initial_index++);
 			state.entities.world_matrix[object_indices.back()] = furniture_matrices.back();
 			state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[furniture_meshes.back()];
-			if (furniture_meshes.back() == -1) state.entities.s_resource_view[object_indices.back()] = nullptr;
-			else state.entities.s_resource_view[object_indices.back()] = state.textures[furniture_meshes.back()];
+			if (furniture_textures.back() == -1) state.entities.s_resource_view[object_indices.back()] = nullptr;
+			else state.entities.s_resource_view[object_indices.back()] = state.textures[furniture_textures.back()];
+
+			// bruteforcing to ensure barrels and crates use their emmissive texture
+			//if (furniture_textures.back() == game_manager::texture_list::CRATE_BARREL) {
+			//	state.entities.emissive[object_indices.back()] = state.textures[game_manager::texture_list::CRATE_BARREL_E];
+			//}
 
 			furniture_matrices.pop_back();
 			furniture_textures.pop_back();
@@ -121,7 +121,64 @@ namespace crow {
 
 			switch (i->type)
 			{
+			case object_type::DOOR_PANEL: {
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE3];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE3];
+
+				// automatically rotate this thing based on its position
+				if (i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), -90.f, -90.f);
+				} else if (i->x == 0) { // left wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f, 90.f);
+				} else if (i->y == this->length - 1) { // top wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0, 180.f, 90.f);
+				} else { // bottom wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0, 0, 90.f);
+				}
+
+				// move this thing up
+				XMFLOAT3 door_pos = state.entities.get_world_position(object_indices.back());
+				state.entities.set_world_position(object_indices.back(), door_pos.x, door_pos.y + 2, door_pos.z);
+
+				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
+				} break;
+			case object_type::OXYGEN_CONSOLE:
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE2];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE2];
+				// automatically rotate this thing based on its position
+				if (i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, -90.f);
+				} else if (i->x == 0) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f);
+				} else if (i->y == this->length - 1) {
+					// face it down
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 180.f);
+				} else {
+					// default orientation
+				}
+
+				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
 			case object_type::PRESSURE_CONSOLE: {
+				// gonna use julio's version of this unless we have any problems
+				/*
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D];
+				state.entities.specular[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_S];
+				// automatically rotate this thing based on its position
+				if (i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, -90.f);
+				} else if (i->x == 0) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f);
+				} else if (i->y == this->length - 1) {
+					// default orientation
+				} else {
+					// face it down
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 180.f);
+				}
+
+				state.entities.scale_world_matrix(object_indices.back(), 0.075f);
+				*/
+				
 				state.entities.scale_world_matrix(object_indices.back(), 0.04f);
 				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
 				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D];

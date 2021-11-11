@@ -149,7 +149,7 @@ namespace crow {
 		std::string text;
 		// We don't need anything else, stop it, get some help
 		if (door->is_active) {
-			text = "LOCKING..."; 
+			text = "LOCKING...";
 		}
 		else {
 			text = "UNLOCKING...";

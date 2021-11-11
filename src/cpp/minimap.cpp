@@ -5,13 +5,13 @@ void crow::minimap::draw_call(game_manager& state) {
     ImGui::SetNextWindowBgAlpha(0.3f);
 
     // special processing depending on if the mouse is inside the minimap
-    if (inside_minimap(state.mouse_pos_gui)) {
+    if (inside_minimap(state.mouse_pos_gui) || is_dragging) {
         // first, enable zooming of the map
         if (state.mwheel_delta) {
             calculate_extents(false);
             zoom += state.mwheel_delta * 0.001f;
             zoom = clampf(zoom, 1, 5);
-            // TODO:: support for shift + lclick
+            // TODO:: support for shift + rclick
         }
 
         // next, draw the minimap not faded out
@@ -31,23 +31,31 @@ void crow::minimap::draw_call(game_manager& state) {
     ImVec2 wh = state.imgui_wsize;
     set_window_size(wh);
 
-  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+  if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
     // first, check to see if the mouse click began inside of the minimap
     // window
     if (inside_minimap(state.mouse_pos_gui)) {
       calculate_mouse_position(state.mouse_pos_gui);
     }
   }
-  is_dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
-  // processing for dragging the minimap around all goes in here
-  if (is_dragging) {
-    // first check to see that we have "grabbed" the minimap with the mouse.
-    // if it has been grabbed, then minimap.mouse_position.x should have been
-    // set to a float between 0:1
-    if (mouse_position.x != -1) {
-      calculate_mouse_drag(state.mouse_pos_gui);
+    // this is used to prevent buttons from being clicked when you drag on the minimap
+    bool was_dragging = is_dragging;
+
+    is_dragging = ImGui::IsMouseDragging(ImGuiMouseButton_Right);
+    // processing for dragging the minimap around all goes in here
+    if (is_dragging) {
+        // first check to see that we have "grabbed" the minimap with the mouse.
+        // if it has been grabbed, then minimap.mouse_position.x should have been
+        // set to a float between 0:1
+        if (mouse_position.x != -1) {
+            calculate_mouse_drag(state.mouse_pos_gui);
+        }
+        was_dragging = true;
     }
-  }
+    // colors of the imgui minimap buttons (default)
+        ImGui::PushStyleColor(ImGuiCol_Button, { 0.19f, 0.40f, 0.63f, 0.35f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.25f, 0.58f, 0.98f, 0.7f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.25f, 0.58f, 0.98f, 0.7f});
 
   // float2e starting_r_pos = {0.f, 0.f};
   if (current_level) {
@@ -108,14 +116,15 @@ void crow::minimap::draw_call(game_manager& state) {
 
         // change the color of the room button where the player is
         if (current_room.has_player) {
-            ImGui::PushStyleColor(ImGuiCol_Button, { 0.8f, 0.5f, 0.5f, 0.5f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 1.0f, 0.5f, 0.5f, 1.0f});
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.8f, 0.5f, 0.5f, 1.0f});
+            ImGui::PopStyleColor(3);
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.65f, 0.25f, 0.25f, 0.35f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.85f, 0.37f, 0.37f, 0.7f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.85f, 0.37f, 0.37f, 0.7f});
         }
 
-        //if (ImGui::Button( "", room_wh)) {
-        if (ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh)) {
-          if (!is_dragging) {
+        //if (ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh)) {
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !was_dragging && inside_minimap(state.mouse_pos_gui) &&
+            inside_pos(state.mouse_pos_gui, room_xy, room_wh)) {
             /* processing for room switch goes here */
             // active_room->set_active(app, room_mesh_ptr, *camera);
             printf("\nclicked on room: ");
@@ -123,12 +132,16 @@ void crow::minimap::draw_call(game_manager& state) {
             current_level->selected_room = &current_room;
             //crow::update_room_cam(current_level->selected_room, state.view);
             crow::update_room_cam(pac(state.cam_pos), pac(state.cam_rotation), state.view);
-          }
         }
+        ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh);
+        
         
         // reset colors
         if (current_room.has_player) {
             ImGui::PopStyleColor(3);
+            ImGui::PushStyleColor(ImGuiCol_Button, { 0.19f, 0.40f, 0.63f, 0.35f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, { 0.25f, 0.58f, 0.98f, 0.7f});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.25f, 0.58f, 0.98f, 0.7f});
         }
 
       }
@@ -139,12 +152,15 @@ void crow::minimap::draw_call(game_manager& state) {
       // paranoia check: using !ismousedown instead of mousereleased
     }
   }
-  if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+  if (!ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
     reset_state();
     /*minimap.mouse_position = {-1, -1};
     minimap.dragging = false;*/
   }
+    ImGui::PopStyleColor(3);
   ImGui::End();
+
+  
 }
 
 crow::minimap::minimap() {}
@@ -185,6 +201,14 @@ auto crow::minimap::inside_minimap(float2e& mouse_pos)
           mouse_pos.y < static_cast<double>(window_pos.y) + static_cast<double>(window_ext.y) &&
           mouse_pos.x > static_cast<double>(window_pos.x) &&
             static_cast<double>(mouse_pos.y) > static_cast<double>(window_pos.y));
+}
+
+auto crow::minimap::inside_pos(float2e& mouse_pos, ImVec2 pos, ImVec2 wh)
+    -> bool {
+  return (mouse_pos.x < static_cast<double>(window_pos.x) + static_cast<double>(pos.x) + static_cast<double>(wh.x) &&
+          mouse_pos.y < static_cast<double>(window_pos.y) + static_cast<double>(pos.y) + static_cast<double>(wh.y) &&
+          mouse_pos.x > static_cast<double>(window_pos.x) + static_cast<double>(pos.x) &&
+            static_cast<double>(mouse_pos.y) > static_cast<double>(window_pos.y) + static_cast<double>(pos.y));
 }
 
 void crow::minimap::calculate_mouse_position(float2e& mouse_pos) {

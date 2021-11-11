@@ -341,10 +341,35 @@ namespace crow
 		}
 		return result;
 	}
-
+	
 	inline float4x4 MultiplyM(float4x4 a, float4x4 b)
 	{
 		float4x4 result;
+		for (int i = 0; i < 4; ++i)
+		{
+			result[i] = MatrixVectorMult(a[i], b);
+		}
+		return result;
+	}
+
+	inline float4_a MatrixVectorMult(float4_a v, float4x4_a m)
+	{
+		float4_a result;
+		result[0] = result[1] = result[2] = result[3] = 0;
+
+		for (int i = 0; i < 4; ++i)
+		{
+			for (int j = 0; j < 4; ++j)
+			{
+				result[i] += v[j] * m[j][i];
+			}
+		}
+		return result;
+	}
+
+	inline float4x4_a MultiplyM(float4x4_a a, float4x4_a b)
+	{
+		float4x4_a result;
 		for (int i = 0; i < 4; ++i)
 		{
 			result[i] = MatrixVectorMult(a[i], b);
@@ -389,6 +414,50 @@ namespace crow
 
 	}
 
+	inline float4x4_a XrotationM(float4x4_a m, float deg)
+	{
+		deg = deg * (3.1415f / 180.0f);
+
+		float4x4_a temp = IdentityM_a();
+		temp[1].y = cosf(deg);
+		temp[1].z = -sinf(deg);
+		temp[2].y = sinf(deg);
+		temp[2].z = cosf(deg);
+		return MultiplyM(temp, m);
+	}
+
+	inline float4x4_a YrotationM(float4x4_a m, float deg)
+	{
+		deg = deg * (3.1415f / 180.0f);
+
+		float4x4_a temp = IdentityM_a();
+		temp[0].x = cosf(deg);
+		temp[0].z = sinf(deg);
+		temp[2].x = -sinf(deg);
+		temp[2].z = cosf(deg);
+		return MultiplyM(temp, m);
+	}
+
+	inline float4x4_a ZrotationM(float4x4_a m, float deg)
+	{
+		deg = deg * (3.1415f / 180.0f);
+
+		float4x4_a temp = IdentityM_a();
+		temp[0].x = cosf(deg);
+		temp[0].y = -sinf(deg);
+		temp[1].x = sinf(deg);
+		temp[1].y = cosf(deg);
+		return MultiplyM(temp, m);
+
+	}
+	
+	inline void scale_matrix(float4x4_a& m, float x, float y, float z)
+	{
+		m[0][0] *= x;
+		m[1][1] *= y;
+		m[2][2] *= z;
+	}
+
 	inline float3_a pac(float3e in) {
 		float3_a temp;
 		temp.x = in.x;
@@ -406,7 +475,7 @@ namespace crow
 
 		return temp;
 	}
-
+	
 	inline float clampf(float in, float min, float max) {
 		return in < min ? min : (in > max ? max : in);
 	}

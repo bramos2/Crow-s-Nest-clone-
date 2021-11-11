@@ -697,6 +697,9 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		// ALL IMGUI SETUP GOES HERE
 		ImGui::CreateContext();
 		ImGui_ImplDX11_Init(device, context);
+		// this prevents imgui from making an ini file.
+        ImGuiIO& io = ImGui::GetIO();
+		io.IniFilename = NULL;
 	}
 
 	void impl_t::create_main_render_target()

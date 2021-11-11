@@ -106,6 +106,21 @@ struct level {
   // call this when loading a new level AFTER loading entities and BEFORE
   // updating the camera
   void select_default_room();
+
+  // helper functions for level loading:
+  // return is the index of the object in the respective room's object array
+
+  int place_couch(room& r, float2e position, char orientation, int number);
+  int place_table(room& r, float2e position, char orientation, int number);
+  int place_crate1(room& r, float2e position, char orientation); // don't use .5
+  int place_crate2(room& r, float2e position, float rotation); // don't use .5
+  int place_crate3(room& r, float2e position, char orientation); // don't use .5
+  int place_lightbox(room& r, float2e position, float rotation); // don't use .5
+  int place_barrel(room& r, float2e position, char orientation, int number); // don't use .5
+  int place_serverbox(room& r, float2e position, char orientation);
+  int place_electricbox(room& r, float2e position, char orientation);
+  int place_bed(room& r, float2e position, char orientation);
+  int place_chair(room& r, float2e position, char orientation); // don't use .5
 };
 
 }  // namespace crow
