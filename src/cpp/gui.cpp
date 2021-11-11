@@ -170,7 +170,7 @@ namespace crow {
             ImGui::SetCursorPos(
                 {confirm_window_wh.x * 0.15f, confirm_window_wh.y * 0.65f});
             if (ImGui::Button("Yes", confirm_button_wh)) {
-                level_number = 0;
+                level_number = 1;
                 new_game();
                 save_game();
                 crow::audio::play_sfx(crow::audio::MENU_OK);

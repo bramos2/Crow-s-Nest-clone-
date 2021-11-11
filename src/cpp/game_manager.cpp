@@ -451,6 +451,8 @@ namespace crow {
 	}
 
 	bool game_manager::r_click_update() {
+		if (minimap.inside_minimap(mouse_pos_gui)) return false;
+
 		if (buttons_frame[controls::r_mouse] != 1) {
 			return false;
 		}
