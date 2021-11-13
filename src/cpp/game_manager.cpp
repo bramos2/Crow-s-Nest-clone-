@@ -154,6 +154,13 @@ namespace crow {
 		current_message.update(dt);
 		if (current_level.interacting && current_message.progress_max &&
 			current_message.progress_max == current_message.progress) {
+			// stops broken ambient sound when a console is repaired
+			crow::object_type interact_type = current_level.interacting->type;
+			if (interact_type == crow::object_type::POWER_CONSOLE ||
+				interact_type == crow::object_type::PRESSURE_CONSOLE ||
+				interact_type == crow::object_type::OXYGEN_CONSOLE
+				) crow::audio::stop_bgs();
+
 			current_level.interacting->activate(*this);
 			current_level.interacting = nullptr;
 		}
@@ -177,7 +184,7 @@ namespace crow {
 					printf("\nDEBUG MODE ENABLED\n");
 				} 
 				else {
-					printf("\nDEBUG MODE DISSABLED\n");
+					printf("\nDEBUG MODE DISABLED\n");
 				}
 			}
 		}
@@ -240,6 +247,7 @@ namespace crow {
 				break;
 			}
 
+			sound_updates(dt);
 			room_updates(dt);
 			audio::update_audio_timers(this, dt);
 
@@ -250,6 +258,25 @@ namespace crow {
 				// mark as read
 				current_level.msg.time_remaining = 0;
 				// read: 2:11 PM
+			}
+
+			if (c_buffered_message.wait > 0) {
+				c_buffered_message.wait -= dt;
+
+				// trigger the message
+				if (c_buffered_message.wait <= 0) {
+					// defer this message until the current message passes
+					if (current_message.time_remaining > 0) {
+						c_buffered_message.wait += 0.5;
+					} else {
+						current_message = c_buffered_message.b_message;
+
+						// trigger the exit function (if applicable)
+						if (c_buffered_message._exit_function) {
+							(this->*c_buffered_message._exit_function)();
+						}
+					}
+				}
 			}
 
 			break;
@@ -333,7 +360,7 @@ namespace crow {
 	bool game_manager::l_click_update() {
 		if (buttons_frame[controls::l_mouse] != 1) return false;
 
-		current_message = crow::message();
+		if (current_message.progress_max > 0) current_message = crow::message();
 
 
 		crow::room* selected_room = current_level.selected_room;
@@ -458,10 +485,9 @@ namespace crow {
 		}
 		// stopping the player and resetting interaction handles
 		player_data.path_result.clear();
+		if (current_message.progress_max > 0) current_message = crow::message();
 		player_data.interacting = false;
 		player_data.target = nullptr;
-		current_message = crow::message();
-		return true;
 		return true;
 	}
 
@@ -520,6 +546,71 @@ namespace crow {
 				player_data.player_interact.dissable();
 				return;
 			}
+		}
+
+		// updating events
+		for (int i = 0; i < current_level.selected_room->event_triggers.size(); i++) {
+			// don't check for events if the room doesn't have the player in it
+			if (!current_level.selected_room->has_player) break;
+
+			event_trigger& t = current_level.selected_room->event_triggers[i];
+
+			// check if event is triggered
+			if (t.within_bounds(entities.get_world_position(crow::entity::WORKER))) {
+				// execute event
+				(this->*t._event)();
+				// pop event from stack
+				current_level.selected_room->event_triggers.erase(current_level.selected_room->event_triggers.begin() + i);
+			}
+		}
+	}
+
+	void game_manager::sound_updates(double dt) {
+		// this will make the enemy play foostep sounds, but only if they're moving
+		if (!crow::audio::enemy_isnt_moving(this)) {
+			crow::audio::add_footstep_sound_e(
+				(float4x4_a*)&entities.world_matrix[static_cast<size_t>(
+					crow::entity::WORKER)], 0.3f);
+		}
+
+		// processing for enemy appear sound
+		if (current_level.selected_room->has_player && current_level.selected_room->has_ai) {
+			if (enemy_appear_sound_cooldown <= 0) {
+				crow::audio::play_sfx(crow::audio::SFX::ENEMY_APPEAR);
+
+				// display the enemy appearance message for the first time it appears
+				if (!enemy_first_appearance) {
+					// if you're not currently interacting with an object, display the message immediately.
+					// otherwise, defer it just enough to finish interacting
+					if (current_message.progress_max > current_message.progress)
+							current_message = message("If that thing gets you, you're dead! RUN!", 3.5f);
+					else c_buffered_message.set(message("If that thing gets you, you're dead! RUN!", 3.5f),
+							current_message.progress_max - current_message.progress, nullptr);
+
+					// don't display this again
+					enemy_first_appearance = true;
+				}
+			}
+			enemy_appear_sound_cooldown = enemy_appear_sound_max_cooldown;
+		} else {
+			// decrement the sound cooldown to allow it to play again
+			enemy_appear_sound_cooldown -= dt;
+			if (enemy_appear_sound_cooldown < 0) enemy_appear_sound_cooldown = 0;
+		}
+
+		// setup for checking console sound
+		int console_status = current_level.selected_room->has_broken_console();
+		bool bgs_playing = crow::audio::bgs_handle != -1;
+
+		// no console in room, make sure bgs isnt playing
+		if (console_status == 0) {
+			// stop sound if playing
+			if (bgs_playing) crow::audio::stop_bgs();
+		// broken console in room, play broken electronics sound
+		} else if (console_status == 1) {
+			if (!bgs_playing) crow::audio::play_bgs(crow::audio::SFX::CONSOLE_BROKEN);
+		} else if (console_status == -1) {
+			if (!bgs_playing) crow::audio::play_bgs(crow::audio::SFX::CONSOLE_WORKING, false);
 		}
 	}
 
@@ -832,13 +923,16 @@ namespace crow {
 
 		load_level(level_number);
 		audio::play_bgm(audio::BGM::NORMAL);
+		c_buffered_message.reset();
 	}
 
 	void game_manager::end_game() {
 		audio::stop_bgm();
+		audio::stop_bgs();
 		// make sure none of these exist
 		audio::clear_audio_timers();
 		current_level.clean_level();
+		c_buffered_message.reset();
 		cleanup();
 		entities.pop_all();
 		ai_bt.clean_tree();
@@ -846,6 +940,8 @@ namespace crow {
 
 	void game_manager::change_level(int lv) {
 		level_number = lv;
+		audio::stop_bgs();
+		c_buffered_message.reset();
 
 		// after all clean up is done, it's time to start loading the next level
 		if (lv - 1 == crow::final_level) {
@@ -867,6 +963,10 @@ namespace crow {
 	}
 
 	void game_manager::load_level(int lv) {
+		// setting this bool properly for the tutorial popup for when the enemy appears for the first time
+		if (lv < 2) enemy_first_appearance = false; // allow popup to occur once
+		else enemy_first_appearance = true; // don't allow popup to occur
+
 		// reset any variables that may need resetting
 		player_data.player_interact.is_active = true;
 

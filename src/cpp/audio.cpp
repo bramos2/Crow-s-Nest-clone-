@@ -4,14 +4,20 @@
 
 namespace crow {
     namespace audio {
+        // float to multiply bgm by when bgs is playing
+        const float bgs_mute_coefficient = 0.2f;
+        // float to multiply bgs volume by since the sounds are very loud
+        const float bgs_volume_coefficient = 0.4f;
 
         SoLoud::Soloud soloud;
-        SoLoud::WavStream bgm[NUM_BGM];
-        SoLoud::Wav sfx[NUM_SFX];
+        SoLoud::WavStream bgm[BGM::BGM_COUNT];
+        SoLoud::Wav sfx[SFX::SFX_COUNT];
         bool sound_loaded;
         std::vector<timed_audio> audio_timers;
         // handle of currently playing bgm
         int bgm_handle;
+        // handle of currently playing bgs
+        int bgs_handle;
         // volume of ALL sounds
         float all_volume;
         // volume of bgm ONLY (stacks with all_volume)
@@ -26,12 +32,13 @@ namespace crow {
             sfx_volume = 1;
 
             bgm_handle = -1;
+            bgs_handle = -1;
             soloud.init();
             load_all_sounds();
         }
         // all audio-related cleanup called here
         void cleanup() { soloud.deinit(); }
-
+        
         int play_bgm(int id) {
             bgm_handle = soloud.play(bgm[id], bgm_volume);
             // prevents the bgm from dying just because there's too many sfx
@@ -39,8 +46,27 @@ namespace crow {
             return bgm_handle;
         }
 
+        int play_bgs(int id, bool reduce) {
+            bgs_handle = soloud.play(sfx[id], sfx_volume * bgs_volume_coefficient);
+            // prevents the bgm from dying just because there's too many sfx
+            soloud.setProtectVoice(bgs_handle, 1);
+
+            // decreases the volume of the bgm while bgs is playing
+            if (reduce && bgm_handle != -1) {
+                soloud.setVolume(bgm_handle, bgm_volume * bgs_mute_coefficient);
+            }
+            return bgs_handle;
+        }
+
         void stop_bgm() { soloud.stop(bgm_handle); bgm_handle = -1; }
         void stop_bgm(int handle) { soloud.stop(handle); }
+
+        void stop_bgs() {
+            soloud.stop(bgs_handle);
+            bgs_handle = -1;
+            // revert the bgm volume
+            soloud.setVolume(bgm_handle, bgm_volume);
+        }
 
         int play_sfx(int id) {
           int voice = soloud.play(sfx[id], sfx_volume);
@@ -65,25 +91,28 @@ namespace crow {
         }
 
         void load_all_sounds() {
-          // initialize the string that we use to load stuff
-          std::string sound_path;
-
           // loading sounds one by one
-          sound_path = "res/sfx/footstep00.ogg";
-          load_sfx(sound_path, 0);
+          load_sfx("res/sfx/footstep00.ogg", SFX::FOOTSTEP_WORKER);
+          load_sfx("res/sfx/Menu_Select.wav", SFX::MENU_OK);
+          load_sfx("res/sfx/Radio_Chatter_3.wav", SFX::INTERACT); // placeholder
+          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_LOCK); // placeholder
+          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_UNLOCK); // placeholder
+          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_LOCKED); // placeholder
+          load_bgs("res/sfx/Busted_electronics.wav", SFX::CONSOLE_BROKEN);
+          load_bgs("res/sfx/Laboratory_digital_equipment.wav", SFX::CONSOLE_WORKING);
+          load_sfx("res/sfx/Monster_Step_3.wav", SFX::ENEMY_FOOTSTEP);
+          load_sfx("res/sfx/bong_001.ogg", SFX::ENEMY_APPEAR); // placeholder
+          load_sfx("res/sfx/slap.wav", SFX::ENEMY_ATTACK); // placeholder
+          load_sfx("res/sfx/Alarm_Blaring.wav", SFX::ALARM);
 
-          sound_path = "res/sfx/Menu_Select.wav";
-          load_sfx(sound_path, 1);
-
-          // loading bgm one by one
-          sound_path = "res/bgm/cavethemeb4.ogg";
-          load_bgm(sound_path, 0);
+          // loading bgm
+          load_bgm("res/bgm/cavethemeb4.ogg", 0);
 
           sound_loaded = true;
         }
 
-        bool load_sfx(std::string& path, int i) {
-          sfx[i].load(path.c_str());
+        bool load_sfx(char* path, int i) {
+          sfx[i].load(path);
           sfx[i].setLooping(0);
           sfx[i].setInaudibleBehavior(false, true);
           // successfully loaded a sound, return true
@@ -92,8 +121,8 @@ namespace crow {
           return false;
         }
 
-        bool load_bgm(std::string& path, int i) {
-          bgm[i].load(path.c_str());
+        bool load_bgm(char* path, int i) {
+          bgm[i].load(path);
           bgm[i].setLooping(1);
           bgm[i].setInaudibleBehavior(true, false);
           // successfully loaded a sound, return true
@@ -102,9 +131,23 @@ namespace crow {
           return false;
         }
 
+        bool load_bgs(char* path, int i) {
+          sfx[i].load(path);
+          sfx[i].setLooping(1);
+          sfx[i].setInaudibleBehavior(true, false);
+          // successfully loaded a sound, return true
+          if (sfx[i].mSampleCount) return true;
+          // sound is null, return false
+          return false;
+        }
+
         void update_volume() {
             soloud.setGlobalVolume(all_volume);
             if (bgm_handle != -1) soloud.setVolume(bgm_handle, bgm_volume);
+            if (bgs_handle != -1) {
+                soloud.setVolume(bgm_handle, bgm_volume * bgs_mute_coefficient);
+                soloud.setVolume(bgs_handle, sfx_volume * bgs_volume_coefficient);
+            }
         }
 
         void add_footstep_sound(float4x4_a* worker_position, float interval) {
@@ -117,6 +160,21 @@ namespace crow {
           crow::audio::audio_timers.push_back(
               crow::audio::timed_audio(crow::audio::worker_isnt_moving, worker_position,
                                        crow::audio::FOOTSTEP_WORKER, interval, -1));
+        }
+
+        void add_footstep_sound_e(float4x4_a* enemy_position, float interval) {
+            // search for a previously existing instance of this sound
+            int index = crow::audio::audio_timers_index(crow::audio::enemy_isnt_moving);
+
+            // if found, give up, we are already playing the sound
+            if (index != -1) {
+                return;
+            }
+
+            // if not found, add new instance
+            crow::audio::audio_timers.push_back(
+                crow::audio::timed_audio(crow::audio::enemy_isnt_moving, enemy_position,
+                                        crow::audio::ENEMY_FOOTSTEP, interval, -1));
         }
 
         bool audio_timers_includes(bool (*_escape_clause)(crow::game_manager* state)) {
@@ -155,24 +213,40 @@ namespace crow {
             audio_timers[i].timer += dt;
             // check to see if we should play a sound because we hit the time threshold
             if (audio_timers[i].timer >= audio_timers[i].time_frame) {
+              audio_timers[i].timer -= audio_timers[i].time_frame;
+              audio_timers[i].loops_remaining--;
+
+                // hotfix to prevent sounds from playing when the relevant actor is present
+                // there are far more elegant ways to do this but there is no need for it
+                if (audio_timers[i].escape_clause == &worker_isnt_moving) {
+                    // check to see if the worker is in the room before playing sound
+                    if (!state->current_level.selected_room->has_player) continue;
+                }
+                if (audio_timers[i].escape_clause == &enemy_isnt_moving) {
+                    // check to see if the worker is in the room before playing sound
+                    if (!state->current_level.selected_room->has_ai) continue;
+                }
+
               // plays a 3d sound if the sound has a position, plays a regular (not-3d)
               // sound otherwise
               if (audio_timers[i].position)
                 play_sfx3d(audio_timers[i].sound, *audio_timers[i].position,
                            state->view);
-              else
-                play_sfx(audio_timers[i].sound);
-              audio_timers[i].timer -= audio_timers[i].time_frame;
-              audio_timers[i].loops_remaining--;
+              else play_sfx(audio_timers[i].sound);
             }
           }
         }
-
+        
         bool worker_isnt_moving(crow::game_manager* state) {
-          if (state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].x ==
-                  0 &&
-              state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].z ==
-                  0)
+          if (state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].x == 0 &&
+              state->entities.velocities[static_cast<size_t>(crow::entity::WORKER)].z == 0)
+            return true;
+          return false;
+        }
+
+        bool enemy_isnt_moving(crow::game_manager* state) {
+          if (state->entities.velocities[static_cast<size_t>(crow::entity::SPHYNX)].x == 0 &&
+              state->entities.velocities[static_cast<size_t>(crow::entity::SPHYNX)].z == 0)
             return true;
           return false;
         }

@@ -96,6 +96,7 @@ set(CPP_FILES
   src/cpp/search_theta.cpp
   src/cpp/super_matrix.cpp
   src/cpp/tile.cpp
+  src/cpp/tutorial.cpp
   src/cpp/view.cpp
   src/cpp/XTime.cpp
 )

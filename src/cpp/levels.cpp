@@ -52,6 +52,9 @@ namespace crow {
 				place_table(rooms[2][1], { 12.5f, 7.5f }, 'u', 1);
 				place_table(rooms[2][1], { 16.5f, 7.5f }, 'u', 1);
 				place_table(rooms[2][1], { 8.5f, 7.5f }, 'u', 1);
+
+				// tutorial
+				rooms[2][1].event_triggers.push_back(event_trigger({ -10, -7}, { 1, 7}, &game_manager::t_locked_door_message));
 			}
 
 			rooms[1][1].id = 2;
@@ -118,6 +121,9 @@ namespace crow {
 				place_table(rooms[2][0], { 22.5f, 2.5f }, 'u', 1);
 				place_table(rooms[2][0], { 20.5f, 7.5f }, 'r', 1);
 				place_table(rooms[2][0], { 22.5f, 10.5f }, 'u', 1);
+
+				// tutorial
+				rooms[2][0].event_triggers.push_back(event_trigger({ -1, -1}, { 1, 1}, &game_manager::t_first_control_message));
 			}
 
 			rooms[2][2].id = 4;
@@ -302,8 +308,8 @@ namespace crow {
 				
 				place_table(rooms[0][2], { 10.5f, 5.5f }, 'u', 1);
 				place_table(rooms[0][2], { 14.5f, 5.5f }, 'u', 1);
-				place_table(rooms[0][2], { 10.5f, 7.5f }, 'u', 1);
-				place_table(rooms[0][2], { 14.5f, 7.5f }, 'u', 1);
+				place_table(rooms[0][2], { 10.5f, 7.5f }, 'd', 1);
+				place_table(rooms[0][2], { 14.5f, 7.5f }, 'd', 1);
 				
 				place_chair(rooms[0][2], { 8, 6 }, 'r');
 				place_chair(rooms[0][2], { 8, 7 }, 'r');
@@ -613,6 +619,21 @@ namespace crow {
 		found_ai = false;
 		for (auto& i : rooms) {
 			for (auto& j : i) {
+				// automatically locks all doors connected to locked doors
+				for (int k = 0; k < j.objects.size(); k++) {
+					if (j.objects[k]->type == crow::object_type::DOOR) {
+						crow::door* d = (crow::door*)(j.objects[k]);
+
+						if (!d->neighbor) {
+							printf("error! Found an incorrectly configured door!");
+							continue;
+						}
+
+						if (!d->is_active) d->neighbor->is_active = false;
+					}
+				}
+
+				// properly set the starting room variables
 				for (int k = 0; k < j.object_indices.size(); k++) {
 					if (j.object_indices[k] == 0) {
 						this->starting_room = j.id;

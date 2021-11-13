@@ -1,4 +1,5 @@
 #include "..\hpp\enemy_behaviors.hpp"
+#include "../hpp/audio.hpp"
 
 #include <time.h>
 
@@ -191,6 +192,11 @@ namespace crow {
 				// we ignore any doors with lower heat values
 			}
 		}
+
+		// i ran into a divide by zero error here,
+		// this line should prevent the game from crashing,
+		// but i don't know what will happen when tinx.size() == 0
+		if (tinx.size() == 0) return result;
 
 		// we pick a random index inside the index list
 		size_t choice = rand() % tinx.size();
@@ -450,6 +456,9 @@ namespace crow {
 				//        m.target = nullptr;
 				//    }
 
+				// sound effect of destroyed target
+				crow::audio::play_sfx(crow::audio::SFX::ENEMY_ATTACK);
+
 				m.target->dissable();
 				if (!m.target->is_broken) {
 					return crow::status::RUNNING;
@@ -495,6 +504,9 @@ namespace crow {
 				result = crow::status::PASSED;
 			}
 			else {
+				// sound effect of destroyed target
+				crow::audio::play_sfx(crow::audio::SFX::ENEMY_ATTACK);
+
 				m.target->dissable();
 				m.target = nullptr;
 				m.counter--;

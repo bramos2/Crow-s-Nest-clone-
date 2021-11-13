@@ -10,8 +10,6 @@
 #include "../../ext/soloud/include/soloud_wav.h"
 #include "../../ext/soloud/include/soloud_wavstream.h"
 
-#define NUM_BGM 1
-#define NUM_SFX 2
 // distance (squared) that sounds can furthest be heard from, used in the 3d
 // audio formula
 #define VOLUME_MAXDIST_SQUARED 10000.f
@@ -62,9 +60,23 @@ struct timed_audio {
 };
 
 // readable names for every bgm object in the game
-enum BGM : int { NORMAL = 0, TITLE = 1, DETECTED = 2 };
+enum BGM : int { NORMAL, TITLE, DETECTED, BGM_COUNT };
 // readable names for every sfx object in the game
-enum SFX : int { FOOTSTEP_WORKER = 0, MENU_OK = 1, BEAKER_BREAK = 2 };
+enum SFX : int { 
+    FOOTSTEP_WORKER,
+    MENU_OK,
+    INTERACT,
+    DOOR_LOCK,
+    DOOR_UNLOCK,
+    DOOR_LOCKED,
+    CONSOLE_BROKEN,
+    CONSOLE_WORKING,
+    ENEMY_FOOTSTEP,
+    ENEMY_APPEAR,
+    ENEMY_ATTACK,
+    ALARM,
+    SFX_COUNT
+};
 
 // must be defined in order to play audio
 extern SoLoud::Soloud soloud;
@@ -72,10 +84,10 @@ extern SoLoud::Soloud soloud;
 // holds every background sound object in the game
 // the WavStream object doesn't hold the entire sound in memory, and instead
 // streams the data on demand
-extern SoLoud::WavStream bgm[NUM_BGM];
+extern SoLoud::WavStream bgm[BGM::BGM_COUNT];
 
 // holds every sound effect object in the game
-extern SoLoud::Wav sfx[NUM_SFX];
+extern SoLoud::Wav sfx[SFX::SFX_COUNT];
 
 // set to true when all sounds are loaded, should be false otherwise
 extern bool sound_loaded;
@@ -83,6 +95,7 @@ extern bool sound_loaded;
 extern std::vector<timed_audio> audio_timers;
 
 extern int bgm_handle;
+extern int bgs_handle;
 extern float all_volume;
 extern float bgm_volume;
 extern float sfx_volume;
@@ -97,19 +110,26 @@ void cleanup();
 void load_all_sounds();
 
 // load into this id, the sfx at this path
-bool load_sfx(std::string& path, int i);
+bool load_sfx(char* path, int i);
 
 // load into this id, the bgm at this path
-bool load_bgm(std::string& path, int i);
+bool load_bgm(char* path, int i);
+// load into this id, the bgs at this path
+// note that it loads it as a sfx, with bgm parameters
+bool load_bgs(char* path, int i);
 
 // ************ playing functions ************ //
 
-// play background audio
+// play background music
 int play_bgm(int id);
+// plau background sound
+int play_bgs(int id, bool reduce = true);
 
 // stop playing the bgm represented by the handle
 void stop_bgm();
 void stop_bgm(int handle);
+// stops playing the bgs 
+void stop_bgs();
 
 // a static, barebones play sound function
 int play_sfx(int id);
@@ -126,6 +146,7 @@ int play_sfx3d(int id, float4x4_a& sfx_pos, view_t& camera,
 void update_volume();
 
 void add_footstep_sound(float4x4_a* worker_position, float interval);
+void add_footstep_sound_e(float4x4_a* enemy_position, float interval);
 
 // checks if an audio timer with the passed in escape clause exists
 // returns true if it exists
@@ -141,6 +162,8 @@ void update_audio_timers(crow::game_manager* state, float dt);
 
 // simply returns true if the worker isnt moving, and false if he is
 bool worker_isnt_moving(crow::game_manager* state);
+// ditto but for the ai
+bool enemy_isnt_moving(crow::game_manager* state);
 
 }  // namespace audio
 }  // namespace crow

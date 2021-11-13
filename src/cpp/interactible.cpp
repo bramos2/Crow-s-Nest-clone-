@@ -1,4 +1,5 @@
 #include "../hpp/interactible.hpp"
+#include "../hpp/audio.hpp"
 
 #include "../hpp/game_manager.hpp"
 #include "../hpp/map.hpp"
@@ -96,6 +97,8 @@ namespace crow {
 			current_level->interacting = this;
 			current_level->msg = message("Repairing oxygen console...", crow::default_message_time - 1.0f,
 				crow::default_interact_wait);
+			// TODO::we can use the return from this function to stop the sound if the action is cancelled
+			int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
 		}
 	}
 
@@ -119,6 +122,8 @@ namespace crow {
 			current_level->interacting = this;
 			current_level->msg = message("Repairing pressure console...", crow::default_message_time - 1.0f,
 				crow::default_interact_wait);
+			// TODO::we can use the return from this function to stop the sound if the action is cancelled
+			int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
 		}
 	}
 
@@ -158,11 +163,18 @@ namespace crow {
 		current_level->interacting = this;
 		current_level->msg = message(text, crow::default_message_time - 1.0f,
 			crow::default_interact_wait);
+		// TODO::we can use the return from this function to stop the sound if the action is cancelled
+		int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
 	}
 
 	// we may not need to pass in the game state anymore
 	void door_panel::activate(crow::game_manager& state) {
 		door->is_active = door->neighbor->is_active = !door->is_active;
+		if (door->is_active) {
+			crow::audio::play_sfx(crow::audio::SFX::DOOR_UNLOCK);
+		} else {
+			crow::audio::play_sfx(crow::audio::SFX::DOOR_LOCK);
+		}
 	}
 
 	door_panel::door_panel(crow::level* _lv) {
@@ -181,7 +193,7 @@ namespace crow {
 		}
 
 		if (is_active == false) {
-			// we should play some sort of sound here maybe, the door is visually locked so no point on writting a message
+			crow::audio::play_sfx(crow::audio::SFX::DOOR_LOCKED);
 			return;
 		}
 

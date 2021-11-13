@@ -288,5 +288,20 @@ namespace crow {
 		return result;
 	}
 
+	int room::has_broken_console() {
+		int result = 0;
+		for (crow::interactible*& i : objects) {
+			switch (i->type) {
+			// ONLY check these types of objects
+			case object_type::OXYGEN_CONSOLE:
+			case object_type::PRESSURE_CONSOLE:
+			case object_type::POWER_CONSOLE:
+				if (i->is_broken) result = 1;
+				else if (result == 0) result = -1;
+				// broken console has priority over working console
+			}
+		}
+		return result;
+	}
 
 }  // namespace crow

@@ -36,6 +36,8 @@ namespace crow {
 
 		game_state prev_state = game_state::MAIN_MENU;
 		float state_time = 0;
+		float enemy_appear_sound_cooldown = 0;
+		const float enemy_appear_sound_max_cooldown = 20;
 
 		// animatiors
 		animator player_animator;
@@ -60,6 +62,10 @@ namespace crow {
 		level current_level;
 		crow::minimap minimap;
 		crow::message current_message;
+
+		// set to true the first time the enemy appears. false otherwise
+		// used only by the tutorial
+		bool enemy_first_appearance;
 
 		// camera values
 		float3e cam_pos = float3e(0.f, 20.f, -2.f);
@@ -150,6 +156,28 @@ namespace crow {
 			};
 		};
 
+		// used to display messages after a delay
+		struct buffered_message {
+			// message to display
+			message b_message;
+			// time to wait before displaying the message
+			// negative means don't display.
+			double wait = -1.0;
+			// function to be called when the message is displayed
+			void (crow::game_manager::* _exit_function)() = nullptr;
+
+			void reset() {
+				wait = -1.0;
+				_exit_function = nullptr;
+			}
+
+			void set(message _m, double _w, void (crow::game_manager::* _e)()) {
+				b_message = _m;
+				wait = _w;
+				_exit_function = _e;
+			}
+		} c_buffered_message;
+
 		// all ai components
 		crow::behavior_tree ai_bt;
 		crow::ai_manager ai_m;
@@ -174,6 +202,8 @@ namespace crow {
 		bool r_click_update();
 		// updates room metadata such as oxygen remaining, pressure, doors, etc
 		void room_updates(double dt);
+		// updates various things related to sound
+		void sound_updates(double dt);
 
 		void render();
 		void render_game();
@@ -218,6 +248,14 @@ namespace crow {
 
 		// gets the size of the game window
 		ImVec2 get_window_size();
+
+		// tutorial functions
+		void t_first_control_message();
+		void t_second_control_message();
+		void t_third_control_message();
+		void t_fourth_control_message();
+		void t_fifth_control_message();
+		void t_locked_door_message();
 
 	private:
 		std::vector<double> buttons;

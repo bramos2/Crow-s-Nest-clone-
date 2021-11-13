@@ -67,6 +67,8 @@ namespace crow {
             ImGui::Text("mousewheel: %i", mwheel_delta);
             ImGui::SameLine();
             ImGui::Text("   rclick: %i", io.MouseDown[1]);
+            DirectX::XMFLOAT3 worker_pos = entities.get_world_position(crow::entity::WORKER);
+            ImGui::Text("worker: %f, %f", worker_pos.x, worker_pos.z);
 		    if (ImGui::Button("click me")) audio::play_sfx(0);
         }
 

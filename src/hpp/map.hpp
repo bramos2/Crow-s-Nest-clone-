@@ -12,6 +12,23 @@
 namespace crow {
     class game_manager;
 
+    struct event_trigger {
+        float2e top_left;
+        float2e bottom_right;
+        void (crow::game_manager::* _event)();
+
+        event_trigger(float2e _tl, float2e _br, void (crow::game_manager::* _e)())
+                : top_left(_tl), bottom_right(_br), _event(_e) { }
+
+        bool within_bounds(DirectX::XMFLOAT3 pos) {
+            if (pos.x > top_left.x && pos.z > top_left.y &&
+                pos.x < bottom_right.x && pos.z < bottom_right.y) {
+                return true;
+            }
+            return false;
+        }
+    };
+
 struct room {
   // how much to scale the width and length variables of the room when drawing
   // the minimap
@@ -32,6 +49,9 @@ struct room {
 
   /*float3e cam_pos = float3e(0.f, 20.f, -2.f);
   float3e cam_rotation = float3e(-85.f, 0.f, 0.f);*/
+
+  // contains all events that may be in this level
+  std::vector<crow::event_trigger> event_triggers;
 
   // contains the entity index of every object that is in this room
   std::vector<size_t> object_indices;
@@ -61,6 +81,13 @@ struct room {
   float2e get_tile_wpos(tile* const tile);
   tile* get_tile_at(float2e const pos);
   std::vector<float2e> get_path(float2e start, float2e goal);
+  // checks if a room has a broken console
+  // used to play the ambient noise of a broken console
+  //        returns:
+  //             0 = no console found
+  //            -1 = working console found
+  //             1 = broken console found
+  int room::has_broken_console();
 };
 
 struct level {
