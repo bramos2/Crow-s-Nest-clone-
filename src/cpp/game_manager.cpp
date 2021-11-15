@@ -198,7 +198,7 @@ namespace crow {
 		case game_state::PLAYING:
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
-
+			
 			// all ai updates (player and enemy) here
 			//if (false) {
 			if (current_level.found_ai) { ai_bt.run(dt); }
@@ -326,6 +326,11 @@ namespace crow {
 				//crow::update_room_cam(current_level.selected_room, view); 
 				crow::update_room_cam(pac(cam_pos), pac(cam_rotation), view);
 			}
+
+			// particle stuff
+			p_impl->set_sorted_particles(emitter1, 30);
+			p_impl->update_sorted_particles(emitter1, dt);
+
 
 			// VERY LAST thing to do should be to update the camera
 			view.update();
@@ -507,7 +512,6 @@ namespace crow {
 					// this kills the worker
 					if (r.oxygen <= 0) {
 						r.oxygen = 0;
-						//game_over();
 						player_data.player_interact.dissable();
 						return;
 					}
@@ -519,13 +523,11 @@ namespace crow {
 					}
 					/*std::string hval = "\nheat: " + std::to_string(o->heat);*/
 					// for doors update the heat value
-					if (o->heat > 0.0005f) {
-						o->heat -= static_cast<float>(dt) * 0.01f;
-						/*std::printf(hval.c_str());*/
+					if (o->heat > 0.05f) {
+						o->heat -= static_cast<float>(dt);
 					}
-					else if (o->heat < 0.0005f) {
-						o->heat += static_cast<float>(dt) * 0.01f;
-						/*std::printf(hval.c_str());*/
+					else if (o->heat < 0.05f) {
+						o->heat += static_cast<float>(dt);
 					}
 					else {
 						o->heat = 0.f;

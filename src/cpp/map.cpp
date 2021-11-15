@@ -210,6 +210,16 @@ namespace crow {
 				}
 				break;
 			}
+			case object_type::EXIT:
+			{
+				if (i->x == 0 || i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, -90.f);
+				}
+				state.entities.scale_world_matrix(object_indices.back(), 0.35f);
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::DOOR];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::DOOR_EXIT];
+				break;
+			}
 			default:
 			{
 				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CUBE];
@@ -241,7 +251,7 @@ namespace crow {
 	void room::update_room_doors(std::vector<ID3D11ShaderResourceView*>& textures, entities& entities)
 	{
 		for (auto& o : objects) {
-			if (o->type == crow::object_type::DOOR || o->type == crow::object_type::EXIT) {
+			if (o->type == crow::object_type::DOOR) {
 				if (o->is_active) {
 					entities.s_resource_view[o->entity_index] = textures[game_manager::texture_list::DOOR_OPEN];
 				}

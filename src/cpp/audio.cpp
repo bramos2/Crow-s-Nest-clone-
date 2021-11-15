@@ -94,15 +94,15 @@ namespace crow {
           // loading sounds one by one
           load_sfx("res/sfx/footstep00.ogg", SFX::FOOTSTEP_WORKER);
           load_sfx("res/sfx/Menu_Select.wav", SFX::MENU_OK);
-          load_sfx("res/sfx/Radio_Chatter_3.wav", SFX::INTERACT); // placeholder
-          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_LOCK); // placeholder
-          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_UNLOCK); // placeholder
-          load_sfx("res/sfx/bong_001.ogg", SFX::DOOR_LOCKED); // placeholder
+          load_sfx("res/sfx/Keyboard_Typing.wav", SFX::INTERACT);
+          load_sfx("res/sfx/Opening_door.wav", SFX::DOOR_LOCK); // we could probably get an additional sound
+          load_sfx("res/sfx/Opening_door.wav", SFX::DOOR_UNLOCK);
+          load_sfx("res/sfx/Locking_Door.wav", SFX::DOOR_LOCKED); 
           load_bgs("res/sfx/Busted_electronics.wav", SFX::CONSOLE_BROKEN);
           load_bgs("res/sfx/Laboratory_digital_equipment.wav", SFX::CONSOLE_WORKING);
           load_sfx("res/sfx/Monster_Step_3.wav", SFX::ENEMY_FOOTSTEP);
-          load_sfx("res/sfx/bong_001.ogg", SFX::ENEMY_APPEAR); // placeholder
-          load_sfx("res/sfx/slap.wav", SFX::ENEMY_ATTACK); // placeholder
+          load_sfx("res/sfx/Monster_Scream.wav", SFX::ENEMY_APPEAR);
+          load_sfx("res/sfx/Door_Bang.wav", SFX::ENEMY_ATTACK);
           load_sfx("res/sfx/Alarm_Blaring.wav", SFX::ALARM);
 
           // loading bgm

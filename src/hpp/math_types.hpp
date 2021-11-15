@@ -510,36 +510,10 @@ namespace crow
 		//inline mesh_vertex(const float3e& p, const float3e& n, const float2e& u) : pos{ p }, normal{ n }, uv{ u } {}
 	};
 
-	/*struct joint_f
-	{
-		float transform[4][4];
-		int parent_index;
-	};*/
-
-	struct j_x
-	{
-		DirectX::XMFLOAT4X4 transform;
-		int parent_index;
-	};
-
-	struct kFrame
-	{
-		double time;
-		std::vector<j_x> joints;
-	};
-
-	struct aClip
-	{
-		double duration;
-		std::vector<kFrame> frames;
-	};
-
 	static float randFloat(float min, float max)
 	{
 		return (max - min) * (rand() / (float)RAND_MAX) + min;
 	}
-
-
 
 	struct mat_t
 	{

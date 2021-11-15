@@ -10,38 +10,6 @@ namespace crow {
 	{
 		{
 			hwnd = (HWND)window_handle;
-			//LoadData(); //terrain for engine dev
-			//exporting and loading data from our fbx using our library
-			//export_fbx_mesh("../Renderer/Assets/Run.fbx");
-			/*load_anim_data("res/animations/Run.anim", animationClip);
-			load_bin_data("res/meshes/Run.bin", meshInds, meshVerts);
-			load_mat_data("res/textures/Run.mat", filePaths, materials);*/
-			//modifying file paths for textures/materials
-			/*std::string folPath = "res/textures/";
-			for (int i = 0; i < filePaths.size(); ++i)
-			{
-				size_t spos = filePaths[i].find_first_of('\\');
-				filePaths[i].at(spos) = '/';
-				filePaths[i].erase(remove(filePaths[i].begin(), filePaths[i].end(), '\\'), filePaths[i].end());
-				filePaths[i] = folPath + filePaths[i];
-				replaceExt(filePaths[i], "dds");
-			}
-			diffuseTexturePath = filePaths[0];
-			if (filePaths.size() > 1)
-			{
-				emissiveTexturePath = filePaths[1];
-				specularTexturePath = filePaths[2];
-			}
-			else
-			{
-				emissiveTexturePath = specularTexturePath = "";
-			}*/
-
-			////getting inverted bind pose
-			//for (int i = 0; i < animationClip.frames[0].joints.size(); ++i) //preparing the bind pose
-			//{
-			//	InvBindPose[i] = XMMatrixInverse(nullptr, XMLoadFloat4x4(&animationClip.frames[0].joints[i].transform));
-			//}
 
 			create_device_and_swapchain();
 
@@ -50,8 +18,6 @@ namespace crow {
 			setup_depth_stencil();
 
 			setup_rasterizer();
-
-			//CreateTexture(diffuseTexturePath, emissiveTexturePath, specularTexturePath);
 
 			CreateSamplerState();
 
@@ -76,214 +42,15 @@ namespace crow {
 		}
 	}
 
-	//void impl_t::replaceExt(std::string& s, const std::string& newExt)
-	//{
-	//	std::string::size_type i = s.rfind('.', s.length());
-
-	//	if (i != std::string::npos) {
-	//		s.replace(i + 1, newExt.length(), newExt);
-	//	}
-	//}
-
-	//void impl_t::load_mat_data(const char* file_path, std::vector<std::string>& filePaths, std::vector<mat_t>& materials)
-	//{
-	//	uint32_t materialsCount;
-	//	uint32_t pathCount;
-
-	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
-	//	assert(file.is_open());
-
-	//	if (!file.is_open())
-	//	{
-	//		assert(false);
-	//		return;
-	//	}
-
-	//	file.read((char*)&materialsCount, sizeof(uint32_t));
-	//	materials.resize(materialsCount);
-	//	file.read((char*)materials.data(), materialsCount * sizeof(mat_t));
-	//	file.read((char*)&pathCount, sizeof(uint32_t));
-	//	filePaths.resize(pathCount);
-	//	for (int i = 0; i < pathCount; ++i)
-	//	{
-	//		std::string curr;
-	//		uint32_t stringSize;
-	//		file.read((char*)&stringSize, sizeof(uint32_t));
-	//		curr.resize(stringSize);
-	//		file.read((char*)curr.data(), stringSize * sizeof(char));
-	//		filePaths[i] = curr;
-	//	}
-
-	//	file.close();
-	//}
-
-	//void impl_t::load_bin_data(const char* file_path, std::vector<uint32_t>& mesh_inds, std::vector<mesh_vertex>& mesh_verts)
-	//{
-	//	uint32_t indexCount;
-	//	uint32_t vertexCount;
-
-	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
-
-	//	assert(file.is_open());
-
-	//	if (!file.is_open())
-	//	{
-	//		assert(false);
-	//		return;
-	//	}
-	//	//retrieving index data
-	//	file.read((char*)&indexCount, sizeof(uint32_t));
-	//	mesh_inds.resize(indexCount);
-	//	file.read((char*)mesh_inds.data(), indexCount * sizeof(uint32_t));
-
-	//	//retrieving vertex data
-	//	file.read((char*)&vertexCount, sizeof(uint32_t));
-	//	mesh_verts.resize(vertexCount);
-	//	file.read((char*)mesh_verts.data(), vertexCount * sizeof(mesh_vertex));
-
-	//	file.close();
-	//}
-
-	//void impl_t::load_anim_data(const char* file_path, aClip& animationClip)
-	//{
-	//	uint32_t frameCount;
-
-	//	std::fstream file{ file_path, std::ios_base::in | std::ios_base::binary };
-	//	assert(file.is_open());
-
-	//	if (!file.is_open())
-	//	{
-	//		assert(false);
-	//		return;
-	//	}
-
-	//	//read duration as double into animation clip 
-	//	file.read((char*)&animationClip.duration, sizeof(double));
-	//	//then read the number of frames as uint32_t
-	//	file.read((char*)&frameCount, sizeof(uint32_t));
-	//	//loop for each frame
-	//	for (int f = 0; f < frameCount; ++f)
-	//	{
-	//		//create keyframe
-	//		kFrame currentFrame;
-	//		//read current frame time as double
-	//		file.read((char*)&currentFrame.time, sizeof(double));
-	//		//read the number of joints in this frame as uint32_t
-	//		uint32_t jointCount;
-	//		file.read((char*)&jointCount, sizeof(uint32_t));
-	//		//resize joints container inside this keyframe
-	//		currentFrame.joints.resize(jointCount);
-	//		//read the data into the joints container as number of joints in this frame * size of joint_x
-	//		file.read((char*)currentFrame.joints.data(), jointCount * sizeof(j_x));
-	//		//push keyframe into animation clip
-	//		animationClip.frames.push_back(currentFrame);
-	//	}
-
-	//	file.close();
-	//}
-
-	//void impl_t::TranslateJoints(kFrame& frame, float3e translation)
-	//{
-	//	for (int i = 0; i < frame.joints.size(); ++i)
-	//	{
-	//		frame.joints[i].transform.m[3][0] += translation.x;
-	//		frame.joints[i].transform.m[3][1] += translation.y;
-	//		frame.joints[i].transform.m[3][2] += translation.z;
-	//	}
-	//}
-
-void impl_t::draw_path(std::vector<float2e> path, float4e color)
-{
-	for (auto& p : path) {
-		float3e pos = float3e(p.x, 0.f, p.y);
-		float3e des = float3e(p.x, 1.f, p.y);
-
-		crow::debug_renderer::add_line(pos, des, color);
-	}
-}
-
-void impl_t::drawJointTransform(j_x joint, float3e translation)
+	void impl_t::draw_path(std::vector<float2e> path, float4e color)
 	{
-		float3e pos = float3e(joint.transform.m[3][0] + translation.x, joint.transform.m[3][1] + translation.y,
-			joint.transform.m[3][2] + translation.z);
+		for (auto& p : path) {
+			float3e pos = float3e(p.x, 0.f, p.y);
+			float3e des = float3e(p.x, 1.f, p.y);
 
-		float3e xAxis = float3e(joint.transform.m[0][0] / 2 + pos.x, joint.transform.m[0][1] / 2 + pos.y, joint.transform.m[0][2] / 2 + pos.z);
-		float3e yAxis = float3e(joint.transform.m[1][0] / 2 + pos.x, joint.transform.m[1][1] / 2 + pos.y, joint.transform.m[1][2] / 2 + pos.z);
-		float3e zAxis = float3e(joint.transform.m[2][0] / 2 + pos.x, joint.transform.m[2][1] / 2 + pos.y, joint.transform.m[2][2] / 2 + pos.z);
-
-		crow::debug_renderer::add_line(pos, xAxis, crow::float4e(1.0f, 0, 0, 1.0f));
-		crow::debug_renderer::add_line(pos, yAxis, crow::float4e(0, 1.0f, 0, 1.0f));
-		crow::debug_renderer::add_line(pos, zAxis, crow::float4e(0, 0, 1.0f, 1.0f));
-	}
-
-	void impl_t::drawKeyFrame(kFrame frame, float3e translation)
-	{
-		for (int i = 0; i < frame.joints.size(); ++i)
-		{
-			drawJointTransform(frame.joints[i], translation);
-			int p = frame.joints[i].parent_index;
-			if (p >= 0)
-			{
-				float3e currPos = float3e(frame.joints[i].transform.m[3][0] + translation.x,
-					frame.joints[i].transform.m[3][1] + translation.y, frame.joints[i].transform.m[3][2] + translation.z);
-				float3e parentPos = float3e(frame.joints[p].transform.m[3][0] + translation.x,
-					frame.joints[p].transform.m[3][1] + translation.y, frame.joints[p].transform.m[3][2] + translation.z);
-				crow::debug_renderer::add_line(currPos, parentPos, float4e(1, 1, 1, 1));
-			}
+			crow::debug_renderer::add_line(pos, des, color);
 		}
 	}
-
-	//kFrame impl_t::GetTweenFrame(aClip _animationClip, double t)
-	//{
-	//	double d = 0;
-	//	int prev = 0;
-	//	int next = 0;
-	//	//the frame we will be drawing
-	//	std::vector<j_x> tween_frame;
-	//	tween_frame.resize(_animationClip.frames[0].joints.size());
-
-	//	//find where t falls in
-	//	for (int i = 1; i < _animationClip.frames.size() - 1; ++i)
-	//	{
-	//		if (t >= _animationClip.frames[i].time)
-	//		{
-	//			prev = i;
-	//			next = i + 1;
-	//		}
-	//	}
-
-	//	d = (t - _animationClip.frames[prev].time) / (_animationClip.frames[next].time - _animationClip.frames[prev].time);
-	//	const kFrame& prevFrame = _animationClip.frames[prev];
-	//	const kFrame& nextFrame = _animationClip.frames[next];
-
-	//	for (int j = 0; j < tween_frame.size(); ++j)
-	//	{
-	//		tween_frame[j].parent_index = prevFrame.joints[j].parent_index;
-
-	//		XMVECTOR q1 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&prevFrame.joints[j].transform));
-	//		XMVECTOR q2 = XMQuaternionRotationMatrix(XMLoadFloat4x4(&nextFrame.joints[j].transform));
-	//		XMVECTOR qs = XMQuaternionSlerp(q1, q2, d);
-
-	//		XMStoreFloat4x4(&tween_frame[j].transform, XMMatrixRotationQuaternion(qs));
-
-	//		tween_frame[j].transform.m[3][0] = (nextFrame.joints[j].transform.m[3][0] - prevFrame.joints[j].transform.m[3][0])
-	//			* d + prevFrame.joints[j].transform.m[3][0];
-
-	//		tween_frame[j].transform.m[3][1] = (nextFrame.joints[j].transform.m[3][1] - prevFrame.joints[j].transform.m[3][1])
-	//			* d + prevFrame.joints[j].transform.m[3][1];
-
-	//		tween_frame[j].transform.m[3][2] = (nextFrame.joints[j].transform.m[3][2] - prevFrame.joints[j].transform.m[3][2])
-	//			* d + prevFrame.joints[j].transform.m[3][2];
-
-	//	}
-
-	//	kFrame result;
-	//	result.joints = tween_frame;
-	//	result.time = t;
-
-	//	//drawKeyFrame(result);
-	//	return result;
-	//}
 
 	void impl_t::draw_cube(view_t& view)
 	{
@@ -301,31 +68,6 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 
 		context->Draw(36, 0);
 	}
-
-	//void impl_t::draw_terrain(view_t& view)
-	//{
-	//	//	//only setting necesary components
-	//	//	UINT stride = sizeof(end::colored_vertex);
-	//	//	UINT offset = 0;
-	//	//	context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], &stride, &offset);
-	//	//	context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::TERRAIN_VERTEX], 0, nullptr, terr.data(), 0, 0);
-
-	//	//	//context->IASetInputLayout(input_layout[INPUT_LAYOUT::COLORED_VERTEX]);
-
-	//	//	//context->VSSetShader(vertex_shader[VERTEX_SHADER::COLORED_VERTEX], nullptr, 0);
-	//	//	//context->PSSetShader(pixel_shader[PIXEL_SHADER::COLORED_VERTEX], nullptr, 0);
-	//	//	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//	//	//context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::MVP]);
-
-	//	///*	MVP_t mvp;
-	//	//	mvp.modeling = XMMatrixTranspose(XMMatrixIdentity());
-	//	//	mvp.projection = XMMatrixTranspose((XMMATRIX&)view.proj_mat);
-	//	//	mvp.view = XMMatrixTranspose(XMMatrixInverse(nullptr, (XMMATRIX&)view.view_mat));
-	//	//	context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::MVP], 0, NULL, &mvp, 0, 0);*/
-
-	//	//	context->Draw(vert_count, 0);
-	//}
 
 	void impl_t::draw_debug_lines(view_t& view)
 	{
@@ -356,36 +98,6 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		context->Draw(crow::debug_renderer::get_line_vert_count(), 0);
 		crow::debug_renderer::clear_lines();
 	}
-
-	//void impl_t::draw_mesh(view_t& view)
-	//{
-	//	UINT stride = sizeof(crow::mesh_vertex);
-	//	UINT offset = 0;
-
-	//	context->IASetVertexBuffers(0, 1, &vertex_buffer[VERTEX_BUFFER::ANIM_MESH], &stride, &offset);
-	//	context->UpdateSubresource(vertex_buffer[VERTEX_BUFFER::ANIM_MESH], 0, nullptr, meshVerts.data(), 0, 0);
-	//	context->IASetInputLayout(input_layout[INPUT_LAYOUT::ANIM_MESH]);
-	//	context->VSSetShader(vertex_shader[VERTEX_SHADER::ANIM_MESH], nullptr, 0);
-	//	context->PSSetShader(pixel_shader[PIXEL_SHADER::ANIM_MESH], nullptr, 0);
-	//	context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
-	//	context->IASetIndexBuffer(index_buffer[INDEX_BUFFER::ANIM_MESH], DXGI_FORMAT_R32_UINT, 0);
-
-	//	context->PSSetShaderResources(0, 1, &sResourceView[SUBRESOURCE_VIEW::DIFFUSE]);
-	//	context->PSSetShaderResources(1, 1, &sResourceView[SUBRESOURCE_VIEW::EMISSIVE]);
-	//	context->PSSetShaderResources(2, 1, &sResourceView[SUBRESOURCE_VIEW::SPECULAR]);
-	//	context->PSSetSamplers(0, 1, &samplerState[STATE_SAMPLER::DEFAULT]);
-
-	//	meshCB.modeling = XMMatrixTranspose(XMMatrixIdentity());
-	//	meshCB.projection = view.proj_final;
-	//	meshCB.view = view.view_final;
-	//	context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::ANIM_MESH], 0, NULL, &meshCB, 0, 0);
-
-	//	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	//	//time to draw, please work
-	//	context->DrawIndexed((int)meshInds.size(), 0, 0);
-
-	//}
 
 	void impl_t::draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view)
 	{
@@ -470,104 +182,30 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		}
 	}
 
-	//bool impl_t::InputUpdate(float delta, std::bitset<256> bm, float dx, float dy)
-	//{
-	//	float3e prev = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
-	//	XMMATRIX temp = XMLoadFloat4x4(&a1);
-
-	//	//rotation
-	//	if (bm[(int)VK_LEFT] == 1)
-	//		temp = XMMatrixMultiply(XMMatrixRotationY(-delta), temp);
-
-	//	if (bm[(int)VK_RIGHT] == 1)
-	//		temp = XMMatrixMultiply(XMMatrixRotationY(delta), temp);
-
-	//	//translation
-	//	if (bm[(int)VK_UP] == 1)
-	//		temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * delta), temp);
-	//	if (bm[(int)VK_DOWN] == 1)
-	//		temp = XMMatrixMultiply(XMMatrixTranslation(0, 0, 5.0f * -delta), temp);
-
-	//	if (bm[(int)'N'] == 1)
-	//	{
-	//		keyframeIndex += 1;
-	//		//std::cout << "current key frame: " << keyframeIndex << std::endl;
-	//	}
-
-	//	if (bm[(int)'B'] == 1)
-	//		b_on = !b_on;
-
-	//	XMStoreFloat4x4(&a1, temp);
-	//	float3e curr = float3e(a1.m[3][0], a1.m[3][1], a1.m[3][2]);
-	//	if (curr.x != prev.x || curr.y != prev.y || curr.z != prev.z)
-	//		return true;
-
-	//	return false;
-	//}
-
 	void impl_t::update(float delta) {
 		/*aTime += delta;
 		if (aTime >= animationClip.duration)
 			aTime = animationClip.frames[1].time;*/
 
-		//keyFrame tweenFrame = animationClip.frames[keyframeIndex];
-		//kFrame tweenFrame = GetTweenFrame(animationClip, aTime);
-		//drawKeyFrame(tweenFrame, float3e(5, 0, 0));
+			//keyFrame tweenFrame = animationClip.frames[keyframeIndex];
+			//kFrame tweenFrame = GetTweenFrame(animationClip, aTime);
+			//drawKeyFrame(tweenFrame, float3e(5, 0, 0));
 
-		/*meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
-		meshCB.lightPos = float3(0.0f, 0.0f, 0.0f);
-		meshCB.lightPower = 55.0f;*/
-		//meshCB.surfaceShininess = 1.0f;
+			/*meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
+			meshCB.lightPos = float3(0.0f, 0.0f, 0.0f);
+			meshCB.lightPower = 55.0f;*/
+			//meshCB.surfaceShininess = 1.0f;
 
-		//meshCB.matrices;
+			//meshCB.matrices;
 
-		//for (int i = 0; i < tweenFrame.joints.size(); ++i)
-		//{
-		//	XMMATRIX cMatrix = XMMatrixMultiply(InvBindPose[i], XMLoadFloat4x4(&tweenFrame.joints[i].transform));
-		//	meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
-		//}
+			//for (int i = 0; i < tweenFrame.joints.size(); ++i)
+			//{
+			//	XMMATRIX cMatrix = XMMatrixMultiply(InvBindPose[i], XMLoadFloat4x4(&tweenFrame.joints[i].transform));
+			//	meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
+			//}
 
-		//DrawGrid();
+			//DrawGrid();
 	}
-
-	//void impl_t::update(float delta, std::bitset<256> bm, float dx = 0.f, float dy = 0.f)
-	//{
-
-	//	InputUpdate(delta, bm, dx, dy);
-	//	//vbox.center = (float3e&)a1.m[3];
-
-	//	//add_aabb(vbox, float4e(0, 0, 1, 1));
-
-	//	/*if (keyframeIndex >= animationClip.frames.size())
-	//		keyframeIndex = 0;*/
-
-	//		/*if (kfi >= animationClip.frames.size())
-	//			kfi = 0;*/
-
-	//	aTime += delta;
-	//	if (aTime >= animationClip.duration)
-	//		aTime = animationClip.frames[1].time;
-
-	//	//keyFrame tweenFrame = animationClip.frames[keyframeIndex];
-	//	keyFrame tweenFrame = GetTweenFrame(animationClip, aTime);
-	//	drawKeyFrame(tweenFrame, float3e(5, 0, 0));
-
-	//	meshCB.lightColor = float3(1.0f, 0.0f, 0.0f);
-	//	meshCB.lightPos = float3(0.0f, 0.0f, 0.0f);
-	//	meshCB.lightPower = 55.0f;
-	//	meshCB.surfaceShininess = 1.0f;
-
-	//	meshCB.matrices;
-
-	//	for (int i = 0; i < tweenFrame.joints.size(); ++i)
-	//	{
-	//		XMMATRIX cMatrix = XMMatrixMultiply(InvBindPose[i], XMLoadFloat4x4(&tweenFrame.joints[i].transform));
-	//		meshCB.matrices[i] = XMMatrixTranspose(cMatrix);
-	//	}
-
-	//	DrawGrid();
-
-	//}
 
 	impl_t::~impl_t()
 	{
@@ -698,7 +336,7 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		ImGui::CreateContext();
 		ImGui_ImplDX11_Init(device, context);
 		// this prevents imgui from making an ini file.
-        ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ImGui::GetIO();
 		io.IniFilename = NULL;
 	}
 
@@ -1051,7 +689,7 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		}*/
 	}
 
-	void impl_t::create_imgui_texture(std::string filename, ID3D11ShaderResourceView*& /* ?????????????????????? */ texture) {
+	void impl_t::create_imgui_texture(std::string filename, ID3D11ShaderResourceView*& texture) {
 		std::wstring wstr = std::wstring(filename.begin(), filename.end());
 		const wchar_t* wcstrD = wstr.c_str();
 		HRESULT hr = CreateDDSTextureFromFile(device, wcstrD, nullptr, &texture);
@@ -1072,53 +710,6 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		HRESULT hr = device->CreateSamplerState(&sd, &samplerState[STATE_SAMPLER::DEFAULT]);
 	}
 
-	/*float impl_t::ManhDistance(float3e a, float3e b)
-	{
-		return fabsf(a.x - b.x) + fabsf(a.y - b.y) + fabsf(a.z - b.z);
-	}*/
-
-	//aabb_t impl_t::ComputeBounds(aabb_t a, aabb_t b)
-	//{
-	//	float3e min, max;
-	//	/*max.x = curr->aabb().extents.x > n.aabb().extents.x ? curr->aabb().extents.x : n.aabb().extents.x;
-	//	max.y = curr->aabb().extents.y > n.aabb().extents.y ? curr->aabb().extents.y : n.aabb().extents.y;
-	//	max.x = curr->aabb().extents.z > n.aabb().extents.z ? curr->aabb().extents.z : n.aabb().extents.z;*/
-	//	aabb_t result;
-
-	//	float3e c, d;
-	//	c = a.center + a.extents;
-	//	d = b.center + b.extents;
-	//	max.x = c.x > d.x ? c.x : d.x;
-	//	max.y = c.y > d.y ? c.y : d.y;
-	//	max.z = c.z > d.z ? c.z : d.z;
-
-	//	c = a.center - a.extents;
-	//	d = b.center - b.extents;
-	//	min.x = c.x < d.x ? c.x : d.x;
-	//	min.y = c.y < d.y ? c.y : d.y;
-	//	min.z = c.z < d.z ? c.z : d.z;
-
-	//	result.center = (min + max) / 2.0f;
-	//	result.extents = max - result.center;
-
-	//	return result;
-	//}
-
-	//bool impl_t::CheckCollision(aabb_t a, aabb_t b)
-	//{
-	//	float3e mina = a.center - a.extents;
-	//	float3e minb = b.center - b.extents;
-
-	//	float3e maxa = a.center + a.extents;
-	//	float3e maxb = b.center + b.extents;
-
-	//	if (maxa.x < minb.x || mina.x > maxb.x) return false;
-	//	if (maxa.y < minb.y || mina.y > maxb.y) return false;
-	//	if (maxa.z < minb.z || mina.z > maxb.z) return false;
-
-	//	return true;
-	//}
-
 	void impl_t::drawXMatrix(XMFLOAT4X4 M)
 	{
 		crow::float3e pos = crow::float3e(M.m[3][0], M.m[3][1], M.m[3][2]);
@@ -1130,86 +721,6 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 		crow::debug_renderer::add_line(pos, yAxis, crow::float4e(0, 1.0f, 0, 1.0f));
 		crow::debug_renderer::add_line(pos, zAxis, crow::float4e(0, 0, 1.0f, 1.0f));
 	}
-
-	//void impl_t::add_aabb(aabb_t box, float4e color)
-	//{
-	//	//when values are 0 data gets corrupted, I will probably fix it? this mea
-	//	if (box.extents.y == 0)
-	//	{
-	//		float3e p[4];
-	//		int w = 0;
-	//		for (float x = -box.extents.x; x <= box.extents.x; x += box.extents.x * 2)
-	//		{
-	//			for (float z = -box.extents.z; z <= box.extents.z; z += box.extents.z * 2)
-	//			{
-	//				p[w++] = float3e(x + box.center.x, box.center.y, z + box.center.z);
-	//			}
-	//		}
-
-	//		/*for (int j = 0; j < 4; ++j)
-	//		{
-
-	//		}*/
-
-	//		crow::debug_renderer::add_line(p[0], p[1],
-	//			color);
-
-	//		crow::debug_renderer::add_line(p[0], p[2],
-	//			color);
-
-	//		crow::debug_renderer::add_line(p[2], p[3],
-	//			color);
-
-	//		crow::debug_renderer::add_line(p[1], p[3],
-	//			color);
-
-	//		return;
-	//	}
-
-
-	//	//std::vector<float3> p;
-	//	float3e points[8];
-	//	int i = 0;
-	//	for (float x = -box.extents.x; x <= box.extents.x; x += box.extents.x * 2)
-	//	{
-	//		for (float y = -box.extents.y; y <= box.extents.y; y += box.extents.y * 2)
-	//		{
-	//			for (float z = -box.extents.z; z <= box.extents.z; z += box.extents.z * 2)
-	//			{
-	//				if (i >= 8)
-	//					int yeet = 7;
-	//				//p.push_back(float3(x + box.center.x, y + box.center.y, z + box.center.z));
-	//				points[i++] = float3e(x + box.center.x, y + box.center.y, z + box.center.z);
-	//			}
-	//		}
-	//	}
-
-	//	//now draw lines between points
-	//	for (int j = 0; j < 8; ++j)
-	//	{
-	//		//draw z axis lines
-	//		if (/*j % 2 == 0*/ j == 0 || j == 2 || j == 4 || j == 6)
-	//		{
-	//			crow::debug_renderer::add_line(points[j], points[j + 1],
-	//				color);
-	//		}
-	//		//draw x axis lines
-	//		if (j <= 3)
-	//		{
-	//			crow::debug_renderer::add_line(points[j], points[j + 4],
-	//				color);
-	//		}
-	//		//draw y axis lines
-	//		if (/*points[j].y < box.center.y*/ j == 0 || j == 1 || j == 4 || j == 5)
-	//		{
-	//			if (j + 2 >= 8)
-	//				int nFrenchFries = 0;
-
-	//			crow::debug_renderer::add_line(points[j], points[j + 2],
-	//				color);
-	//		}
-	//	}
-	//}
 
 	void impl_t::VecToRow(XMFLOAT4X4* m, XMFLOAT3 v, int row)
 	{
@@ -1345,6 +856,50 @@ void impl_t::drawJointTransform(j_x joint, float3e translation)
 			crow::float3e(dxz, 0.0f, cz), // first point
 			crow::float3e(dxz, 0.0f, cz + size),  // second point
 			crow::float4e(1.0, 1.0f, 1.0f, 1.0f));  // color for both
+	}
+
+	void impl_t::set_sorted_particles(emitter_sp& emitter, int particles)
+	{
+		for (unsigned int i = 0; i < particles; ++i)
+		{
+			int16_t indx = emitter.pool.alloc();
+			if (indx == -1)
+				return;
+
+			particle p;
+			p.pos = p.prev_pos = emitter.pos;
+			p.color = emitter.color;
+			p.vel = crow::float3e(randFloat(-5.0f, 5.0f), 1.f, randFloat(-5.0f, 5.0f));
+			p.life_span = randFloat(0.3f, 3.0f);
+
+			emitter.pool[indx] = p;
+		}
+	}
+
+	void impl_t::update_sorted_particles(emitter_sp& emitter, float delta)
+	{
+		for (int i = 0; i < emitter.pool.size(); ++i)
+		{
+			particle& p = emitter.pool[i];
+			if (p.life_span <= 0.0f)
+			{
+				emitter.pool.free(i);
+				--i;
+			}
+			else
+			{
+				p.prev_pos = p.pos;
+				p.pos += p.vel * delta;
+				p.pos.y -= 0.1f * delta;
+				p.life_span -= delta;
+
+				crow::debug_renderer::add_line(
+					p.prev_pos,
+					p.pos,
+					emitter.color
+				);
+			}
+		}
 	}
 
 } // namespace crow

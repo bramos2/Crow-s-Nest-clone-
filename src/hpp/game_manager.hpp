@@ -183,6 +183,9 @@ namespace crow {
 		crow::ai_manager ai_m;
 		crow::player_behavior_data player_data;
 
+		// test particle stuff
+		crow::emitter_sp emitter1;
+
 		// s_bin = filepath to model file to load (mandatory)
 		// s_mat = filepath to mat file to load (optional)
 		// s_anim = filepath to anim file to load (optional)

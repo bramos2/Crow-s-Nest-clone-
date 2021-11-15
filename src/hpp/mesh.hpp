@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "math_types.hpp"
+#include "pools.hpp"
 //#include "interactible.hpp"
 
 namespace crow {
@@ -110,6 +111,23 @@ namespace crow {
 		void update_tween_frame();
 		// returns the multiplications of the inverted bindpose and the updated tween_frame
 		void mult_curr_frame();
+	};
+
+	// particle data
+	struct particle
+	{
+		crow::float3e pos = crow::float3e(0.f, 0.f, 0.f);
+		crow::float3e prev_pos = crow::float3e(0.f, 0.f, 0.f);
+		crow::float4e color = crow::float4e(0.5f, 0.f, 1.f, 1.f);
+		crow::float3e vel = crow::float3e(0.f, 0.f, 0.f);
+		float life_span;
+	};
+
+	struct emitter_sp
+	{
+		crow::float3e pos = crow::float3e(0.f,0.f,0.f);
+		crow::float4e color = crow::float4e(0.5f, 0.f, 1.f, 1.f);
+		sorted_pool_t<particle, 1024> pool;
 	};
 
 	// load mesh data from a .bin file and stores it in given mesh

@@ -192,10 +192,10 @@ namespace crow
 		void draw_path(std::vector<float2e> path, float4e color);
 		
 		//draws joint with given translation
-		void drawJointTransform(j_x joint, float3e translation);
+		//void drawJointTransform(j_x joint, float3e translation);
 
 		//draws entire frame skeleton with given translation
-		void drawKeyFrame(kFrame frame, float3e translation);
+		//void drawKeyFrame(kFrame frame, float3e translation);
 
 		/*Draw Functions
 		* *******
@@ -265,23 +265,8 @@ namespace crow
 		void DrawGrid();
 
 		////allocates particles into sorted emitter array
-		//void set_sorted_particles(Emitter_sp& emitter, int particles)
-		//{
-		//	for (unsigned int i = 0; i < particles; ++i)
-		//	{
-		//		int16_t indx = emitter.pool.alloc();
-		//		if (indx == -1)
-		//			return;
-
-		//		Particle p;
-		//		p.pos = p.prev_pos = emitter.pos;
-		//		p.color = emitter.color;
-		//		p.vel = end::float3e(randFloat(-5.0f, 5.0f), randFloat(-5.0f, 5.0f), randFloat(-5.0f, 5.0f));
-		//		p.life_span = randFloat(0.3f, 3.0f);
-
-		//		emitter.pool[indx] = p;
-		//	}
-		//}
+		void set_sorted_particles(emitter_sp& emitter, int particles);
+		
 		//// allocates particles and index of particle in free pool and sorted pool
 		//void set_free_particles(Emitter_fp<int16_t>& emitter, pool_t<Particle, 1024>& pPool, int particles)
 		//{
@@ -314,31 +299,31 @@ namespace crow
 		//}
 
 		////updates particle position based on delta
-		//void update_sorted_particles(Emitter_sp& emitter, float delta)
-		//{
-		//	for (int i = 0; i < emitter.pool.size(); ++i)
-		//	{
-		//		Particle& p = emitter.pool[i];
-		//		if (p.life_span <= 0.0f)
-		//		{
-		//			emitter.pool.free(i);
-		//			--i;
-		//		}
-		//		else
-		//		{
-		//			p.prev_pos = p.pos;
-		//			p.pos += p.vel * delta;
-		//			p.pos.y -= 0.1f * delta;
-		//			p.life_span -= delta;
+		void update_sorted_particles(emitter_sp& emitter, float delta);
+		/*{
+			for (int i = 0; i < emitter.pool.size(); ++i)
+			{
+				particle& p = emitter.pool[i];
+				if (p.life_span <= 0.0f)
+				{
+					emitter.pool.free(i);
+					--i;
+				}
+				else
+				{
+					p.prev_pos = p.pos;
+					p.pos += p.vel * delta;
+					p.pos.y -= 0.1f * delta;
+					p.life_span -= delta;
 
-		//			end::debug_renderer::add_line(
-		//				p.prev_pos,
-		//				p.pos,
-		//				spEmitter.color
-		//			);
-		//		}
-		//	}
-		//}
+					crow::debug_renderer::add_line(
+						p.prev_pos,
+						p.pos,
+						emitter.color
+					);
+				}
+			}
+		}*/
 
 		////updates particles position and index  of free pool based on delta
 		//void update_and_draw_fp(Emitter_fp<int16_t>& emitter, pool_t<Particle, 1024>& pPool, float delta)

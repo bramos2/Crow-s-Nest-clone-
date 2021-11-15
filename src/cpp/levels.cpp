@@ -43,7 +43,6 @@ namespace crow {
 				rooms[2][1].objects.push_back(lv1_door1_r);
 				rooms[2][1].objects.push_back(lv1_doorp1_r);
 
-
 				// door panel
 				lv1_doorp1_r->door = lv1_door1_r;
 
