@@ -86,6 +86,11 @@ namespace crow {
 		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
 
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
+		p_impl->create_texture("res/textures/gui/crow-logo.dds", textures[texture_list::GUI_LOGO]);
+
+		p_impl->create_texture("res/textures/splash/full-sail-university.160x100.dds", textures[texture_list::SPLASH_FS]);
+		p_impl->create_texture("res/textures/splash/GPGames_LogoOriginal.dds", textures[texture_list::SPLASH_GD]);
+		p_impl->create_texture("res/textures/splash/Logic_Visions2.dds", textures[texture_list::SPLASH_LV]);
 	}
 
 	void crow::game_manager::load_animation_data()
@@ -124,7 +129,6 @@ namespace crow {
 		p_impl = new impl_t(window_handle, view);
 		imgui_wsize = get_window_size();
 
-
 		// initialize the timer
 		timer.Restart();
 		time_elapsed = 0;
@@ -139,8 +143,13 @@ namespace crow {
 
 		load_game();
 
-		// load main menu
+		// open the game
 		current_state = game_state::MAIN_MENU;
+		// you can uncomment this line to skip the logos, just remember to comment it again
+		current_state = game_state::S_SPLASH_FS;
+		init_credits();
+
+		load_texture_data();
 	}
 
 	void game_manager::update()
@@ -231,6 +240,9 @@ namespace crow {
 
 			// movement update should be done if the player is still alive
 			crow::path_through(player_data, entities, static_cast<size_t>(crow::entity::WORKER), dt);
+			// check if we've beaten the game before attempting to continue
+			if (current_state != game_state::PLAYING) break;
+
 			current_level.selected_room->update_room_doors(textures, entities);
 
 			// all this just to update the angle of the model of the player
@@ -278,7 +290,53 @@ namespace crow {
 					}
 				}
 			}
+			
+			break;
+		case game_state::GAME_WIN: // falling case
+			if (state_time > 5.f) {
+				end_game();
+				current_state = prev_state = game_state::CREDITS;
+				state_time = 0;
+				audio::play_bgm(audio::BGM::GAME_WIN);
+				break;
+			}
+		case game_state::LEVEL_WIN:
+			poll_controls(dt);
+			if (current_level.found_ai) { ai_bt.run(dt); }
 
+			// making AI model face its velocity
+			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update();
+			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
+
+			update_animations(dt);
+			entities.update_transform_data(dt);
+
+			if (current_state != game_state::GAME_WIN && state_time > 4.5f && buttons_frame[controls::l_mouse] == 1) {
+				// unload the previous level
+				unload_level();
+
+				// load the next level
+				load_level(level_number);
+
+				// save game to file
+				save_game();
+			}
+			break;
+		case game_state::CREDITS:
+			if (state_time > 81.f) current_state = game_state::MAIN_MENU;
+			break;
+		case game_state::S_SPLASH_FS:
+		case game_state::S_SPLASH_GD:
+		case game_state::S_SPLASH_LV:
+			// splash time has overstayed its welcome
+			if (state_time > 4.0f) {
+				// this increments the splash screen to its next splash screen
+				current_state = (game_state)((int)current_state + 1);
+				current_state = (game_state)((int)current_state % ((int)game_state::S_SPLASH_LV + 1));
+				// lol casting.
+			}
 			break;
 		}
 
@@ -339,6 +397,8 @@ namespace crow {
 		state_time += dt;
 		// band-aid for re-setting state_time and prev_state
 		if (prev_state != current_state) {
+			// play title theme on title screen
+			if (current_state == game_state::MAIN_MENU) audio::play_bgm(audio::BGM::TITLE);
 			prev_state = current_state;
 			state_time = 0;
 		}
@@ -578,6 +638,7 @@ namespace crow {
 		// processing for enemy appear sound
 		if (current_level.selected_room->has_player && current_level.selected_room->has_ai) {
 			if (enemy_appear_sound_cooldown <= 0) {
+				audio::play_bgm(audio::BGM::DETECTED);
 				crow::audio::play_sfx(crow::audio::SFX::ENEMY_APPEAR);
 
 				// display the enemy appearance message for the first time it appears
@@ -595,9 +656,19 @@ namespace crow {
 			}
 			enemy_appear_sound_cooldown = enemy_appear_sound_max_cooldown;
 		} else {
+			int reset_bgm = enemy_appear_sound_cooldown > 0 ? 1 : 0;
+
 			// decrement the sound cooldown to allow it to play again
 			enemy_appear_sound_cooldown -= dt;
-			if (enemy_appear_sound_cooldown < 0) enemy_appear_sound_cooldown = 0;
+			if (enemy_appear_sound_cooldown <= 0) {
+				enemy_appear_sound_cooldown = 0;
+				reset_bgm = reset_bgm + 1;
+			}
+
+			// sets the bgm back to normal when the encounter period wears off
+			if (reset_bgm == 2) {
+				audio::play_bgm(audio::BGM::NORMAL);
+			}
 		}
 
 		// setup for checking console sound
@@ -624,6 +695,8 @@ namespace crow {
 		case game_state::SETTINGS:
 			// case falls if in-game, draw nothing otherwise
 			if (!current_level.rooms.size()) break;
+		case game_state::GAME_WIN: // falling case
+		case game_state::LEVEL_WIN: // falling case
 		case game_state::PLAYING: // falling case
 		case game_state::PAUSED:
 			render_game();
@@ -718,6 +791,7 @@ namespace crow {
 			end_game();
 			prev_state = current_state = game_state::GAME_OVER;
 			state_time = 0;
+			audio::play_bgm(audio::BGM::GAME_OVER);
 		}
 	}
 
@@ -741,14 +815,6 @@ namespace crow {
 			all_meshes[i].specular = nullptr;*/
 		}
 
-		// clearing texture data
-		for (auto& m : textures) {
-			if (m) {
-				m->Release();
-			}
-		}
-		textures.clear();
-
 		animators.clear();
 		all_meshes.clear();
 
@@ -764,6 +830,18 @@ namespace crow {
 	{
 		cleanup();
 		audio::cleanup();
+
+		// clearing texture data
+		for (auto& m : textures) {
+			if (m) {
+				m->Release();
+			}
+		}
+		textures.clear();
+		
+		// prevents memory leaks (????????)
+		p_impl->swapchain->SetFullscreenState(false, nullptr);
+		// delet this
 		delete p_impl;
 	}
 
@@ -804,6 +882,7 @@ namespace crow {
 			savefile.open("save.dat", std::ios::in);
 			if (!savefile) {
 				printf("Notice: No save file was loaded.\n");
+				p_impl->swapchain->SetFullscreenState(true, nullptr);
 			}
 			else {
 				char save_data[14];
@@ -826,7 +905,6 @@ namespace crow {
 	}
 
 	void game_manager::new_game() {
-		load_texture_data();
 		load_all_meshes();
 		load_animation_data();
 
@@ -945,22 +1023,29 @@ namespace crow {
 		audio::stop_bgs();
 		c_buffered_message.reset();
 
+		// remove the worker from the level
+		// checks every room instead of just the current room since you don't have
+		// to be looking at the worker to clear the level
+		for (auto& i : current_level.rooms) {
+			for (auto& j : i) {
+				for (int k = 0; k < j.object_indices.size(); k++) {
+					if (j.object_indices[k] == 0) {
+						j.object_indices.erase(j.object_indices.begin() + k);
+						break;
+					}
+				}
+				j.has_player = false;
+			}
+		}
+
 		// after all clean up is done, it's time to start loading the next level
 		if (lv - 1 == crow::final_level) {
 			// we beat the game, so send us to the endgame sequence, whatever that may be
-			end_game();
-			current_state = prev_state = game_state::CREDITS;
+			current_state = prev_state = game_state::GAME_WIN;
 			state_time = 0;
-		}
-		else {
-			// unload the previous level
-			unload_level();
-
-			// load the next level
-			load_level(lv);
-
-			// save game to file
-			save_game();
+		} else {
+			current_state = prev_state = game_state::LEVEL_WIN;
+			state_time = 0;
 		}
 	}
 
@@ -1059,9 +1144,8 @@ namespace crow {
 	void game_manager::imgui_centertext(std::string text, float scale, ImVec2 wh) {
 		float f = ImGui::GetFontSize() / 13;
 		ImGui::SetWindowFontScale(ImGui::GetWindowSize().x / 960.f * scale);
-		float text_size = ImGui::GetFontSize() * text.size() / 2;
-		ImGui::SameLine(wh.x / 2.0f - text_size +
-			(text_size / 2.0f));
+		float text_size =ImGui::CalcTextSize(text.c_str()).x;
+		ImGui::SetCursorPosX((wh.x - text_size) / 2.0f);
 		ImGui::Text(text.c_str());
 		ImGui::SetWindowFontScale(f);
 		f = ImGui::GetFontSize();

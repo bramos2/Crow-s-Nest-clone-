@@ -4,6 +4,7 @@
 
 #include "audio.hpp"
 #include "behavior_tree.hpp"
+#include "credits.hpp"
 #include "d3d11_renderer_impl.hpp"
 #include "mesh.hpp"
 #include "XTime.hpp"
@@ -31,13 +32,17 @@ namespace crow {
 			EXIT = 6,
 			GAME_OVER,
 			GAME_OVER_PRE,
-			GAME_WIN
+			GAME_WIN,
+			LEVEL_WIN,
+			S_SPLASH_FS,
+			S_SPLASH_GD,
+			S_SPLASH_LV
 		} current_state = game_state::MAIN_MENU;
 
 		game_state prev_state = game_state::MAIN_MENU;
 		float state_time = 0;
 		float enemy_appear_sound_cooldown = 0;
-		const float enemy_appear_sound_max_cooldown = 20;
+		const float enemy_appear_sound_max_cooldown = 10;
 
 		// animatiors
 		animator player_animator;
@@ -139,10 +144,14 @@ namespace crow {
 				LIGHT_BOX,
 				DESK12,
 				DESK3,
-				GUI_PAUSE,
 				CONSOLE3,
 				CONSOLE3_E,
 				SHADOW,
+				GUI_PAUSE,
+				GUI_LOGO,
+				SPLASH_FS,
+				SPLASH_GD,
+				SPLASH_LV,
 				COUNT
 			};
 		};
@@ -240,6 +249,10 @@ namespace crow {
 		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
 		void draw_pressure_remaining(ImVec2 wh);
+		void draw_splash(ImVec2 wh);
+		void draw_credits(ImVec2 wh);
+		void draw_level_win_screen(ImVec2 wh);
+		void draw_game_win_screen(ImVec2 wh);
 
 		// imgui sucks
 		ImVec2 imgui_wsize;

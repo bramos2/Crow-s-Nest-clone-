@@ -297,7 +297,7 @@ namespace crow {
 			}
 
 			// position correction
-			furn_matrix[3][2] -= 2;
+			furn_matrix[3][2] -= 2.6f;
 			break;
 		case 'r': // right
 			furn_matrix = YrotationM(furn_matrix, 90);

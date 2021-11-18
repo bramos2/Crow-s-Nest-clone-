@@ -16,6 +16,734 @@ namespace crow {
 		/*pressure = pressure_max = 230;*/
 		// TODO MAKE LEVEL TILE MAP BASED ON THE LEVEL'S ROOM DIMMENSIONS AND REMOVE EXTRA DATA FROM ROOM STRUCT
 		switch (lv) {
+		case 3: {
+			x = y = 5;
+			id = 1;
+			starting_room = 1;
+			exit_room = 8;
+			rooms.resize(y);
+			for (auto& row : rooms) {
+				row.resize(x);
+			}
+
+			rooms[0][0].id = 1;
+			crow::door* door1 = new door(this, false, 'r', &rooms[0][0]);
+			crow::door_panel* door1p = new door_panel(this, 'r', door1, {0, 3});
+			//crow::oxygen_console* oxy = new crow::oxygen_console(this);
+			crow::pressure_console* press = new crow::pressure_console(this);
+			{
+				rooms[0][0].objects.push_back(door1p);
+
+				// worker start position
+				rooms[0][0].object_indices.push_back(0);
+
+				// here is the damn issue
+				rooms[0][0].generate_tilemap();
+			}
+
+			rooms[0][1].id = 2;
+			crow::door* door2 = new door(this, false, 'l', &rooms[0][1], door1);
+			crow::door* door2_2 = new door(this, true, 'd', &rooms[0][1], nullptr);
+			crow::door* door2_r = new door(this, false, 'r', &rooms[0][1], nullptr);
+			{
+
+				rooms[0][1].generate_tilemap();
+
+			}
+
+			rooms[1][1].id = 3;
+			crow::door* door3 = new door(this, true, 'u', &rooms[1][1], door2_2);
+			crow::door* door3_2 = new door(this, true, 'd', &rooms[1][1]);
+			{
+
+				rooms[1][1].generate_tilemap();
+
+
+			}
+
+			rooms[2][1].id = 4;
+			crow::door* door4 =   new door(this, true, 'u', &rooms[2][1], door3_2);
+			crow::door* door4_2 = new door(this, true, 'l', &rooms[2][1]);
+			crow::door* door4_3 = new door(this, true, 'd', &rooms[2][1]);
+			crow::door* door4_4 = new door(this, true, 'r', &rooms[2][1]);
+			{
+
+				rooms[2][1].generate_tilemap();
+			}
+
+			rooms[2][0].id = 5;
+			crow::door* door5 = new door(this, true, 'r', &rooms[2][0], door4_2);
+			crow::door* door5_u = new door(this, true, 'u', &rooms[2][0]);
+			crow::door* door5_d = new door(this, true, 'd', &rooms[2][0]);
+			crow::door_panel* doorp5 = new door_panel(this, 'r', door5, { 0, 3 });
+			{
+				rooms[2][0].objects.push_back(doorp5);
+				rooms[2][0].object_indices.push_back(1);
+
+				rooms[2][0].generate_tilemap();
+			}
+
+			rooms[3][1].id = 6;
+			crow::door* door6 = new door(this, true, 'u', &rooms[3][1], door4_3);
+			crow::door* door6_r = new door(this, false, 'r', &rooms[3][1]);
+			{
+				press->roomptr = &rooms[3][1];
+				rooms[3][1].objects.push_back(press);
+				pressure_console = press;
+				press->set_tile('d');
+
+				rooms[3][1].generate_tilemap();
+			}
+
+			rooms[2][2].id = 7;
+			crow::door* door7 =   new door(this, true, 'l', &rooms[2][2], door4_4);
+			crow::door* door7_2 = new door(this, false, 'r', &rooms[2][2]);
+			crow::door* door7_d = new door(this, false, 'd', &rooms[2][2]);
+			{
+
+				rooms[2][2].generate_tilemap();
+			}
+			
+			rooms[2][3].id = 8;
+			crow::door* door8 = new door(this, true, 'l', &rooms[2][3], door7_2);
+			crow::exit* floor0_exit = new exit(state, this, lv);
+			{
+
+				floor0_exit->set_tile('r');
+				rooms[2][3].objects.push_back(floor0_exit);
+
+				rooms[2][3].generate_tilemap();
+			}
+
+			rooms[1][0].id = 9;
+			crow::door* door9_d = new door(this, true, 'd', &rooms[1][0], door5_u);
+			crow::door_panel* doorp9 = new door_panel(this, 'd', door9_d, { -3, 0 });
+			crow::door_panel* doorp11 = new door_panel(this, 'u', door2_r, { 5, 0 });
+			{
+				rooms[1][0].objects.push_back(doorp9);
+				rooms[1][0].objects.push_back(doorp11);
+				rooms[1][0].generate_tilemap();
+			}
+
+			rooms[3][0].id = 10;
+			crow::door* door10_u = new door(this, true, 'u', &rooms[3][0], door5_d);
+			crow::door_panel* doorp14_u = new door_panel(this, 'd', nullptr, { 0, 0 });
+			{
+				rooms[3][0].objects.push_back(doorp14_u);
+				rooms[3][0].generate_tilemap();
+			}
+
+			rooms[0][2].id = 11;
+			crow::door* door11_l = new door(this, true, 'l', &rooms[0][2], door2_r);
+			crow::door* door11_r = new door(this, true, 'r', &rooms[0][2]);
+			crow::door* door11_d = new door(this, true, 'd', &rooms[0][2]);
+			{
+				rooms[0][2].generate_tilemap();
+			}
+
+			rooms[0][3].id = 12;
+			crow::door* door12_l = new door(this, false, 'l', &rooms[0][3], door11_r);
+			crow::door* door12_d = new door(this, true, 'd', &rooms[0][3]);
+			crow::door_panel* doorp12 = new door_panel(this, 'l', door12_l, { 0, -3 });
+			{
+				rooms[0][3].objects.push_back(doorp12);
+				rooms[0][3].generate_tilemap();
+			}
+
+			rooms[1][2].id = 13;
+			crow::door* door13_u = new door(this, true, 'u', &rooms[1][2], door11_d);
+			crow::door* door13_r = new door(this, false, 'r', &rooms[1][2]);
+			{
+				rooms[1][2].generate_tilemap();
+			}
+
+			rooms[1][3].id = 14;
+			crow::door* door14_u = new door(this, true, 'u', &rooms[1][3], door12_d);
+			crow::door* door14_l = new door(this, true, 'l', &rooms[1][3], door13_r);
+			crow::door_panel* doorp14 = new door_panel(this, 'u', door14_u, { -3, 0 });
+			crow::door_panel* doorp15 = new door_panel(this, 'd', nullptr, { 7, 0 });
+			{
+				doorp14_u->door = door14_l;
+				rooms[1][3].objects.push_back(doorp14);
+				rooms[1][3].objects.push_back(doorp15);
+				rooms[1][3].generate_tilemap();
+			}
+
+			rooms[3][2].id = 15;
+			crow::door* door15_u = new door(this, false, 'u', &rooms[3][2], door7_d);
+			crow::door* door15_l = new door(this, false, 'l', &rooms[3][2], door6_r);
+			crow::door_panel* doorp15_u = new door_panel(this, 'u', door15_u, { -3, 0 });
+			crow::door_panel* doorp8 = new door_panel(this, 'r', door8, { 0, 2 });
+			{
+				doorp15->door = door15_l;
+				rooms[3][2].objects.push_back(doorp15_u);
+				rooms[3][2].objects.push_back(doorp8);
+				rooms[3][2].generate_tilemap();
+			}
+		} break;
+		case 2: {
+			x = 4;
+			y = 5;
+			id = 1;
+			exit_room = 17;
+			rooms.resize(y);
+			for (auto& row : rooms) {
+				row.resize(x);
+			}
+			rooms[4][0].id = 1;
+			crow::door* lv2_door1_u = new door(this);
+			crow::door* lv2_door1_r = new door(this, false);
+			crow::door_panel* lv2_doorp1_u = new door_panel(this);
+			{
+				lv2_door1_u->set_tile('u');
+				lv2_door1_r->set_tile('r');
+				lv2_doorp1_u->set_tile('r'); lv2_doorp1_u->y += 3;
+				lv2_door1_u->roomptr = lv2_door1_r->roomptr =
+					&rooms[4][0];
+				rooms[4][0].objects.push_back(lv2_door1_u);
+				rooms[4][0].objects.push_back(lv2_door1_r);
+				rooms[4][0].objects.push_back(lv2_doorp1_u);
+
+				// worker start position
+				rooms[4][0].object_indices.push_back(0);
+
+				// door panel
+				lv2_doorp1_u->door = lv2_door1_u;
+
+				rooms[4][0].generate_tilemap();
+
+				place_barrel(rooms[4][0], { 11, 11 }, 'u', 2);
+				place_barrel(rooms[4][0], { 17, 9 }, 'u', 1);
+				place_barrel(rooms[4][0], { 18, 5 }, 'v', 0);
+
+				place_barrel(rooms[4][0], { 9, 5 }, 'l', 0);
+				place_barrel(rooms[4][0], { 2, 1 }, 'l', 1);
+				place_barrel(rooms[4][0], { 2, 1 }, 'l', 2);
+
+				place_barrel(rooms[4][0], { 4, 10 }, 'r', 2);
+
+				place_barrel(rooms[4][0], { 21, 3 }, 'u', 2);
+
+				// that one create lole
+				place_crate2(rooms[4][0], { 23, 13 }, -6);
+			}
+			rooms[3][0].id = 2;
+			crow::door* lv2_door2_d = new door(this);
+			crow::door_panel* lv2_doorp1_r = new door_panel(this);
+			{
+				lv2_door2_d->set_tile('d');
+				lv2_doorp1_r->set_tile('u');
+				lv2_door2_d->roomptr = &rooms[3][0];
+				rooms[3][0].objects.push_back(lv2_door2_d);
+				rooms[3][0].objects.push_back(lv2_doorp1_r);
+
+				lv2_door2_d->neighbor = lv2_door1_u;
+				lv2_door1_u->neighbor = lv2_door2_d;
+				// door panel
+				lv2_doorp1_r->door = lv2_door1_r;
+
+				rooms[3][0].generate_tilemap();
+
+				place_electricbox(rooms[3][0], { 12, 7 }, 'd');
+				place_electricbox(rooms[3][0], { 12, 9 }, 'd');
+				place_electricbox(rooms[3][0], { 12, 5 }, 'd');
+
+
+			}
+			rooms[4][1].id = 3;
+			crow::door* lv2_door3_l = new door(this);
+			crow::door* lv2_door3_r = new door(this);
+			crow::door_panel* lv2_doorp3_r = new door_panel(this);
+			{
+				lv2_door3_l->set_tile('l');
+				lv2_door3_r->set_tile('r');
+				lv2_doorp3_r->set_tile('r'); lv2_doorp3_r->y -= 3;
+				lv2_door3_l->roomptr = lv2_door3_r->roomptr =
+					&rooms[4][1];
+				rooms[4][1].objects.push_back(lv2_door3_l);
+				rooms[4][1].objects.push_back(lv2_door3_r);
+				rooms[4][1].objects.push_back(lv2_doorp3_r);
+
+				lv2_door3_l->neighbor = lv2_door1_r;
+				lv2_door1_r->neighbor = lv2_door3_l;
+				// door panel
+				lv2_doorp3_r->door = lv2_door3_r;
+
+				rooms[4][1].generate_tilemap();
+
+				
+				place_couch(rooms[4][1], { 7, 7 }, 'r', 1);
+				place_couch(rooms[4][1], { 17, 7 }, 'l', 1);
+			}
+			rooms[4][2].id = 4;
+			crow::door* lv2_door4_u = new door(this);
+			crow::door* lv2_door4_l = new door(this);
+			crow::door* lv2_door4_r = new door(this);
+			{
+				lv2_door4_u->set_tile('u');
+				lv2_door4_l->set_tile('l');
+				lv2_door4_r->set_tile('r');
+				lv2_door4_l->roomptr = lv2_door4_r->roomptr = lv2_door4_u->roomptr =
+					&rooms[4][2];
+				rooms[4][2].objects.push_back(lv2_door4_u);
+				rooms[4][2].objects.push_back(lv2_door4_l);
+				rooms[4][2].objects.push_back(lv2_door4_r);
+
+				lv2_door4_l->neighbor = lv2_door3_r;
+				lv2_door3_r->neighbor = lv2_door4_l;
+
+				rooms[4][2].generate_tilemap();
+
+				
+				place_table(rooms[4][2], { 12, 7 }, 'r', 1);
+				place_table(rooms[4][2], { 15, 4 }, 'd', 1);
+				place_table(rooms[4][2], {  9, 4 }, 'd', 1);
+
+				place_chair(rooms[4][2], { 12, 4 }, 'u');
+			}
+			rooms[3][2].id = 5;
+			crow::door* lv2_door5_u = new door(this);
+			crow::door* lv2_door5_d = new door(this);
+			{
+				lv2_door5_u->set_tile('u');
+				lv2_door5_d->set_tile('d');
+				lv2_door5_u->roomptr = lv2_door5_d->roomptr =
+					&rooms[3][2];
+				rooms[3][2].objects.push_back(lv2_door5_u);
+				rooms[3][2].objects.push_back(lv2_door5_d);
+
+				lv2_door5_d->neighbor = lv2_door4_u;
+				lv2_door4_u->neighbor = lv2_door5_d;
+
+				rooms[3][2].generate_tilemap();
+				
+				place_bed(rooms[3][2], { 2, 1 }, 'r');
+				place_bed(rooms[3][2], { 2, 3 }, 'r');
+				place_bed(rooms[3][2], { 2, 5 }, 'r');
+				place_bed(rooms[3][2], { 2, 7 }, 'r');
+				place_bed(rooms[3][2], { 2, 9 }, 'r');
+				place_bed(rooms[3][2], { 2, 11 }, 'r');
+				place_bed(rooms[3][2], { 2, 13 }, 'r');
+
+				place_bed(rooms[3][2], { 22,  1 }, 'l');
+				place_bed(rooms[3][2], { 22,  3 }, 'l');
+				place_bed(rooms[3][2], { 22,  5 }, 'l');
+				place_bed(rooms[3][2], { 22,  7 }, 'l');
+				place_bed(rooms[3][2], { 22,  9 }, 'l');
+				place_bed(rooms[3][2], { 22, 11 }, 'l');
+				place_bed(rooms[3][2], { 22, 13 }, 'l');
+
+
+			}
+			rooms[2][2].id = 6;
+			crow::door* lv2_door6_u = new door(this, false);
+			crow::door* lv2_door6_d = new door(this);
+			{
+				lv2_door6_u->set_tile('u');
+				lv2_door6_d->set_tile('d');
+				lv2_door6_u->roomptr = lv2_door6_d->roomptr =
+					&rooms[2][2];
+				rooms[2][2].objects.push_back(lv2_door6_u);
+				rooms[2][2].objects.push_back(lv2_door6_d);
+
+				lv2_door6_d->neighbor = lv2_door5_u;
+				lv2_door5_u->neighbor = lv2_door6_d;
+
+				rooms[2][2].generate_tilemap();
+				
+				place_bed(rooms[2][2], { 2, 1 }, 'r');
+				place_bed(rooms[2][2], { 2, 3 }, 'r');
+				place_bed(rooms[2][2], { 2, 5 }, 'r');
+				place_bed(rooms[2][2], { 2, 7 }, 'r');
+				place_bed(rooms[2][2], { 2, 9 }, 'r');
+				place_bed(rooms[2][2], { 2, 11 }, 'r');
+				place_bed(rooms[2][2], { 2, 13 }, 'r');
+
+				place_bed(rooms[2][2], { 22,  1 }, 'l');
+				place_bed(rooms[2][2], { 22,  3 }, 'l');
+				place_bed(rooms[2][2], { 22,  5 }, 'l');
+				place_bed(rooms[2][2], { 22,  7 }, 'l');
+				place_bed(rooms[2][2], { 22,  9 }, 'l');
+				place_bed(rooms[2][2], { 22, 11 }, 'l');
+				place_bed(rooms[2][2], { 22, 13 }, 'l');
+			}
+			rooms[4][3].id = 7;
+			crow::door* lv2_door7_u = new door(this);
+			crow::door* lv2_door7_l = new door(this);
+			crow::door_panel* lv2_door6p_u = new door_panel(this);
+			{
+				lv2_door7_u->set_tile('u');
+				lv2_door7_l->set_tile('l');
+				lv2_door6p_u->set_tile('r');
+				lv2_door7_u->roomptr = lv2_door7_l->roomptr =
+					&rooms[4][3];
+				rooms[4][3].objects.push_back(lv2_door7_u);
+				rooms[4][3].objects.push_back(lv2_door7_l);
+				rooms[4][3].objects.push_back(lv2_door6p_u);
+
+				lv2_door7_l->neighbor = lv2_door4_r;
+				lv2_door4_r->neighbor = lv2_door7_l;
+				lv2_door6p_u->door = lv2_door6_u;
+
+				rooms[4][3].generate_tilemap();
+				place_serverbox(rooms[4][3], { 22, 14 }, 'd');
+				place_serverbox(rooms[4][3], { 18, 14 }, 'd');
+				place_serverbox(rooms[4][3], { 9, 14 }, 'd');
+				place_serverbox(rooms[4][3], { 5, 14 }, 'd');
+				
+				place_serverbox(rooms[4][3], {  22, 1 }, 'u');
+				place_serverbox(rooms[4][3], {  18, 1 }, 'u');
+				place_serverbox(rooms[4][3], {  9, 1 }, 'u');
+				place_serverbox(rooms[4][3], {  5, 1 }, 'u');
+				
+				place_chair(rooms[4][3], {  3, 3 }, 'd');
+				place_chair(rooms[4][3], {  7, 3 }, 'd');
+				place_chair(rooms[4][3], {  3, 12 }, 'u');
+				place_chair(rooms[4][3], {  7, 12 }, 'u');
+
+				place_chair(rooms[4][3], {  21, 3 }, 'd');
+				place_chair(rooms[4][3], {  17, 3 }, 'd');
+				place_chair(rooms[4][3], {  21, 12 }, 'u');
+				place_chair(rooms[4][3], {  17, 12 }, 'u');
+			}
+			rooms[3][3].id = 8;
+			crow::door* lv2_door8_u = new door(this);
+			crow::door* lv2_door8_d = new door(this);
+			{
+				lv2_door8_u->set_tile('u');
+				lv2_door8_d->set_tile('d');
+				lv2_door8_u->roomptr = lv2_door8_d->roomptr =
+					&rooms[3][3];
+				rooms[3][3].objects.push_back(lv2_door8_u);
+				rooms[3][3].objects.push_back(lv2_door8_d);
+
+				lv2_door8_d->neighbor = lv2_door7_u;
+				lv2_door7_u->neighbor = lv2_door8_d;
+
+				rooms[3][3].generate_tilemap();
+
+				place_serverbox(rooms[3][3], { 13, 9 }, 'r');
+				place_serverbox(rooms[3][3], { 13, 7 }, 'r');
+				place_serverbox(rooms[3][3], { 11, 9 }, 'l');
+				place_serverbox(rooms[3][3], { 11, 7 }, 'l');
+				
+				place_couch(rooms[3][3], { 1, 12 }, 'r', 1);
+				place_couch(rooms[3][3], { 1, 2 }, 'r', 1);
+				place_couch(rooms[3][3], { 23, 12 }, 'l', 1);
+				place_couch(rooms[3][3], { 23, 2 }, 'l', 1);
+			}
+			rooms[2][3].id = 9;
+			crow::door* lv2_door9_u = new door(this, false);
+			crow::door* lv2_door9_d = new door(this);
+			crow::door_panel* lv2_door9p_u = new door_panel(this);
+			{
+				lv2_door9_u->set_tile('u');
+				lv2_door9_d->set_tile('d');
+				lv2_door9p_u->set_tile('u'); lv2_door9p_u->x += 3;
+				lv2_door9_u->roomptr = lv2_door9_d->roomptr =
+					&rooms[2][3];
+				rooms[2][3].objects.push_back(lv2_door9_u);
+				rooms[2][3].objects.push_back(lv2_door9_d);
+				rooms[2][3].objects.push_back(lv2_door9p_u);
+
+				lv2_door9_d->neighbor = lv2_door8_u;
+				lv2_door8_u->neighbor = lv2_door9_d;
+
+				lv2_door9p_u->door = lv2_door9_u;
+
+				rooms[2][3].generate_tilemap();
+				
+				place_table(rooms[2][3], { 6, 5 }, 'u', 1);
+				place_chair(rooms[2][3], { 6, 3 }, 'u');
+				place_chair(rooms[2][3], { 7, 3 }, 'u');
+
+				place_table(rooms[2][3], { 6, 9 }, 'u', 1);
+				place_chair(rooms[2][3], { 6, 7 }, 'u');
+				place_chair(rooms[2][3], { 7, 7 }, 'u');
+
+				place_table(rooms[2][3], { 18, 5 }, 'u', 1);
+				place_chair(rooms[2][3], { 18, 3 }, 'u');
+				place_chair(rooms[2][3], { 19, 3 }, 'u');
+
+				place_table(rooms[2][3], { 18, 9 }, 'u', 1);
+				place_chair(rooms[2][3], { 18, 7 }, 'u');
+				place_chair(rooms[2][3], { 19, 7 }, 'u');
+
+				place_table(rooms[2][3], { 12, 11 }, 'u', 0);
+
+			}
+			rooms[1][2].id = 10;
+			crow::door* lv2_door10_u = new door(this);
+			crow::door* lv2_door10_d = new door(this);
+			crow::door* lv2_door10_l = new door(this);
+			crow::door* lv2_door10_r = new door(this);
+			{
+				lv2_door10_u->set_tile('u');
+				lv2_door10_d->set_tile('d');
+				lv2_door10_l->set_tile('l');
+				lv2_door10_r->set_tile('r');
+				lv2_door10_u->roomptr = lv2_door10_d->roomptr =
+				lv2_door10_l->roomptr = lv2_door10_r->roomptr =
+					&rooms[1][2];
+				rooms[1][2].objects.push_back(lv2_door10_u);
+				rooms[1][2].objects.push_back(lv2_door10_d);
+				rooms[1][2].objects.push_back(lv2_door10_l);
+				rooms[1][2].objects.push_back(lv2_door10_r);
+
+				lv2_door10_d->neighbor = lv2_door6_u;
+				lv2_door6_u->neighbor = lv2_door10_d;
+
+				rooms[1][2].generate_tilemap();
+				
+				// top
+				place_table(rooms[1][2], { 9, 12 }, 'l', 2);
+				place_table(rooms[1][2], { 15, 12 }, 'r', 2);
+				// bottom
+				place_table(rooms[1][2], { 9, 2 }, 'l', 2);
+				place_table(rooms[1][2], { 15, 2 }, 'r', 2);
+				// left
+				place_table(rooms[1][2], { 2, 4 }, 'd', 2);
+				place_table(rooms[1][2], { 2, 10 }, 'u', 2);
+				// right
+				place_table(rooms[1][2], { 22, 4 }, 'd', 2);
+				place_table(rooms[1][2], { 22, 10 }, 'u', 2);
+			}
+			rooms[1][3].id = 11;
+			crow::door* lv2_door11_u = new door(this);
+			crow::door* lv2_door11_d = new door(this);
+			crow::door* lv2_door11_l = new door(this);
+			{
+				lv2_door11_u->set_tile('u');
+				lv2_door11_d->set_tile('d');
+				lv2_door11_l->set_tile('l');
+				lv2_door11_u->roomptr = lv2_door11_d->roomptr =
+				lv2_door11_l->roomptr =
+					&rooms[1][3];
+				rooms[1][3].objects.push_back(lv2_door11_u);
+				rooms[1][3].objects.push_back(lv2_door11_d);
+				rooms[1][3].objects.push_back(lv2_door11_l);
+				
+				lv2_door11_d->neighbor = lv2_door9_u;
+				lv2_door9_u->neighbor = lv2_door11_d;
+				lv2_door11_l->neighbor = lv2_door10_r;
+				lv2_door10_r->neighbor = lv2_door11_l;
+
+				rooms[1][3].generate_tilemap();
+				
+				place_table(rooms[1][3], { 6, 3 }, 'd', 1);
+				place_chair(rooms[1][3], { 6, 5 }, 'd');
+
+				place_table(rooms[1][3], { 6, 7 }, 'd', 1);
+				place_chair(rooms[1][3], { 7, 9 }, 'd');
+
+				place_table(rooms[1][3], { 18, 3 }, 'd', 1);
+				place_chair(rooms[1][3], { 19, 5 }, 'd');
+
+				place_table(rooms[1][3], { 18, 7 }, 'd', 1);
+				place_chair(rooms[1][3], { 18, 9 }, 'd');
+			}
+			rooms[0][2].id = 12;
+			crow::door* lv2_door12_d = new door(this);
+			crow::door* lv2_door12_l = new door(this, false);
+			crow::door* lv2_door12_r = new door(this);
+			crow::door_panel* lv2_doorp12_l = new door_panel(this);
+			{
+				lv2_door12_d->set_tile('d');
+				lv2_door12_l->set_tile('l');
+				lv2_door12_r->set_tile('r');
+				lv2_doorp12_l->set_tile('l'); lv2_doorp12_l->y -= 3;
+				lv2_door12_r->roomptr = lv2_door12_d->roomptr =
+				lv2_door12_l->roomptr =
+					&rooms[0][2];
+				rooms[0][2].objects.push_back(lv2_door12_d);
+				rooms[0][2].objects.push_back(lv2_door12_l);
+				rooms[0][2].objects.push_back(lv2_door12_r);
+				rooms[0][2].objects.push_back(lv2_doorp12_l);
+				
+				lv2_door12_d->neighbor = lv2_door10_u;
+				lv2_door10_u->neighbor = lv2_door12_d;
+
+				lv2_doorp12_l->door = lv2_door12_l;
+
+				rooms[0][2].generate_tilemap();
+
+				place_couch(rooms[0][2], {  6, 11 }, 'd', 2);
+				place_couch(rooms[0][2], { 18, 11 }, 'd', 2);
+				place_couch(rooms[0][2], {  6,  3 }, 'u', 2);
+				place_couch(rooms[0][2], { 18,  3 }, 'u', 2);
+				
+				place_table(rooms[0][2], {  6, 9 }, 'd', 1);
+				place_table(rooms[0][2], { 18, 9 }, 'd', 1);
+				place_table(rooms[0][2], {  6, 5 }, 'u', 1);
+				place_table(rooms[0][2], { 18, 5 }, 'u', 1);
+
+			}
+			rooms[0][3].id = 13;
+			crow::door* lv2_door13_d = new door(this);
+			crow::door* lv2_door13_l = new door(this);
+			crow::door_panel* lv2_doorp16_d = new door_panel(this);
+			{
+				lv2_door13_d->set_tile('d');
+				lv2_door13_l->set_tile('l');
+				lv2_doorp16_d->set_tile('r'); lv2_doorp16_d->y += 5;
+				lv2_door13_d->roomptr = lv2_door13_l->roomptr =
+					&rooms[0][3];
+				rooms[0][3].objects.push_back(lv2_door13_d);
+				rooms[0][3].objects.push_back(lv2_door13_l);
+				rooms[0][3].objects.push_back(lv2_doorp16_d);
+				
+				lv2_door13_d->neighbor = lv2_door11_u;
+				lv2_door11_u->neighbor = lv2_door13_d;
+				lv2_door13_l->neighbor = lv2_door12_r;
+				lv2_door12_r->neighbor = lv2_door13_l;
+
+				rooms[0][3].generate_tilemap();
+				place_couch(rooms[0][3], { 17, 13 }, 'd', 2);
+				place_couch(rooms[0][3], { 23,  5 }, 'l', 1);
+				place_couch(rooms[0][3], { 12,  8 }, 'd', 0);
+			}
+			rooms[0][1].id = 14;
+			crow::door* lv2_door14_l = new door(this);
+			crow::door* lv2_door14_r = new door(this);
+			{
+				lv2_door14_l->set_tile('l');
+				lv2_door14_r->set_tile('r');
+				lv2_door14_l->roomptr = lv2_door14_r->roomptr =
+					&rooms[0][1];
+				rooms[0][1].objects.push_back(lv2_door14_l);
+				rooms[0][1].objects.push_back(lv2_door14_r);
+				
+				lv2_door14_r->neighbor = lv2_door12_l;
+				lv2_door12_l->neighbor = lv2_door14_r;
+
+				rooms[0][1].generate_tilemap();
+
+				place_barrel(rooms[0][1], { 24,  14 }, 'v', 2);
+				place_barrel(rooms[0][1], { 24,  0 }, 'v', 1);
+				place_barrel(rooms[0][1], { 0,  0 }, 'v', 2);
+				place_barrel(rooms[0][1], { 0,  14 }, 'v', 0);
+
+			}
+			rooms[0][0].id = 15;
+			crow::door* lv2_door15_d = new door(this);
+			crow::door* lv2_door15_r = new door(this);
+			{
+				lv2_door15_d->set_tile('d');
+				lv2_door15_r->set_tile('r');
+				lv2_door15_d->roomptr = lv2_door15_r->roomptr =
+					&rooms[0][0];
+				rooms[0][0].objects.push_back(lv2_door15_d);
+				rooms[0][0].objects.push_back(lv2_door15_r);
+				
+				lv2_door15_r->neighbor = lv2_door14_l;
+				lv2_door14_l->neighbor = lv2_door15_r;
+
+				rooms[0][0].generate_tilemap();
+
+				place_crate2(rooms[0][0], { 19, 3 }, 0);
+				place_crate2(rooms[0][0], { 4, 11 }, 0);
+				place_crate2(rooms[0][0], { 1, 2 }, 0);
+
+				place_lightbox(rooms[0][0], { 3, 14 }, 0);
+				place_lightbox(rooms[0][0], { 2, 9 }, 30);
+				place_lightbox(rooms[0][0], { 13, 8 }, 15);
+				place_lightbox(rooms[0][0], { 22, 13 }, 0);
+				place_lightbox(rooms[0][0], { 2, 4 }, 20);
+				place_lightbox(rooms[0][0], { 8, 6 }, 4);
+
+				place_barrel(rooms[0][0], { 12, 7 }, 'l', 0);
+				place_barrel(rooms[0][0], { 17, 7 }, 'd', 0);
+				place_barrel(rooms[0][0], { 16, 2 }, 'u', 0);
+
+			}
+			rooms[1][0].id = 16;
+			crow::door* lv2_door16_u = new door(this);
+			crow::door* lv2_door16_d = new door(this, false);
+			{
+				lv2_door16_u->set_tile('u');
+				lv2_door16_d->set_tile('d');
+				lv2_door16_d->roomptr = lv2_door16_u->roomptr =
+					&rooms[1][0];
+				rooms[1][0].objects.push_back(lv2_door16_u);
+				rooms[1][0].objects.push_back(lv2_door16_d);
+				
+				lv2_door16_u->neighbor = lv2_door15_d;
+				lv2_door15_d->neighbor = lv2_door16_u;
+
+				lv2_doorp16_d->door = lv2_door16_d;
+
+				rooms[1][0].generate_tilemap();
+
+				place_chair(rooms[1][0], { 15, 5 }, 'd');
+				place_chair(rooms[1][0], { 12, 7 }, 'u');
+				place_chair(rooms[1][0], { 13, 8 }, 'l');
+				place_chair(rooms[1][0], { 14, 7 }, 'r');
+				place_chair(rooms[1][0], { 17, 9 }, 'u');
+				place_chair(rooms[1][0], { 12, 11 }, 'r');
+				place_chair(rooms[1][0], { 13, 4 }, 'd');
+				place_chair(rooms[1][0], { 16, 8 }, 'l');
+				
+				place_chair(rooms[1][0], { 12, 8 }, 'd');
+				place_chair(rooms[1][0], { 7, 6 }, 'u');
+				place_chair(rooms[1][0], { 8, 5 }, 'l');
+				place_chair(rooms[1][0], { 10, 4 }, 'r');
+				place_chair(rooms[1][0], { 11, 12 }, 'u');
+				place_chair(rooms[1][0], { 7, 11 }, 'r');
+				place_chair(rooms[1][0], { 7, 7 }, 'd');
+				place_chair(rooms[1][0], { 9, 5 }, 'l');
+
+			}
+			rooms[2][0].id = 17;
+			crow::door* lv2_door17_u = new door(this);
+			crow::exit* floor2_exit = new exit(state, this, lv);
+			{
+				lv2_door17_u->set_tile('u');
+				floor2_exit->set_tile('l');
+				lv2_door17_u->roomptr =	&rooms[2][0];
+				rooms[2][0].objects.push_back(lv2_door17_u);
+				rooms[2][0].objects.push_back(floor2_exit);
+				
+				lv2_door17_u->neighbor = lv2_door16_d;
+				lv2_door16_d->neighbor = lv2_door17_u;
+
+				rooms[2][0].generate_tilemap();
+				
+				place_table(rooms[2][0], { 14, 5 }, 'd', 1);
+				place_table(rooms[2][0], { 10, 4 }, 'd', 1);
+				place_table(rooms[2][0], { 6, 4 }, 'd', 1);
+				place_table(rooms[2][0], { 2, 4 }, 'd', 1);
+
+				place_table(rooms[2][0], {  6, 10 }, 'd', 1);
+				place_table(rooms[2][0], {  2, 10 }, 'd', 1);
+
+				
+				place_table(rooms[2][0], { 9, 12 }, 'l', 1);
+
+				place_table(rooms[2][0], { 15, 12 }, 'l', 1);
+				place_table(rooms[2][0], { 15, 8 }, 'l', 1);
+
+			}
+			rooms[1][1].id = 18;
+			crow::door* lv2_door18_r = new door(this);
+			{
+				lv2_door18_r->set_tile('r');
+				lv2_door18_r->roomptr =	&rooms[1][1];
+				rooms[1][1].objects.push_back(lv2_door18_r);
+				rooms[1][1].object_indices.push_back(1);
+				
+				lv2_door18_r->neighbor = lv2_door10_l;
+				lv2_door10_l->neighbor = lv2_door18_r;
+
+				rooms[1][1].generate_tilemap();
+				
+				place_couch(rooms[1][1], { 12, 5 }, 'd', 0);
+				place_couch(rooms[1][1], { 12, 9 }, 'u', 0);
+
+				place_barrel(rooms[1][1], { 8, 4 }, 'u', 0);
+				place_barrel(rooms[1][1], { 22, 11 }, 'v', 0);
+				place_barrel(rooms[1][1], { 2, 6 }, 'l', 0);
+			}
+		} break;
 		case 1: {
 			x = 4;
 			y = 3;

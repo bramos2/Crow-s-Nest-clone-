@@ -48,6 +48,7 @@ set(HPP_FILES
   src/hpp/behavior_tree.hpp
   src/hpp/blob.hpp
   src/hpp/bvh.hpp
+  src/hpp/credits.hpp
   src/hpp/d3d11_renderer_impl.hpp
   src/hpp/DDSTextureLoader.hpp
   src/hpp/enemy_behaviors.hpp
@@ -76,6 +77,7 @@ set(CPP_FILES
   src/cpp/audio.cpp
   src/cpp/behavior_tree.cpp
   src/cpp/blob.cpp
+  src/cpp/credits.cpp
   src/cpp/d3d11_renderer_impl.cpp
   src/cpp/DDSTextureLoader.cpp
   src/cpp/debug_renderer.cpp

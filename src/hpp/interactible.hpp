@@ -30,7 +30,7 @@ namespace crow {
 
 	// when current_level == final_level, we will skip to the win screen instead of
 	// attempting to advance to the next level
-	static constexpr int final_level = 10;
+	static constexpr int final_level = 4;
 
 	struct interactible {
 		virtual void interact(size_t const index, crow::entities& entity);
@@ -87,6 +87,8 @@ namespace crow {
 		door();
 		door(bool open);
 		door(crow::level* _lv, bool open = true);
+		door(crow::level* _lv, bool _open, char _tile, crow::room* _roomptr, crow::door* _neighbor = nullptr);
+		door(crow::level* _lv, bool _open, float2e _tile, crow::room* _roomptr, crow::door* _neighbor = nullptr);
 
 		crow::door* neighbor = nullptr;
 		// the door does not require a pointer to the panel in the current state as the panel has a pointer to the door
@@ -97,6 +99,7 @@ namespace crow {
 		virtual void interact(size_t const index, crow::entities& entity);
 		virtual void activate(crow::game_manager& state);
 		door_panel(crow::level* _lv);
+		door_panel(crow::level* _lv, char _tile, crow::door* _door, float2e offset = {0, 0});
 
 		crow::door* door = nullptr;
 	};

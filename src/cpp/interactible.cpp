@@ -172,7 +172,8 @@ namespace crow {
 		door->is_active = door->neighbor->is_active = !door->is_active;
 		if (door->is_active) {
 			crow::audio::play_sfx(crow::audio::SFX::DOOR_UNLOCK);
-		} else {
+		}
+		else {
 			crow::audio::play_sfx(crow::audio::SFX::DOOR_LOCK);
 		}
 	}
@@ -181,6 +182,17 @@ namespace crow {
 		type = crow::object_type::DOOR_PANEL;
 		current_level = _lv;
 	}
+	
+	door_panel::door_panel(crow::level* _lv, char _tile, crow::door* _door, float2e offset) {
+		type = crow::object_type::DOOR_PANEL;
+		current_level = _lv;
+		door = _door;
+
+		set_tile(_tile);
+		x += offset.x;
+		y += offset.y;
+	}
+
 
 	// door
 	void door::interact(size_t const index, crow::entities& entity) {
@@ -272,6 +284,31 @@ namespace crow {
 		is_active = open;
 		is_broken = false;
 		current_level = _lv;
+	}
+
+	door::door(crow::level* _lv, bool _open, char _tile, crow::room* _roomptr, crow::door* _neighbor) {
+		type = crow::object_type::DOOR;
+		is_active = _open;
+		is_broken = false;
+		current_level = _lv;
+		roomptr = _roomptr;
+		neighbor = _neighbor;
+		if (neighbor) neighbor->neighbor = this;
+		set_tile(_tile);
+		roomptr->objects.push_back(this);
+	}
+
+	door::door(crow::level* _lv, bool _open, float2e _tile, crow::room* _roomptr, crow::door* _neighbor) {
+		type = crow::object_type::DOOR;
+		is_active = _open;
+		is_broken = false;
+		current_level = _lv;
+		roomptr = _roomptr;
+		neighbor = _neighbor;
+		if (neighbor) neighbor->neighbor = this;
+		x = _tile.x;
+		y = _tile.y;
+		roomptr->objects.push_back(this);
 	}
 
 	// exit door

@@ -40,6 +40,7 @@ namespace crow {
         void cleanup() { soloud.deinit(); }
         
         int play_bgm(int id) {
+            if (bgm_handle != -1) stop_bgm();
             bgm_handle = soloud.play(bgm[id], bgm_volume);
             // prevents the bgm from dying just because there's too many sfx
             soloud.setProtectVoice(bgm_handle, 1);
@@ -106,7 +107,11 @@ namespace crow {
           load_sfx("res/sfx/Alarm_Blaring.wav", SFX::ALARM);
 
           // loading bgm
-          load_bgm("res/bgm/cavethemeb4.ogg", 0);
+          load_bgm("res/bgm/cavethemeb4.ogg", BGM::NORMAL);
+          load_bgm("res/bgm/ambientmain_0.ogg", BGM::TITLE);
+          load_bgm("res/bgm/synth_wave_alex.mp3", BGM::DETECTED);
+          load_bgm("res/bgm/breathe.mp3", BGM::GAME_OVER);
+          load_bgm("res/bgm/game_overcredits.wav", BGM::GAME_WIN);
 
           sound_loaded = true;
         }

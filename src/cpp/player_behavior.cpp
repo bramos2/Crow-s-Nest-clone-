@@ -90,6 +90,10 @@ namespace crow {
 				p_data.interacting = false;
 				// TODO ADD INTERACTING ANIMATIONS
 			}
+
+			// prevents the game from crashing when beating the game
+			if (!entities.current_size) return;
+
 			if (entities.mesh_ptrs[index]->animator && entities.mesh_ptrs[index]->animator->is_running) {
 				entities.mesh_ptrs[index]->animator->switch_animation(animator::anim_type::IDLE);
 				entities.mesh_ptrs[index]->animator->is_running = false;

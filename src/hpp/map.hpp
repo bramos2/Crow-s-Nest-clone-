@@ -137,17 +137,22 @@ struct level {
   // helper functions for level loading:
   // return is the index of the object in the respective room's object array
 
-  int place_couch(room& r, float2e position, char orientation, int number);
-  int place_table(room& r, float2e position, char orientation, int number);
-  int place_crate1(room& r, float2e position, char orientation); // don't use .5
-  int place_crate2(room& r, float2e position, float rotation); // don't use .5
-  int place_crate3(room& r, float2e position, char orientation); // don't use .5
-  int place_lightbox(room& r, float2e position, float rotation); // don't use .5
-  int place_barrel(room& r, float2e position, char orientation, int number); // don't use .5
-  int place_serverbox(room& r, float2e position, char orientation);
-  int place_electricbox(room& r, float2e position, char orientation);
-  int place_bed(room& r, float2e position, char orientation);
-  int place_chair(room& r, float2e position, char orientation); // don't use .5
+    int place_couch(room& r, float2e position, char orientation, int number);
+    int place_table(room& r, float2e position, char orientation, int number);
+    int place_crate1(room& r, float2e position, char orientation); // don't use .5
+    // don't use .5 for position. takes up 3x3 space
+    int place_crate2(room& r, float2e position, float rotation); 
+
+    int place_crate3(room& r, float2e position, char orientation); // don't use .5
+    int place_lightbox(room& r, float2e position, float rotation); // don't use .5
+  
+    // don't use .5 for position.
+    // valid orientations: v (1x1), d/u (1x2), l/r (2x1)
+    int place_barrel(room& r, float2e position, char orientation, int number);
+    int place_serverbox(room& r, float2e position, char orientation);
+    int place_electricbox(room& r, float2e position, char orientation);
+    int place_bed(room& r, float2e position, char orientation);
+    int place_chair(room& r, float2e position, char orientation); // don't use .5
 };
 
 }  // namespace crow

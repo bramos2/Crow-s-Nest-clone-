@@ -60,7 +60,7 @@ struct timed_audio {
 };
 
 // readable names for every bgm object in the game
-enum BGM : int { NORMAL, TITLE, DETECTED, BGM_COUNT };
+enum BGM : int { NORMAL, TITLE, DETECTED, GAME_WIN, GAME_OVER, LEVEL_CLEAR, BGM_COUNT };
 // readable names for every sfx object in the game
 enum SFX : int { 
     FOOTSTEP_WORKER,

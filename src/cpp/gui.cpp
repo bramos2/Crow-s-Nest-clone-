@@ -45,9 +45,23 @@ namespace crow {
         case game_state::GAME_OVER:
             draw_game_over(wh);
             break;
+        case game_state::S_SPLASH_FS:
+        case game_state::S_SPLASH_GD:
+        case game_state::S_SPLASH_LV:
+            draw_splash(wh);
+            break;
+        case game_state::CREDITS:
+            draw_credits(wh);
+            break;
+        case game_state::GAME_WIN:
+            draw_game_win_screen(wh);
+            break;
+        case game_state::LEVEL_WIN:
+            draw_level_win_screen(wh);
+            break;
         }
 
-        if (debug_mode) {
+        if (debug_mode && current_state == game_state::PLAYING) {
             ImVec2 s = get_window_size();
             float3e p = mouse_to_floor(view, mouse_pos, s.x, s.y);
             ImGui::Text("current level: %i: current room: %i", level_number, (imgui_wsize.y / real_size.y));
@@ -97,9 +111,12 @@ namespace crow {
                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
                         ImGuiWindowFlags_NoResize);
 
-        // as a placeholder, i have the game name as some tedext at the top,
-        // there should probably be a logo or something here later on (TODO::)
-        imgui_centertext(std::string("Crow's Nest"), 4.0f, wh);
+        ImVec2 logo_wh = { 420, 160 };
+        ImVec2 logo_xy = { (wh.x - logo_wh.x) / 2.0f, (wh.y * 0.45f - logo_wh.y) / 2.0f };
+        // draw game logo
+        ImGui::SetCursorPos(logo_xy);
+        ImGui::Image(textures[texture_list::GUI_LOGO], logo_wh);
+
 
         // size of all menu options
         ImVec2 mm_button_wh = {wh.x * 0.55f, wh.y * 0.05f};
@@ -138,8 +155,8 @@ namespace crow {
         ImGui::SetCursorPos({wh.x * 0.225f, wh.y * 0.75f});
         if (ImGui::Button("Credits", mm_button_wh)) {
             if (menu_position == 0) {
-                /* currently does nothing. TODO: this */
                 crow::audio::play_sfx(crow::audio::MENU_OK);
+                current_state = game_state::CREDITS;
             }
         }
 
@@ -577,6 +594,194 @@ namespace crow {
 
       // no longer drawing borderless
       ImGui::PopStyleVar(1);
+    }
+
+    void game_manager::draw_splash(ImVec2 wh) {
+        // calculated value of the splash screen's fading
+        float fade_val = 1;
+        if (state_time < 0.5f) fade_val = state_time / 0.5f;
+        if (state_time > 3.5f) fade_val = (4.0f - state_time) / 0.5f;
+
+        // cover the screen with black cuz ye
+        ImVec2 sp_window_xy = { 0, 0 };
+        ImGui::SetNextWindowPos(sp_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::SetNextWindowBgAlpha(1);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, { 0, 0, 0, 1 });
+        // main menu drawing starts here
+        ImGui::Begin("Splash", 0,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize);
+        
+        ImVec2 splash_wh = { 0, 0 };
+        int i = 0;
+
+        // hardcoded image sizes cuz no need to implement texture size acquiring
+        switch (current_state) {
+            case game_state::S_SPLASH_FS:
+            splash_wh = { 160, 100 };
+            break;
+            case game_state::S_SPLASH_GD:
+            splash_wh = { 3300, 2176 };
+            i = 1;
+            break;
+            case game_state::S_SPLASH_LV:
+            splash_wh = { 1284 * 0.65f, 754 * 0.65f };
+            i = 2;
+            break;
+        }
+
+        // prevent the logo from being larger than the screen
+        if (splash_wh.x > wh.x) {
+            splash_wh.y *= (wh.x / splash_wh.x);
+            splash_wh.x *= (wh.x / splash_wh.x);
+        }
+
+        if (splash_wh.y > wh.y) {
+            splash_wh.x *= (wh.y / splash_wh.y);
+            splash_wh.y *= (wh.y / splash_wh.y);
+        }
+
+        // automagically center the texture based on its size
+        ImVec2 splash_xy = { (wh.x - splash_wh.x) / 2.0f, (wh.y - splash_wh.y) / 2.0f };
+
+        ImGui::SetCursorPos(splash_xy);
+        ImGui::Image(textures[texture_list::SPLASH_FS + i], splash_wh, { 0, 0 }, { 1, 1 }, {1, 1, 1, fade_val});
+
+
+        ImGui::End();
+        ImGui::PopStyleVar(1);
+        ImGui::PopStyleColor(1);
+    }
+
+    void game_manager::draw_credits(ImVec2 wh) {
+        // cover the screen with black cuz ye
+        ImVec2 c_window_xy = { 0, 0 };
+        ImGui::SetNextWindowPos(c_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::SetNextWindowBgAlpha(1);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        // main menu drawing starts here
+        ImGui::Begin("Credit", 0,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize);
+
+        // debug timer
+        //ImGui::Text("time: %f", state_time);
+        
+        
+        float c_pos = wh.y;
+        float dist = clampf(state_time, 0, 76.f) * -60;
+        for (auto& c : credits) {
+            switch (c.type) {
+            case credit::credit_type::IMAGE: {
+                dist += wh.y * 0.075f;
+
+                // automagically center the texture based on its size
+                ImVec2 img_xy = { (wh.x - (c.image_w * wh.x)) / 2.0f, c_pos + dist };
+
+                ImGui::SetCursorPos(img_xy);
+
+                ImGui::Image(textures[c.image_id], { wh.x * c.image_w, wh.y * c.image_h });
+                // this doesn't work properly and i don't know why, i don't have time to debug it
+                // i'll just use blanks as a band-aid for now.
+                dist += wh.y * c.image_h * 0.8f;
+                } break;
+            case credit::credit_type::TITLE:
+                dist += wh.y * 0.075f;
+
+                ImGui::SetCursorPosY(c_pos + dist);
+                ImGui::NewLine();
+                imgui_centertext(c.text, 4.0f, wh);
+                dist += wh.y * 0.05f;
+                break;
+            case credit::credit_type::TEXT:
+                dist += wh.y * 0.075f;
+
+                ImGui::SetCursorPosY(c_pos + dist);
+                ImGui::NewLine();
+                imgui_centertext(c.text, 2.0f, wh);
+                break;
+            case credit::credit_type::BLANK:
+                dist += wh.y * c.image_h;
+                break; // don't draw anything
+            }
+        }
+        
+        ImGui::End();
+        ImGui::PopStyleVar(1);
+    }
+
+    void game_manager::draw_level_win_screen(ImVec2 wh) {
+        // cover the screen with black cuz ye
+        ImVec2 win_window_xy = { 0, 0 };
+        ImGui::SetNextWindowPos(win_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::SetNextWindowBgAlpha(clampf(state_time, 0, 1.0f) * 0.65f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        // main menu drawing starts here
+        ImGui::Begin("Win", 0,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize);
+
+        if (state_time > 0.5f) {
+            ImGui::SetCursorPosY(wh.y * 0.25f);
+            ImGui::NewLine();
+            imgui_centertext("The worker and you survived this floor.", 2.0f, wh);
+        
+            if (state_time > 2.5f) {
+                ImGui::SetCursorPosY(wh.y * 0.5f);
+                ImGui::NewLine();
+                imgui_centertext("On to next floor...", 2.0f, wh);
+            
+                if (state_time > 4.5f) {
+                    ImGui::SetCursorPosY(wh.y * 0.75f);
+                    ImGui::NewLine();
+                    imgui_centertext("Click anywhere to continue.", 1.0f, wh);
+        
+                }
+            }
+        }
+
+        ImGui::End();
+        ImGui::PopStyleVar(1);
+    }
+
+    void game_manager::draw_game_win_screen(ImVec2 wh) {
+        // cover the screen with black cuz ye
+        ImVec2 win_window_xy = { 0, 0 };
+        ImGui::SetNextWindowPos(win_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(wh, ImGuiCond_Always);
+        // black background so you can't tell that there is anything going on
+        // behind it, borderless so you can't tell it's just an imgui window
+        ImGui::SetNextWindowBgAlpha(clampf(state_time, 0, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        // main menu drawing starts here
+        ImGui::Begin("Win", 0,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize);
+
+        if (state_time > 0.5f) {
+            ImGui::SetCursorPosY(wh.y * 0.3f);
+            ImGui::NewLine();
+            imgui_centertext("The worker has escaped.", 2.0f, wh);
+        
+            if (state_time > 2.5f) {
+                ImGui::SetCursorPosY(wh.y * 0.6f);
+                ImGui::NewLine();
+                imgui_centertext("He is safe from harm... for now.", 2.0f, wh);
+            }
+        }
+
+        ImGui::End();
+        ImGui::PopStyleVar(1);
     }
 
 }  // namespace crow
