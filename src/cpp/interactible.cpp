@@ -6,29 +6,18 @@
 
 namespace crow {
 
-	void interactible::interact(size_t const index, crow::entities& entity) {
-		if (!is_broken) {
-			std::printf("\n*****interacted with interactible*****\n");
-		}
-		else {
-			std::printf("\n*****fixing interactible*****\n");
+	void interactible::interact(size_t const index, crow::entities& entity, int inter_index) {
+		if (is_broken) {
 			is_broken = false;
 		}
 		is_active = !is_active;
-
-		if (is_active) {
-			std::printf("*****power generator online*****");
-		}
-		else {
-			std::printf("*****power generator offline*****");
-		}
 	}
 
-	void interactible::activate(crow::game_manager& state) { printf("something was activated.\n"); }
+	void interactible::activate(crow::game_manager& state) {/* printf("something was activated.\n");*/ }
 
 	void interactible::dissable() {
-		std::printf("\n*****interactible has been destroyed*****");
 		is_broken = true;
+		is_active = false;
 		//if (health <= 0) {
 		//	is_broken = true;
 		//	//is_active = false;
@@ -55,12 +44,8 @@ namespace crow {
 	interactible::interactible(unsigned int _x, unsigned int _y) : x(_x), y(_y) {}
 
 	// self destruct console
-	void sd_console::interact(size_t const index, crow::entities& entity) {
-		if (!is_broken) {
-			std::printf("\n*****interacted with sd_console*****\n");
-		}
-		else {
-			std::printf("\n*****fixing sd_console*****\n");
+	void sd_console::interact(size_t const index, crow::entities& entity, int inter_index) {
+		if (is_broken) {
 			is_broken = false;
 		}
 		is_active = true;
@@ -69,12 +54,8 @@ namespace crow {
 	sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
 
 	// power generator console
-	void pg_console::interact(size_t const index, crow::entities& entity) {
-		if (!is_broken) {
-			std::printf("\n*****interacted with pg_console*****\n");
-		}
-		else {
-			std::printf("\n*****fixing pg_console*****\n");
+	void pg_console::interact(size_t const index, crow::entities& entity, int inter_index) {
+		if (is_broken) {
 			is_broken = false;
 		}
 		is_active = true;
@@ -89,7 +70,7 @@ namespace crow {
 		is_broken = true;
 	}
 
-	void oxygen_console::interact(size_t const index, crow::entities& entity) {
+	void oxygen_console::interact(size_t const index, crow::entities& entity, int inter_index) {
 		if (!is_broken) {
 			current_level->msg = message("The oxygen console is already repaired!");
 		}
@@ -114,7 +95,7 @@ namespace crow {
 		health = 1;
 	}
 
-	void pressure_console::interact(size_t const index, crow::entities& entity) {
+	void pressure_console::interact(size_t const index, crow::entities& entity, int inter_index) {
 		if (!is_broken) {
 			current_level->msg = message("The pressure console is already repaired!");
 		}
@@ -138,7 +119,7 @@ namespace crow {
 	}
 
 	// door panel
-	void door_panel::interact(size_t const index, crow::entities& entity) {
+	void door_panel::interact(size_t const index, crow::entities& entity, int inter_index) {
 		// we should only do any of this is the door is not broken
 		if (door->is_broken) {
 			current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
@@ -195,9 +176,7 @@ namespace crow {
 
 
 	// door
-	void door::interact(size_t const index, crow::entities& entity) {
-		//std::printf("\ninteracted with door, congrats!");
-
+	void door::interact(size_t const index, crow::entities& entity, int inter_index) {
 		// we will be moving the index out of this room
 		if (!roomptr || !neighbor) { // if this returns the doors was not created properly during level creation
 			std::printf("error! the door is not properly configured!");
@@ -212,6 +191,25 @@ namespace crow {
 		// to move an entity from a room to another we just remove its index from the current room and push it into the neighbor's room
 		// checking the room indices
 		if (!roomptr->object_indices.empty()) {
+
+			// moving the interactible index to back to remove
+			if (!roomptr->live_entities.empty() && inter_index >= 0) {
+				if (roomptr->live_entities.back() != inter_index) {
+					const int temp_indx = roomptr->live_entities.back();
+
+					for (auto& i : roomptr->live_entities) {
+						if (i == inter_index) {
+							i = temp_indx;
+							break;
+						}
+					}
+					roomptr->live_entities.back() = inter_index;
+				}
+				roomptr->live_entities.pop_back();
+				neighbor->roomptr->live_entities.push_back(inter_index);
+			}
+			
+
 			// we are going to move the current entity's index out of this room and to the neighbor's room
 			if (roomptr->object_indices.back() != index) {
 				// swapping the current back with the entity's index for easy removal
@@ -223,7 +221,6 @@ namespace crow {
 						break;
 					}
 				}
-
 				roomptr->object_indices.back() = index;
 			}
 			// removing the entity's index from this room
@@ -237,15 +234,17 @@ namespace crow {
 
 			// this portion handles the heat system the AI uses to track the player
 			// TODO: rebalance
-			if (index == static_cast<size_t>(crow::entity::WORKER)) {
-				roomptr->has_player = false;
-				neighbor->roomptr->has_player = true;
-				heat = neighbor->heat = 2.f;
-			}
-			else {
+			if (index == static_cast<size_t>(crow::entity::SPHYNX)) {
 				roomptr->has_ai = false;
 				neighbor->roomptr->has_ai = true;
 				heat = neighbor->heat = -2.f;
+			}
+			else if (index == static_cast<size_t>(crow::entity::WORKER) ){
+				roomptr->has_player = false;
+				neighbor->roomptr->has_player = true;
+				heat = neighbor->heat = 2.f;
+			} else {
+				heat = neighbor->heat = 2.f;
 			}
 		}
 	}
@@ -312,9 +311,9 @@ namespace crow {
 	}
 
 	// exit door
-	void exit::interact(size_t const index, crow::entities& entity) {
-		std::printf("\ninteracted with exit, congrats! loaded level: %i",
-			level_num + 1);
+	void exit::interact(size_t const index, crow::entities& entity, int inter_index) {
+		//std::printf("\ninteracted with exit, congrats! loaded level: %i",
+		//	level_num + 1);
 		state->change_level(level_num + 1);
 		// nothing should be called after the change level command
 	}
@@ -328,7 +327,7 @@ namespace crow {
 
 	// player
 	void player_interact::dissable() {
-		std::printf("\n*****enemy is attacking player\n");
+		//std::printf("\n*****enemy is attacking player\n");
 		//interactible::dissable();
 		is_active = false;
 		is_broken = true;
@@ -337,5 +336,6 @@ namespace crow {
 	player_interact::player_interact() {
 		type = crow::object_type::PLAYER;
 		is_active = true;
+		entity_index = crow::entity::WORKER;
 	}
 }  // namespace crow

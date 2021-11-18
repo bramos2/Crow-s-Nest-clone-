@@ -51,8 +51,6 @@ namespace crow {
 		bool debug_mode = 0;
 		bool pressing_key = false;
 
-		//float left_click_time = 0.f;
-		//float right_click_time = 0.f;
 		int menu_position = 0;
 		int level_number = 0;
 		int mwheel_delta = 0;
@@ -69,8 +67,8 @@ namespace crow {
 		crow::message current_message;
 
 		// set to true the first time the enemy appears. false otherwise
-		// used only by the tutorial
-		bool enemy_first_appearance;
+		// used only by the tutorial TODO: INITIALIZE THIS VALUE TO ITS DEFAULT
+		bool enemy_first_appearance = false;
 
 		// camera values
 		float3e cam_pos = float3e(0.f, 20.f, -2.f);
@@ -114,6 +112,9 @@ namespace crow {
 				DESK3,
 				CONSOLE3,
 				DISK,
+				AI_1,
+				AI_2,
+				AI_3,
 				COUNT
 			};
 		};
@@ -127,6 +128,7 @@ namespace crow {
 				DOOR_OPEN,
 				DOOR_CLOSED,
 				DOOR_EXIT,
+				DOOR_BROKEN,
 				EXIT_LIGHT_D,
 				EXIT_LIGHT_S,
 				CONSOLE1_D,
@@ -152,6 +154,7 @@ namespace crow {
 				SPLASH_FS,
 				SPLASH_GD,
 				SPLASH_LV,
+				NPC,
 				COUNT
 			};
 		};
@@ -161,6 +164,9 @@ namespace crow {
 				PLAYER = 0,
 				AI,
 				EXIT_LIGHT,
+				AI_1,
+				AI_2,
+				AI_3,
 				COUNT
 			};
 		};
@@ -190,7 +196,29 @@ namespace crow {
 		// all ai components
 		crow::behavior_tree ai_bt;
 		crow::ai_manager ai_m;
+
+		// note we will need a second tree that has different behaviors
+		crow::behavior_tree ai_bt2;
+		// we will store the rest of the ai into this vector instead for simplicity
+		std::vector<crow::ai_manager> ai_managers;
 		crow::player_behavior_data player_data;
+
+		// player and ai interactibles will be stored here. their index will be used by the rooms to determine their current location
+		std::vector<crow::interactible*> live_entities_inter;
+
+		crow::interactible ai1_it;
+		crow::interactible ai2_it;
+		crow::interactible ai3_it;
+
+		struct ai_interactibles {
+			enum {
+				PLAYER = 0,
+				AI_1,
+				AI_2,
+				AI_3,
+				COUNT
+			};
+		};
 
 		// test particle stuff
 		crow::emitter_sp emitter1;

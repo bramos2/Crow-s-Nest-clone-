@@ -13,6 +13,8 @@ namespace crow {
 struct behavior_tree {
 
     crow::ai_manager* aim = nullptr;
+    // um why the fuck is this here. for real, this is a behavior tree, ai data is not supposed to be stored here
+    // TODO: MOVE THIS OUT OF HERE.
     super_matrix e_matrix;
 
   struct node {
@@ -59,12 +61,11 @@ struct behavior_tree {
     virtual status run(float dt, crow::ai_manager& m) override;
   };
 
-
-
   behavior_tree();
   ~behavior_tree();
   
-  void build_tree();
+  // initializes the behavior tree based on the AI type, 0 : enemy ai, 1 : passive ai, 2 : soldier ai
+  void build_tree(int type = 0);
   void clean_tree();
 
  private:

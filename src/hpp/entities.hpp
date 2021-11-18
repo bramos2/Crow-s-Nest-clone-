@@ -72,6 +72,9 @@ namespace crow {
 		enum {
 			WORKER = 0,
 			SPHYNX = 1,
+			AI_1,
+			AI_2,
+			AI_3,
 			FLOOR,
 			WALL_U,
 			WALL_D,

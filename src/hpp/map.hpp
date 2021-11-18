@@ -38,6 +38,8 @@ struct room {
   unsigned int height = 50;
   bool has_player = false;
   bool has_ai = false;
+  // a list of the live entities in this room
+  std::vector<int> live_entities;
   float2e minimap_pos = {0.f, 0.f};
   // seconds of oxygen left in the room
   float oxygen = 50;
@@ -102,6 +104,8 @@ struct level {
   unsigned int starting_room = 0;
   unsigned int exit_room = 0;
   bool found_ai = false;
+  // the amount of np units in this level to be processed 0 - 3
+  int units = 0;
   
   player_interact* p_inter = nullptr;
   crow::room* selected_room = nullptr;

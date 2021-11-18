@@ -252,7 +252,10 @@ namespace crow {
 	{
 		for (auto& o : objects) {
 			if (o->type == crow::object_type::DOOR) {
-				if (o->is_active) {
+				if (o->is_broken) {
+					entities.s_resource_view[o->entity_index] = textures[game_manager::texture_list::DOOR_BROKEN];
+				}
+				else if (o->is_active) {
 					entities.s_resource_view[o->entity_index] = textures[game_manager::texture_list::DOOR_OPEN];
 				}
 				else {

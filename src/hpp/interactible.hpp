@@ -25,6 +25,7 @@ namespace crow {
 		FLOOR,
 		WALL,
 		SHORT_WALL,
+		AI,
 		COUNT,
 	};
 
@@ -33,7 +34,7 @@ namespace crow {
 	static constexpr int final_level = 4;
 
 	struct interactible {
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		// similar to interact(), but for objects that require time to activate
 		virtual void activate(crow::game_manager& state);
 		virtual void dissable();
@@ -58,13 +59,13 @@ namespace crow {
 
 	struct pg_console : public interactible {
 		// TODO: gives power to a level
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		pg_console();
 	};
 
 	struct oxygen_console : public interactible {
 		// TODO: gives power to a level
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		virtual void activate(crow::game_manager& state);
 		oxygen_console(crow::level* _lv);
 	};
@@ -73,7 +74,7 @@ namespace crow {
 		// TODO: gives power to a level
 		float pressure = 230.f;
 		const float pressure_max = 230.f;
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		virtual void activate(crow::game_manager& state);
 		virtual void dissable();
 		pressure_console(crow::level* _lv);
@@ -81,7 +82,7 @@ namespace crow {
 
 	struct door : public interactible {
 		// TODO: Make player transition
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		virtual void dissable();
 
 		door();
@@ -96,7 +97,7 @@ namespace crow {
 	};
 
 	struct door_panel : public interactible {
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		virtual void activate(crow::game_manager& state);
 		door_panel(crow::level* _lv);
 		door_panel(crow::level* _lv, char _tile, crow::door* _door, float2e offset = {0, 0});
@@ -106,13 +107,13 @@ namespace crow {
 
 	struct sd_console : public interactible {
 		// TODO: tick up optional task
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		sd_console();
 	};
 
 	struct exit : public interactible {
 		// TODO: Make player transition
-		virtual void interact(size_t const index, crow::entities& entity);
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
 		// third param of the constructor (level number) should ALWAYS be the level
 		// number that the exit is IN, NOT the level number that it takes you to
 		exit(game_manager* _state, crow::level* _lv, int _level_num);

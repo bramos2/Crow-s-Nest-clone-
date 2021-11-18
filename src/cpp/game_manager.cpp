@@ -24,6 +24,21 @@ namespace crow {
 		load_bin_data("res/meshes/slasher_run.bin", *all_meshes[mesh_types::AI].a_mesh);
 		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI].vertex_buffer, all_meshes[mesh_types::AI].index_buffer, *all_meshes[mesh_types::AI].a_mesh);
 
+		// NOTES: important, because every mesh_info holds a pointer to an animator, that means that for animated meshes you will need an entry for every entity that will require it.
+		// so if you have more ai and they all use the player mesh, you will need to load 1 player mesh for each additional ai as an example
+		// making more AI units
+		all_meshes[mesh_types::AI_1].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/guy.bin", *all_meshes[mesh_types::AI_1].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI_1].vertex_buffer, all_meshes[mesh_types::AI_1].index_buffer, *all_meshes[mesh_types::AI_1].a_mesh);
+
+		all_meshes[mesh_types::AI_2].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/guy.bin", *all_meshes[mesh_types::AI_2].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI_2].vertex_buffer, all_meshes[mesh_types::AI_2].index_buffer, *all_meshes[mesh_types::AI_2].a_mesh);
+
+		all_meshes[mesh_types::AI_3].a_mesh = new mesh_a();
+		load_bin_data("res/meshes/guy.bin", *all_meshes[mesh_types::AI_3].a_mesh);
+		p_impl->create_vertex_buffer(all_meshes[mesh_types::AI_3].vertex_buffer, all_meshes[mesh_types::AI_3].index_buffer, *all_meshes[mesh_types::AI_3].a_mesh);
+
 		// loading non-animated meshes
 		mesh_a temp;
 		load_mesh_data("res/meshes/floor1.bin", temp, mesh_types::CUBE);
@@ -57,16 +72,18 @@ namespace crow {
 
 		p_impl->create_texture("res/textures/player.dds", textures[texture_list::PLAYER]);
 		p_impl->create_texture("res/textures/enemy1.dds", textures[texture_list::AI]);
+		p_impl->create_texture("res/textures/npc.dds", textures[texture_list::NPC]);
 		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
 		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
 		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
 		p_impl->create_texture("res/textures/door_exit.dds", textures[texture_list::DOOR_EXIT]);
+		p_impl->create_texture("res/textures/door_off.dds", textures[texture_list::DOOR_BROKEN]);
 		p_impl->create_texture("res/textures/exit_light_d.dds", textures[texture_list::EXIT_LIGHT_D]);
 		p_impl->create_texture("res/textures/exit_light_s.dds", textures[texture_list::EXIT_LIGHT_S]);
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
-		
+
 		p_impl->create_texture("res/textures/bed1.dds", textures[texture_list::BED1]);
 		p_impl->create_texture("res/textures/chair1.dds", textures[texture_list::CHAIR1]);
 		p_impl->create_texture("res/textures/electric_box1.dds", textures[texture_list::ELECTRIC_BOX1]);
@@ -117,6 +134,17 @@ namespace crow {
 		animators[i].animations.resize(1);
 		load_anim_data("res/animations/exit_light.anim", animators[i].animations[0]);
 		get_inverted_bind_pose(animators[i].animations[0].frames[0], animators[i]);
+
+		// NOTES: we will have to load an animator per additional ai unit that gets added (important)
+		i = animator_list::AI_1;
+		for (size_t j = 0; j < 3; ++j) {
+			animators[i].animations.resize(2);
+			load_anim_data("res/animations/jogging.anim", animators[i].animations[0]);
+			load_anim_data("res/animations/dying_2.anim", animators[i].animations[1]);
+			get_inverted_bind_pose(pbindpose.frames[0], animators[i]);
+			++i;
+		}
+
 	}
 
 	void game_manager::init_app(void* window_handle)
@@ -191,7 +219,7 @@ namespace crow {
 				debug_mode = ai_m.debug_mode = !debug_mode;
 				if (debug_mode) {
 					printf("\nDEBUG MODE ENABLED\n");
-				} 
+				}
 				else {
 					printf("\nDEBUG MODE DISABLED\n");
 				}
@@ -204,18 +232,40 @@ namespace crow {
 
 		// game state update
 		switch (current_state) {
-		case game_state::PLAYING:
+		case game_state::PLAYING: {
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
-			
+
 			// all ai updates (player and enemy) here
-			//if (false) {
-			if (current_level.found_ai) { ai_bt.run(dt); }
-			//}
+			if (current_level.found_ai) {
+				if (true) ai_bt.run(dt);
+
+				// NOTE: This is only running the first AI, we should run the AI's based on which are in the current level instead
+					size_t j = crow::entity::AI_1;
+					for (size_t i = 0; i < current_level.units; ++i) {
+						// if the AI is dead don't run the tree
+						if (!live_entities_inter[ai_managers[i].inter_index]->is_active) {
+							entities.mesh_ptrs[ai_managers[i].index]->animator->freeze_frame(1);
+							entities.velocities[ai_managers[i].index] = { 0.f, 0.f, 0.f };
+							continue;
+						}
+						ai_bt2.aim = &ai_managers[i];
+						ai_bt2.run(dt);
+
+						// TODO: PLEASE CHANGE THIS, THERE IS NO REASON WHY A MATRIX SHOULD BE LOCATED IN THE BEHAVIOR TREE, IT JUST COMPLICATES A SIMPLE PROCESS
+						ai_bt2.e_matrix.scale = { 0.25f, 0.25f, 0.25f };
+						ai_bt2.e_matrix.rotate_y_axis_from_velocity(entities.velocities[j]);
+						ai_bt2.e_matrix.update_position(entities.world_matrix[j]);
+						ai_bt2.e_matrix.update();
+						entities.world_matrix[j] = ai_bt2.e_matrix.final_matrix;
+						++j;
+					}
+				//}
+			}
 
 			// making AI model face its velocity
-			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[(int)crow::entity::SPHYNX]);
-			ai_bt.e_matrix.update_position(entities.world_matrix[(int)crow::entity::SPHYNX]);
+			ai_bt.e_matrix.rotate_y_axis_from_velocity(entities.velocities[crow::entity::SPHYNX]);
+			ai_bt.e_matrix.update_position(entities.world_matrix[crow::entity::SPHYNX]);
 			ai_bt.e_matrix.update();
 			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 			//}
@@ -280,7 +330,8 @@ namespace crow {
 					// defer this message until the current message passes
 					if (current_message.time_remaining > 0) {
 						c_buffered_message.wait += 0.5;
-					} else {
+					}
+					else {
 						current_message = c_buffered_message.b_message;
 
 						// trigger the exit function (if applicable)
@@ -338,6 +389,7 @@ namespace crow {
 				// lol casting.
 			}
 			break;
+		}
 		}
 
 		// debug mode updates
@@ -407,7 +459,7 @@ namespace crow {
 	void game_manager::update_animations(double dt) {
 		// update all animations for all animated entities
 		// there is only 2 animated entities so lets only loop 2 times instead of 100+ times
-		for (uint32_t i = 0; i < 2 /*entities.current_size*/; i++) {
+		for (uint32_t i = 0; i < 5 /*entities.current_size*/; i++) {
 			if (entities.mesh_ptrs[i]->animator) {
 				entities.mesh_ptrs[i]->animator->update(entities.framexbind[i], static_cast<float>(dt));
 				//// timer increment
@@ -584,10 +636,10 @@ namespace crow {
 					/*std::string hval = "\nheat: " + std::to_string(o->heat);*/
 					// for doors update the heat value
 					if (o->heat > 0.05f) {
-						o->heat -= static_cast<float>(dt);
+						o->heat -= static_cast<float>(dt) * 0.25f;
 					}
 					else if (o->heat < 0.05f) {
-						o->heat += static_cast<float>(dt);
+						o->heat += static_cast<float>(dt) * 0.25f;
 					}
 					else {
 						o->heat = 0.f;
@@ -646,16 +698,17 @@ namespace crow {
 					// if you're not currently interacting with an object, display the message immediately.
 					// otherwise, defer it just enough to finish interacting
 					if (current_message.progress_max > current_message.progress)
-							current_message = message("If that thing gets you, you're dead! RUN!", 3.5f);
+						current_message = message("If that thing gets you, you're dead! RUN!", 3.5f);
 					else c_buffered_message.set(message("If that thing gets you, you're dead! RUN!", 3.5f),
-							current_message.progress_max - current_message.progress, nullptr);
+						current_message.progress_max - current_message.progress, nullptr);
 
 					// don't display this again
 					enemy_first_appearance = true;
 				}
 			}
 			enemy_appear_sound_cooldown = enemy_appear_sound_max_cooldown;
-		} else {
+		}
+		else {
 			int reset_bgm = enemy_appear_sound_cooldown > 0 ? 1 : 0;
 
 			// decrement the sound cooldown to allow it to play again
@@ -679,10 +732,12 @@ namespace crow {
 		if (console_status == 0) {
 			// stop sound if playing
 			if (bgs_playing) crow::audio::stop_bgs();
-		// broken console in room, play broken electronics sound
-		} else if (console_status == 1) {
+			// broken console in room, play broken electronics sound
+		}
+		else if (console_status == 1) {
 			if (!bgs_playing) crow::audio::play_bgs(crow::audio::SFX::CONSOLE_BROKEN);
-		} else if (console_status == -1) {
+		}
+		else if (console_status == -1) {
 			if (!bgs_playing) crow::audio::play_bgs(crow::audio::SFX::CONSOLE_WORKING, false);
 		}
 	}
@@ -771,6 +826,23 @@ namespace crow {
 				// drawing just the shadow again
 				p_impl->draw_entities(entities, svec, view);
 			}
+
+			// drawing shadow at npc's position
+			if (!current_level.selected_room->live_entities.empty()) {
+				for (auto& e_indx : current_level.selected_room->live_entities) { // looping through all live entities in the room
+					for (auto& m : ai_managers) { // looping through all ai units
+						if (e_indx == m.inter_index) { // checking to see which unit is the one in the room
+							if (live_entities_inter[e_indx]->is_active) { // if active, draw shadow
+								entities.world_matrix[crow::entity::SHADOW] = entities.world_matrix[m.index];
+								entities.scale_world_matrix(crow::entity::SHADOW, 1.6f, 4.f, 1.2f);
+								entities.set_world_position(crow::entity::SHADOW, 0.f, 0.055f, 0.f, false);
+								p_impl->draw_entities(entities, svec, view);
+								return;
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -817,8 +889,6 @@ namespace crow {
 
 		animators.clear();
 		all_meshes.clear();
-
-
 	}
 
 	game_manager::game_manager()
@@ -910,6 +980,9 @@ namespace crow {
 
 		//assigning animatiors, could be done inside function if meshes have been initialized
 		all_meshes[mesh_types::PLAYER].animator = &animators[animator_list::PLAYER];
+		all_meshes[mesh_types::AI_1].animator = &animators[animator_list::AI_1];
+		all_meshes[mesh_types::AI_2].animator = &animators[animator_list::AI_2];
+		all_meshes[mesh_types::AI_3].animator = &animators[animator_list::AI_3];
 		all_meshes[mesh_types::AI].animator = &animators[animator_list::AI];
 		all_meshes[mesh_types::EXIT_LIGHT].animator = &animators[animator_list::EXIT_LIGHT];
 
@@ -923,6 +996,17 @@ namespace crow {
 		// creating AI entity
 		entities.mesh_ptrs[crow::entity::SPHYNX] = &all_meshes[mesh_types::AI];
 		entities.s_resource_view[crow::entity::SPHYNX] = textures[texture_list::AI];
+
+		// NOTES: for every additional ai unit you will have to make a new entity much like the worker and enemy ai
+		// other AI entities
+		entities.mesh_ptrs[crow::entity::AI_1] = &all_meshes[mesh_types::AI_1];
+		entities.s_resource_view[crow::entity::AI_1] = textures[texture_list::NPC];
+
+		entities.mesh_ptrs[crow::entity::AI_2] = &all_meshes[mesh_types::AI_2];
+		entities.s_resource_view[crow::entity::AI_2] = textures[texture_list::NPC];
+
+		entities.mesh_ptrs[crow::entity::AI_3] = &all_meshes[mesh_types::AI_3];
+		entities.s_resource_view[crow::entity::AI_3] = textures[texture_list::NPC];
 
 		// creating shadow entity
 		entities.mesh_ptrs[crow::entity::SHADOW] = &all_meshes[mesh_types::DISK];
@@ -981,26 +1065,6 @@ namespace crow {
 			entities.world_matrix[i] = (DirectX::XMMATRIX&)wall_size;
 		}
 
-		/*float4x4_a wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_U];
-		wall_size[1][1] = current_level.room_height;
-		entities.mesh_ptrs[entity::WALL_U] = &all_meshes[game_manager::mesh_types::CUBE];
-		entities.s_resource_view[entity::WALL_U] = textures[game_manager::texture_list::FLOOR1];
-
-		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_D];
-		wall_size[1][1] = current_level.room_height;
-		entities.mesh_ptrs[entity::WALL_D] = &all_meshes[game_manager::mesh_types::CUBE];
-		entities.s_resource_view[entity::WALL_D] = textures[game_manager::texture_list::FLOOR1];
-
-		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_L];
-		wall_size[1][1] = current_level.room_height;
-		entities.mesh_ptrs[entity::WALL_L] = &all_meshes[game_manager::mesh_types::CUBE];
-		entities.s_resource_view[entity::WALL_L] = textures[game_manager::texture_list::FLOOR1];
-
-		wall_size = (float4x4_a&)entities.world_matrix[entity::WALL_R];
-		wall_size[1][1] = current_level.room_height;
-		entities.mesh_ptrs[entity::WALL_R] = &all_meshes[game_manager::mesh_types::CUBE];
-		entities.s_resource_view[entity::WALL_R] = textures[game_manager::texture_list::FLOOR1];*/
-
 		load_level(level_number);
 		audio::play_bgm(audio::BGM::NORMAL);
 		c_buffered_message.reset();
@@ -1016,6 +1080,7 @@ namespace crow {
 		cleanup();
 		entities.pop_all();
 		ai_bt.clean_tree();
+		ai_bt2.clean_tree();
 	}
 
 	void game_manager::change_level(int lv) {
@@ -1054,8 +1119,24 @@ namespace crow {
 		if (lv < 2) enemy_first_appearance = false; // allow popup to occur once
 		else enemy_first_appearance = true; // don't allow popup to occur
 
+		live_entities_inter.clear();
+
 		// reset any variables that may need resetting
 		player_data.player_interact.is_active = true;
+
+		// NOTE: The main AI targets based on an interactible inside this vector, it uses the index which is stored in the interactible itself to know which one belongs to who
+		live_entities_inter.push_back(&player_data.player_interact);
+
+		// NOTE: These are the interactibles for the first 3 ai units I am making, for any other units you add, you will need to add an interactible just like this
+		live_entities_inter.push_back(&ai1_it);
+		live_entities_inter.push_back(&ai2_it);
+		live_entities_inter.push_back(&ai3_it);
+
+		// NOTE: you will need to set up these interactibles as well, to hold proper data
+		ai1_it.entity_index = crow::entity::AI_1;
+		ai2_it.entity_index = crow::entity::AI_2;
+		ai2_it.entity_index = crow::entity::AI_3;
+		
 
 		// load the level data first
 		current_level.load_level(this, lv);
@@ -1087,10 +1168,38 @@ namespace crow {
 		minimap.calculate_extents();
 
 		// initialize ai
-		ai_m.init_manager(&entities, &current_level);
+		ai_m.init_manager(&entities, &current_level, &live_entities_inter);
 		ai_bt.aim = &ai_m;
-		ai_bt.build_tree();
+		// NOTE: 0 is for normal ai 
+		ai_bt.build_tree(0);
 
+		// NOTES: you will need to initialize a manager for each ai unit and at least 1 tree with the desired behavior set
+		// if you plan to recycle the same tree you will need to swap the manager 
+		// from the tree per unit every frame and run the tree every time. Or you can just build additional trees but that will cost you
+		ai_managers.resize(3);
+		size_t ai_index = crow::entity::AI_1;
+		int inter_index = 1;
+		for (auto& m : ai_managers) {
+			m.init_manager(&entities, &current_level, nullptr);
+			m.index = ai_index++;
+			// NOTE: IT MAY BE WISE TO USE ENUMS HERE INSTEAD, SO BE CAREFUL
+			m.inter_index = inter_index++;
+			// NOTE: If you don't set this value the AI this AI will break doors
+			m.friendly = true;
+			m.roam_speed = 2.f;
+			m.roam_total = 20.f;
+		}
+		// NOTE: 1 is for passive npc ai
+		ai_bt2.build_tree(1);
+		// NOTE: we do not set the manager of the behavior tree here because we will be sharing it among all 3 units in this vector
+
+		// NOTE: You could just make a different interactible alltogether but the one I am using here is just the base class, and because I am using base class
+		// I need to set its type to AI so that the enemy ai can also see this unit in the map
+		ai1_it.type = ai2_it.type = ai3_it.type = crow::object_type::AI;
+		ai1_it.is_active = ai2_it.is_active = ai3_it.is_active = true;
+		
+
+		shadow_spawn_timer = 0.f;
 		current_state = crow::game_manager::game_state::PLAYING;
 	}
 
@@ -1122,6 +1231,9 @@ namespace crow {
 
 		current_level.clean_level();
 		ai_bt.clean_tree();
+		ai_bt2.clean_tree();
+
+		live_entities_inter.clear();
 	}
 
 	void game_manager::poll_controls(double dt) {

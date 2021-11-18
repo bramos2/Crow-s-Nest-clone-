@@ -10,7 +10,6 @@
 #include <conio.h>
 #include <bitset>
 
-
 //#include "renderer.hpp"
 #include "../hpp/game_manager.hpp"
 
@@ -186,17 +185,10 @@ void destroy_console(int exit_code)
 MSG begin_main_loop()
 {
 	MSG msg;
-	
-	
 
 	crow::game_manager manager;
 	//manager.renderer = new end::renderer_t(main_hwnd);
 	manager.init_app(main_hwnd);
-	
-	//float dx = 0.0f;
-	//float dy = 0.0f;
-	//float px = mx;
-	//float py = my;
 
 	// Main application loop:
 	while (true)
@@ -213,21 +205,6 @@ MSG begin_main_loop()
 		}
 		else
 		{
-			/*
-			dx = 0.0f;
-			dy = 0.0f;
-
-			if (px != mx)
-			{
-				dx = mx - px;
-				px = mx;
-			}
-
-			if (py != my)
-			{
-				dy = my - py;
-				py = my;
-			}*/
 			manager.mwheel_delta = mdelta;
 			mdelta = 0;
 

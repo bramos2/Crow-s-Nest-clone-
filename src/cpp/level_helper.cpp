@@ -430,7 +430,7 @@ namespace crow {
 		furn_matrix[3][1] = 1.f;
 
 		// this switch case handles the rotation of the matrix of the object in addition to its collision
-		switch (orientation) {
+		switch (orientation) { // TODO: CLEAN UP WARNINGS, USE A CLAMPING FUNCTION FOR INTS NOT FLOATS, THIS COULD BE DANGEROUS
 		case 'u': // up
 			furn_matrix = XrotationM(furn_matrix, 90);
 			for (int i = 0; i < 4; i++) {
@@ -475,7 +475,7 @@ namespace crow {
 		r.furniture_meshes.push_back(game_manager::mesh_types::BED1);
 		r.furniture_textures.push_back(game_manager::texture_list::BED1);
 
-		return r.furniture_matrices.size() - 1;
+		return (int)r.furniture_matrices.size() - 1;
 	}
 
 	int level::place_chair(room& r, float2e position, char orientation) {
@@ -508,8 +508,8 @@ namespace crow {
 			break;
 		}
 
-		// collision is the same for all orientations
-		r.tiles.map[clampf(position.y, 0, r.length - 1)][clampf(position.x, 0, r.width - 1)]->is_open = false;
+		// collision is the same for all orientations TODO: You may want to use a clamp function that takes in ints instead of float, this is not safe also throws warnings
+		r.tiles.map[clampf(position.y, 0.f, r.length - 1.f)][clampf(position.x, 0.f, r.width - 1.f)]->is_open = false;
 
 		// correctly set the furniture's position on the map
 		furn_matrix[3][0] += position.x - r.width * 0.5f + 0.5f; furn_matrix[3][2] += position.y - r.length * 0.5f + 0.5f;

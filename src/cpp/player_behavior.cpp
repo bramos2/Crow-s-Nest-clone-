@@ -84,7 +84,7 @@ namespace crow {
 		else {
 			entities.velocities[index] = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 			if (p_data.interacting) {
-				p_data.target->interact(index, entities);
+				p_data.target->interact(index, entities, 0);
 
 				p_data.target = nullptr;
 				p_data.interacting = false;

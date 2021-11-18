@@ -182,6 +182,7 @@ namespace crow {
 			}
 		} break;
 		case 2: {
+			units = 3;
 			x = 4;
 			y = 5;
 			id = 1;
@@ -247,8 +248,6 @@ namespace crow {
 				place_electricbox(rooms[3][0], { 12, 7 }, 'd');
 				place_electricbox(rooms[3][0], { 12, 9 }, 'd');
 				place_electricbox(rooms[3][0], { 12, 5 }, 'd');
-
-
 			}
 			rooms[4][1].id = 3;
 			crow::door* lv2_door3_l = new door(this);
@@ -274,6 +273,10 @@ namespace crow {
 				
 				place_couch(rooms[4][1], { 7, 7 }, 'r', 1);
 				place_couch(rooms[4][1], { 17, 7 }, 'l', 1);
+
+				// adding npc unit 3
+				rooms[4][1].object_indices.push_back(crow::entity::AI_3);
+				rooms[4][1].live_entities.push_back(3);
 			}
 			rooms[4][2].id = 4;
 			crow::door* lv2_door4_u = new door(this);
@@ -333,6 +336,9 @@ namespace crow {
 				place_bed(rooms[3][2], { 22, 11 }, 'l');
 				place_bed(rooms[3][2], { 22, 13 }, 'l');
 
+				// adding npc unit 2
+				rooms[3][2].object_indices.push_back(crow::entity::AI_2);
+				rooms[3][2].live_entities.push_back(2);
 
 			}
 			rooms[2][2].id = 6;
@@ -405,6 +411,9 @@ namespace crow {
 				place_chair(rooms[4][3], {  17, 3 }, 'd');
 				place_chair(rooms[4][3], {  21, 12 }, 'u');
 				place_chair(rooms[4][3], {  17, 12 }, 'u');
+				// adding npc unit 1
+				rooms[4][3].object_indices.push_back(crow::entity::AI_1);
+				rooms[4][3].live_entities.push_back(1);
 			}
 			rooms[3][3].id = 8;
 			crow::door* lv2_door8_u = new door(this);
@@ -745,6 +754,8 @@ namespace crow {
 			}
 		} break;
 		case 1: {
+			// the amount of npc units in this level
+			units = 1;
 			x = 4;
 			y = 3;
 			id = 1;
@@ -839,7 +850,8 @@ namespace crow {
 				rooms[2][0].objects.push_back(lv1_door3_r);
 
 				// spawn the worker here
-				rooms[2][0].object_indices.push_back(0);
+				rooms[2][0].object_indices.push_back(crow::entity::WORKER);
+				rooms[2][0].live_entities.push_back(0); // this is for the interactible, other ai units will require this
 
 				rooms[2][0].generate_tilemap();
 				
@@ -868,6 +880,8 @@ namespace crow {
 				lv1_door4_l->neighbor = lv1_door1_r;
 				lv1_door1_r->neighbor = lv1_door4_l;
 
+				
+
 				rooms[2][2].objects.push_back(lv1_door4_l);
 				rooms[2][2].objects.push_back(lv1_door4_u);
 				rooms[2][2].objects.push_back(lv1_door4_r);
@@ -882,6 +896,10 @@ namespace crow {
 				place_chair(rooms[2][2], { 19, 4 }, 'l');
 
 				place_chair(rooms[2][2], { 21, 14 }, 'r');
+
+				// add an AI unit here
+				rooms[2][2].object_indices.push_back(crow::entity::AI_1);
+				rooms[2][2].live_entities.push_back(1);
 			}
 
 			rooms[2][3].id = 5;
@@ -1159,7 +1177,7 @@ namespace crow {
 			break;
 		}  // END OF FLOOR 1
 		case 0:
-		default:
+		default: {
 			x = y = 5;
 			id = 1;
 			starting_room = 1;
@@ -1339,6 +1357,7 @@ namespace crow {
 				rooms[2][3].generate_tilemap();
 			}
 			break;
+		}
 		}
 
 		// setting the player bool on the starting room, should be done when loading

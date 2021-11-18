@@ -88,6 +88,7 @@ namespace crow {
 		bool is_acting = false;
 		bool is_running = false;
 		bool performed_action = false;
+		bool frozen = false;
 
 		struct anim_type {
 			enum {
@@ -106,6 +107,9 @@ namespace crow {
 
 		// sets values to the animation corresponding to given index
 		void switch_animation(unsigned int index);
+
+		// freezes the model to the last frame of the "index" animation
+		void freeze_frame(unsigned int index);
 
 	private:
 		void update_tween_frame();

@@ -386,4 +386,12 @@ namespace crow {
 		}
 	}
 
+	void animator::freeze_frame(unsigned int index)
+	{
+		if (index >= animations.size()) { return; }
+		curr_animation = index;
+		t = animations[index].frames.back().time;
+
+	}
+
 } // namespace crow
