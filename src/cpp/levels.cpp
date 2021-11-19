@@ -17,6 +17,7 @@ namespace crow {
 		// TODO MAKE LEVEL TILE MAP BASED ON THE LEVEL'S ROOM DIMMENSIONS AND REMOVE EXTRA DATA FROM ROOM STRUCT
 		switch (lv) {
 		case 3: {
+			units = 0;
 			x = y = 5;
 			id = 1;
 			starting_room = 1;
@@ -36,6 +37,7 @@ namespace crow {
 
 				// worker start position
 				rooms[0][0].object_indices.push_back(0);
+				rooms[0][0].live_entities.push_back(0);
 				rooms[0][0].generate_tilemap();
 
 				place_table(rooms[0][0], { 10, 7 }, 'r', 2);
@@ -289,7 +291,7 @@ namespace crow {
 			}
 		} break;
 		case 2: {
-			units = 3;
+			units = 2;
 			x = 4;
 			y = 5;
 			id = 1;
@@ -314,6 +316,7 @@ namespace crow {
 
 				// worker start position
 				rooms[4][0].object_indices.push_back(0);
+				rooms[4][0].live_entities.push_back(0);
 
 				// door panel
 				lv2_doorp1_u->door = lv2_door1_u;
@@ -382,8 +385,8 @@ namespace crow {
 				place_couch(rooms[4][1], { 17, 7 }, 'l', 1);
 
 				// adding npc unit 3
-				rooms[4][1].object_indices.push_back(crow::entity::AI_3);
-				rooms[4][1].live_entities.push_back(3);
+				/*rooms[4][1].object_indices.push_back(crow::entity::AI_3);
+				rooms[4][1].live_entities.push_back(3);*/
 			}
 			rooms[4][2].id = 4;
 			crow::door* lv2_door4_u = new door(this);

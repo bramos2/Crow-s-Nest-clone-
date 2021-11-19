@@ -247,6 +247,7 @@ namespace crow {
 						if (!live_entities_inter[ai_managers[i].inter_index]->is_active) {
 							entities.mesh_ptrs[ai_managers[i].index]->animator->freeze_frame(1);
 							entities.velocities[ai_managers[i].index] = { 0.f, 0.f, 0.f };
+							++j;
 							continue;
 						}
 						ai_bt2.aim = &ai_managers[i];
@@ -376,7 +377,7 @@ namespace crow {
 			}
 			break;
 		case game_state::CREDITS:
-			if (state_time > 81.f) current_state = game_state::MAIN_MENU;
+			if (state_time > 81.f/1.9f) current_state = game_state::MAIN_MENU;
 			break;
 		case game_state::S_SPLASH_FS:
 		case game_state::S_SPLASH_GD:
@@ -1127,15 +1128,17 @@ namespace crow {
 		// NOTE: The main AI targets based on an interactible inside this vector, it uses the index which is stored in the interactible itself to know which one belongs to who
 		live_entities_inter.push_back(&player_data.player_interact);
 
+		// NOTE: you will need to set up these interactibles as well, to hold proper data
+		ai1_it.entity_index = crow::entity::AI_1;
+		ai2_it.entity_index = crow::entity::AI_2;
+		ai2_it.entity_index = crow::entity::AI_3;
+
 		// NOTE: These are the interactibles for the first 3 ai units I am making, for any other units you add, you will need to add an interactible just like this
 		live_entities_inter.push_back(&ai1_it);
 		live_entities_inter.push_back(&ai2_it);
 		live_entities_inter.push_back(&ai3_it);
 
-		// NOTE: you will need to set up these interactibles as well, to hold proper data
-		ai1_it.entity_index = crow::entity::AI_1;
-		ai2_it.entity_index = crow::entity::AI_2;
-		ai2_it.entity_index = crow::entity::AI_3;
+		
 		
 
 		// load the level data first

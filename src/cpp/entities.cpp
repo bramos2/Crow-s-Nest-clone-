@@ -66,6 +66,7 @@ namespace crow {
 	}
 
 	DirectX::XMFLOAT3 entities::get_world_position(size_t const index) const {
+		if (index >= current_size || index < 0) { return { 0.f, 0.f, 0.f }; }
 		DirectX::XMFLOAT4X4 w;
 		DirectX::XMStoreFloat4x4(&w, world_matrix[index]);
 
@@ -78,7 +79,7 @@ namespace crow {
 
 	void entities::set_world_position(size_t const index, float const x, float const y,
 							float const z, bool const zero) {
-		if (index < current_size) {
+		if (index < current_size && index >= 0) {
 			DirectX::XMFLOAT4X4 w;
 			DirectX::XMStoreFloat4x4(&w, world_matrix[index]);
 			if (zero) {
@@ -108,7 +109,7 @@ namespace crow {
 		y *= to_radiansf;
 		z *= to_radiansf;
 
-		if (index < current_size) {
+		if (index < current_size && index >= 0) {
 			if (x != 0.f) {
 				world_matrix[index] = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationX(x), world_matrix[index]);
 			}

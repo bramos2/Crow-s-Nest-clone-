@@ -676,7 +676,7 @@ namespace crow {
         
         
         float c_pos = wh.y;
-        float dist = clampf(state_time, 0, 76.f) * -60;
+        float dist = clampf(state_time, 0, 76.f/1.9f) * -60 * 1.9f;
         for (auto& c : credits) {
             switch (c.type) {
             case credit::credit_type::IMAGE: {

@@ -101,7 +101,7 @@ namespace crow {
 			else if ((curr_type == crow::object_type::PLAYER || curr_type == crow::object_type::AI) && !m.curr_room->live_entities.empty()) {
 				for (auto& t : m.curr_room->live_entities) {
 					// checking if the entity is in the current room
-					if ((*m.live_units)[t] == m.target) {
+					if ((*m.live_units)[t] == m.target && m.target->is_active) {
 						result = crow::status::PASSED;
 						break;
 					}

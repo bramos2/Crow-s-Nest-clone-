@@ -30,7 +30,7 @@ class ai_manager {
   // the current path finding result
   std::vector<float2e> path;
   // used when player is not the target, will increase over time
-  float roam_speed = 2.5f;
+  float roam_speed = 4.f;
   // the speed at which the AI pursues the player
   const float run_speed = 8.f;
   // The current interactible the ai is chasing
