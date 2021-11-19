@@ -30,4 +30,12 @@ namespace crow {
 
 		c_buffered_message.set(message("Interact with their respective panels to unlock them.", 4.0f), 4.5, &game_manager::t_fifth_control_message);
 	}
+	
+	void game_manager::t_scrollwheel_message() {
+		c_buffered_message.set(message("You can zoom the minimap with the mouse wheel.", 4.0f), 0.5f, nullptr);
+	}
+	
+	void game_manager::t_pressure_message2() {
+		c_buffered_message.set(message("Locate it and interact to repair, or the worker will die.", 4.0f), 0.02f, nullptr);
+	}
 }

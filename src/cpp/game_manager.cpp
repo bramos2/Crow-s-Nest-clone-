@@ -176,7 +176,7 @@ namespace crow {
 		// you can comment this line to skip the logos, just remember to uncomment it again
 		current_state = game_state::S_SPLASH_FS;
 		init_credits();
-
+		 
 		load_texture_data();
 	}
 
@@ -185,7 +185,6 @@ namespace crow {
 		timer.Signal(); float dt = static_cast<float>(timer.Delta());
 		time_elapsed += timer.Delta();
 		p_impl->update(dt);
-
 
 		// updates that run irregardless of the game state
 		current_message.update(dt);
@@ -609,6 +608,18 @@ namespace crow {
 		return true;
 	}
 
+	bool game_manager::enemy_and_player_in_same_room() {
+		for (auto& rv : current_level.rooms) {
+			for (auto& r : rv) {
+				if (r.id <= 0) { // not valid room
+					continue;
+				}
+				if (r.has_ai && r.has_player) return true;
+			}
+		}
+		return false;
+	}
+
 	void game_manager::room_updates(double dt) {
 		// updating the heat values for the doors in the level and oxygen
 		for (auto& rv : current_level.rooms) {
@@ -619,6 +630,15 @@ namespace crow {
 
 				// updating oxygen less optimal as checked every loop but saves me the trouble of having to loop twice to keep doors updated
 				if (current_level.oxygen_console && r.has_player && current_level.oxygen_console->is_broken) {
+					// tutorial thing for pressure console broken
+					//if (!first_pressure_console_break) {
+					//	c_buffered_message.set(message("The pressure console has been broken.", 4.0f), 0.02f, t_pressure_message2);
+					//
+					//	first_pressure_console_break = true;
+					//}
+					// temporarily commenting this out to prevent unpredictable behavior in the final version
+					// TODO::complete and test this
+
 					// decreases oxygen level
 					r.oxygen -= static_cast<float>(dt);
 
@@ -698,7 +718,7 @@ namespace crow {
 				if (!enemy_first_appearance) {
 					// if you're not currently interacting with an object, display the message immediately.
 					// otherwise, defer it just enough to finish interacting
-					if (current_message.progress_max > current_message.progress)
+					if (!(current_message.progress_max > current_message.progress))
 						current_message = message("If that thing gets you, you're dead! RUN!", 3.5f);
 					else c_buffered_message.set(message("If that thing gets you, you're dead! RUN!", 3.5f),
 						current_message.progress_max - current_message.progress, nullptr);
@@ -713,7 +733,7 @@ namespace crow {
 			int reset_bgm = enemy_appear_sound_cooldown > 0 ? 1 : 0;
 
 			// decrement the sound cooldown to allow it to play again
-			enemy_appear_sound_cooldown -= dt;
+			if (!enemy_and_player_in_same_room()) enemy_appear_sound_cooldown -= dt;
 			if (enemy_appear_sound_cooldown <= 0) {
 				enemy_appear_sound_cooldown = 0;
 				reset_bgm = reset_bgm + 1;
@@ -1119,6 +1139,9 @@ namespace crow {
 		// setting this bool properly for the tutorial popup for when the enemy appears for the first time
 		if (lv < 2) enemy_first_appearance = false; // allow popup to occur once
 		else enemy_first_appearance = true; // don't allow popup to occur
+
+		if (lv <= 3) first_pressure_console_break = false;
+		else first_pressure_console_break = true;
 
 		live_entities_inter.clear();
 

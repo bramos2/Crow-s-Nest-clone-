@@ -31,7 +31,7 @@ namespace crow {
 
 	// when current_level == final_level, we will skip to the win screen instead of
 	// attempting to advance to the next level
-	static constexpr int final_level = 3;
+	static constexpr int final_level = 4;
 
 	struct interactible {
 		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);

@@ -67,8 +67,10 @@ namespace crow {
 		crow::message current_message;
 
 		// set to true the first time the enemy appears. false otherwise
-		// used only by the tutorial TODO: INITIALIZE THIS VALUE TO ITS DEFAULT
+		// used only by the tutorial
 		bool enemy_first_appearance = false;
+		// similar to above
+		bool first_pressure_console_break = false;
 
 		// camera values
 		float3e cam_pos = float3e(0.f, 20.f, -2.f);
@@ -240,6 +242,7 @@ namespace crow {
 		void update_animations(double dt);
 		bool l_click_update();
 		bool r_click_update();
+		bool enemy_and_player_in_same_room();
 		// updates room metadata such as oxygen remaining, pressure, doors, etc
 		void room_updates(double dt);
 		// updates various things related to sound
@@ -300,6 +303,8 @@ namespace crow {
 		void t_fourth_control_message();
 		void t_fifth_control_message();
 		void t_locked_door_message();
+		void t_scrollwheel_message();
+		void t_pressure_message2();
 
 	private:
 		std::vector<double> buttons;

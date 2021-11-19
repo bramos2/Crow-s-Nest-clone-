@@ -24,6 +24,7 @@ namespace crow {
         float bgm_volume;
         // volume of sfx ONLY (stacks with all_volume)
         float sfx_volume;
+        int bgm_id;
 
         // all audio-related initialization here
         void initialize() {
@@ -32,6 +33,7 @@ namespace crow {
             sfx_volume = 1;
 
             bgm_handle = -1;
+            bgm_id = -1;
             bgs_handle = -1;
             soloud.init();
             load_all_sounds();
@@ -40,7 +42,13 @@ namespace crow {
         void cleanup() { soloud.deinit(); }
         
         int play_bgm(int id) {
+            // handle duplicate bgm play calls
+            if (bgm_id != id) {
+                bgm_id = id;
+            } else return bgm_handle;
+            // stop previous song
             if (bgm_handle != -1) stop_bgm();
+            // play song
             bgm_handle = soloud.play(bgm[id], bgm_volume);
             // prevents the bgm from dying just because there's too many sfx
             soloud.setProtectVoice(bgm_handle, 1);
@@ -59,7 +67,11 @@ namespace crow {
             return bgs_handle;
         }
 
-        void stop_bgm() { soloud.stop(bgm_handle); bgm_handle = -1; }
+        void stop_bgm() {
+            soloud.stop(bgm_handle);
+            bgm_handle = -1;
+            bgm_id = -1;
+        }
         void stop_bgm(int handle) { soloud.stop(handle); }
 
         void stop_bgs() {
