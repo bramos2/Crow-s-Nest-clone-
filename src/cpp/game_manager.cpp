@@ -103,7 +103,7 @@ namespace crow {
 		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
 
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
-		p_impl->create_texture("res/textures/gui/crow-logo.dds", textures[texture_list::GUI_LOGO]);
+		p_impl->create_texture("res/textures/gui/Crows_Nest.dds", textures[texture_list::GUI_LOGO]);
 
 		p_impl->create_texture("res/textures/splash/full-sail-university.160x100.dds", textures[texture_list::SPLASH_FS]);
 		p_impl->create_texture("res/textures/splash/GPGames_LogoOriginal.dds", textures[texture_list::SPLASH_GD]);
@@ -173,7 +173,7 @@ namespace crow {
 
 		// open the game
 		current_state = game_state::MAIN_MENU;
-		// you can uncomment this line to skip the logos, just remember to comment it again
+		// you can comment this line to skip the logos, just remember to uncomment it again
 		current_state = game_state::S_SPLASH_FS;
 		init_credits();
 

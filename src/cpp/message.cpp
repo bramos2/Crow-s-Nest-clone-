@@ -48,37 +48,42 @@ void message::display(float scale, ImVec2 wh) {
   ImGui::End();
 }
 
-void message::display_bar(float scale, ImVec2 wh) {
-  // ImGui::SetWindowFontScale(wh.x / 960.f * scale);
-  float text_size =
-      wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
+    void message::display_bar(float scale, ImVec2 wh) {
+        // ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+        float text_size = wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
 
-  ImVec2 popup_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.05f,
-                            wh.y * 0.16f};
-  ImVec2 popup_window_wh = {text_size + wh.x * 0.1f,
-                            wh.y * 0.048f * scale + wh.y * 0.15f};
-  ImGui::SetNextWindowPos(popup_window_xy, ImGuiCond_Always);
-  ImGui::SetNextWindowSize(popup_window_wh, ImGuiCond_Always);
-  ImGui::Begin("popup_wind_p", 0,
-               ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
-                   ImGuiWindowFlags_NoResize);
+        ImGui::PushStyleColor(ImGuiCol_Button,        { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 0.4f, 0.65f, 0.99f, 0.5f});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  { 0.4f, 0.65f, 0.99f, 0.5f});
 
-  ImGui::SetWindowFontScale(wh.x / 960.f * scale);
-  ImGui::SetCursorPosX(wh.x * 0.05f);
-  ImGui::Text(text.c_str());
+        ImVec2 popup_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.05f,
+                                wh.y * 0.16f};
+        ImVec2 popup_window_wh = {text_size + wh.x * 0.1f,
+                                wh.y * 0.048f * scale + wh.y * 0.15f};
+        ImGui::SetNextWindowPos(popup_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(popup_window_wh, ImGuiCond_Always);
+        ImGui::Begin("popup_wind_p", 0,
+                    ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoResize);
 
-  // draw the bar using a button, just because we can
-  // TODO::load a texture instead of something as hilarious as a BUTTON
+        ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+        ImGui::SetCursorPosX(wh.x * 0.05f);
+        ImGui::Text(text.c_str());
 
-  ImVec2 prog_bar_wh = {(popup_window_wh.x * 0.92f) * (progress / progress_max),
-                        popup_window_wh.y * 0.45f};
-  ImGui::NewLine();                                 // positioning
-  ImGui::SetCursorPosX(popup_window_wh.x * 0.04f);  // positioning
-  if (progress == progress_max)
-    ImGui::Button("COMPLETE", prog_bar_wh);
-  else
-    ImGui::Button("", prog_bar_wh);
+        // draw the bar using a button, just because we can
+        // TODO::load a texture instead of something as hilarious as a BUTTON
 
-  ImGui::End();
-}
+        ImVec2 prog_bar_wh = {(popup_window_wh.x * 0.92f) * (progress / progress_max),
+                            popup_window_wh.y * 0.45f};
+        ImGui::NewLine();                                 // positioning
+        ImGui::SetCursorPosX(popup_window_wh.x * 0.04f);  // positioning
+        if (progress == progress_max)
+        ImGui::Button("COMPLETE", prog_bar_wh);
+        else
+        ImGui::Button("", prog_bar_wh);
+
+        ImGui::End();
+
+      ImGui::PopStyleColor(3);
+    }
 }  // namespace crow

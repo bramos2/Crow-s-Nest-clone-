@@ -111,7 +111,7 @@ namespace crow {
                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoCollapse |
                         ImGuiWindowFlags_NoResize);
 
-        ImVec2 logo_wh = { 420, 160 };
+        ImVec2 logo_wh = { wh.x * 0.5f, wh.y * 0.2f };
         ImVec2 logo_xy = { (wh.x - logo_wh.x) / 2.0f, (wh.y * 0.45f - logo_wh.y) / 2.0f };
         // draw game logo
         ImGui::SetCursorPos(logo_xy);

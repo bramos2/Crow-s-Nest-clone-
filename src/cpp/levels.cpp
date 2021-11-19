@@ -36,9 +36,10 @@ namespace crow {
 
 				// worker start position
 				rooms[0][0].object_indices.push_back(0);
-
-				// here is the damn issue
 				rooms[0][0].generate_tilemap();
+
+				place_table(rooms[0][0], { 10, 7 }, 'r', 2);
+				place_table(rooms[0][0], { 4, 7 }, 'l', 2);
 			}
 
 			rooms[0][1].id = 2;
@@ -46,18 +47,24 @@ namespace crow {
 			crow::door* door2_2 = new door(this, true, 'd', &rooms[0][1], nullptr);
 			crow::door* door2_r = new door(this, false, 'r', &rooms[0][1], nullptr);
 			{
-
 				rooms[0][1].generate_tilemap();
-
+				
+				place_table(rooms[0][1], { 7, 10 }, 'l', 1);
+				place_table(rooms[0][1], { 7, 4 }, 'r', 1);
+				place_table(rooms[0][1], { 9, 7 }, 'u', 1);
+				place_table(rooms[0][1], { 5, 7 }, 'd', 1);
 			}
 
 			rooms[1][1].id = 3;
 			crow::door* door3 = new door(this, true, 'u', &rooms[1][1], door2_2);
 			crow::door* door3_2 = new door(this, true, 'd', &rooms[1][1]);
 			{
-
 				rooms[1][1].generate_tilemap();
-
+				
+				place_couch(rooms[1][1], { 17, 10 }, 'l', 2);
+				place_couch(rooms[1][1], {  7, 10 }, 'r', 2);
+				place_couch(rooms[1][1], { 17, 4 }, 'l', 2);
+				place_couch(rooms[1][1], {  7, 4 }, 'r', 2);
 
 			}
 
@@ -67,8 +74,19 @@ namespace crow {
 			crow::door* door4_3 = new door(this, true, 'd', &rooms[2][1]);
 			crow::door* door4_4 = new door(this, true, 'r', &rooms[2][1]);
 			{
-
 				rooms[2][1].generate_tilemap();
+				
+				place_couch(rooms[2][1], { 15, 11 }, 'd', 0);
+				place_couch(rooms[2][1], { 19, 10 }, 'l', 0);
+
+				place_couch(rooms[2][1], { 15, 3 }, 'u', 0);
+				place_couch(rooms[2][1], { 19, 4 }, 'l', 0);
+
+				place_couch(rooms[2][1], { 9, 11 }, 'd', 0);
+				place_couch(rooms[2][1], { 5, 10 }, 'r', 0);
+
+				place_couch(rooms[2][1], { 9, 3 }, 'u', 0);
+				place_couch(rooms[2][1], { 5, 4 }, 'r', 0);
 			}
 
 			rooms[2][0].id = 5;
@@ -81,6 +99,15 @@ namespace crow {
 				rooms[2][0].object_indices.push_back(1);
 
 				rooms[2][0].generate_tilemap();
+
+				place_barrel(rooms[2][0], { 19, 1 }, 'l', 0);
+				place_barrel(rooms[2][0], { 22, 5 }, 'v', 2);
+				place_barrel(rooms[2][0], { 9, 13 }, 'u', 0);
+				place_barrel(rooms[2][0], { 2, 12 }, 'd', 1);
+				place_crate2(rooms[2][0], { 18, 11 }, 180);
+				place_lightbox(rooms[2][0], { 5, 2 }, 50);
+				place_lightbox(rooms[2][0], { 7, 8 }, 0);
+				place_electricbox(rooms[2][0], { 3, 1 }, 'u');
 			}
 
 			rooms[3][1].id = 6;
@@ -93,6 +120,19 @@ namespace crow {
 				press->set_tile('d');
 
 				rooms[3][1].generate_tilemap();
+
+				place_barrel(rooms[3][1], { 14, 0 }, 'v', 1);
+				place_barrel(rooms[3][1], { 10, 0 }, 'v', 1);
+
+				place_lightbox(rooms[3][1], {  2, 0 },  0);
+				place_lightbox(rooms[3][1], { 22, 1 }, 10);
+				place_lightbox(rooms[3][1], {  3, 2 }, 15);
+				place_lightbox(rooms[3][1], { 17, 0 }, 22);
+				place_lightbox(rooms[3][1], {  8, 3 }, 45);
+				place_lightbox(rooms[3][1], { 14, 2 }, 75);
+				place_lightbox(rooms[3][1], { 18, 3 }, 85);
+				place_lightbox(rooms[3][1], {  7, 1 }, 195);
+				place_lightbox(rooms[3][1], {  1, 1 }, 220);
 			}
 
 			rooms[2][2].id = 7;
@@ -102,6 +142,12 @@ namespace crow {
 			{
 
 				rooms[2][2].generate_tilemap();
+
+				place_table(rooms[2][2], { 10, 7 }, 'u', 2);
+				place_table(rooms[2][2], { 14, 7 }, 'u', 2);
+				place_table(rooms[2][2], { 18, 8 }, 'd', 2);
+				place_table(rooms[2][2], {  6, 7 }, 'd', 2);
+
 			}
 			
 			rooms[2][3].id = 8;
@@ -113,6 +159,10 @@ namespace crow {
 				rooms[2][3].objects.push_back(floor0_exit);
 
 				rooms[2][3].generate_tilemap();
+
+				place_barrel(rooms[2][3], { 5, 7 }, 'v', 0);
+				place_barrel(rooms[2][3], { 12, 7 }, 'v', 1);
+				place_barrel(rooms[2][3], { 19, 7 }, 'v', 2);
 			}
 
 			rooms[1][0].id = 9;
@@ -123,6 +173,11 @@ namespace crow {
 				rooms[1][0].objects.push_back(doorp9);
 				rooms[1][0].objects.push_back(doorp11);
 				rooms[1][0].generate_tilemap();
+
+				place_bed(rooms[1][0], { 1, 12 }, 'u');
+				place_table(rooms[1][0], { 23, 1 }, 'l', 0);
+				place_chair(rooms[1][0], { 21, 1 }, 'r');
+				place_couch(rooms[1][0], { 12, 10 }, 'd', 0);
 			}
 
 			rooms[3][0].id = 10;
@@ -131,6 +186,10 @@ namespace crow {
 			{
 				rooms[3][0].objects.push_back(doorp14_u);
 				rooms[3][0].generate_tilemap();
+				place_bed(rooms[3][0], { 1, 2 }, 'd');
+				place_table(rooms[3][0], { 23, 13 }, 'l', 0);
+				place_chair(rooms[3][0], { 21, 13 }, 'r');
+				place_couch(rooms[3][0], { 12, 4 }, 'u', 0);
 			}
 
 			rooms[0][2].id = 11;
@@ -139,6 +198,11 @@ namespace crow {
 			crow::door* door11_d = new door(this, true, 'd', &rooms[0][2]);
 			{
 				rooms[0][2].generate_tilemap();
+
+				place_table(rooms[0][2], { 17, 10 }, 'l', 1);
+				place_table(rooms[0][2], { 17, 4 }, 'r', 1);
+				place_table(rooms[0][2], { 15, 7 }, 'u', 1);
+				place_table(rooms[0][2], { 19, 7 }, 'd', 1);
 			}
 
 			rooms[0][3].id = 12;
@@ -148,6 +212,15 @@ namespace crow {
 			{
 				rooms[0][3].objects.push_back(doorp12);
 				rooms[0][3].generate_tilemap();
+
+				place_table(rooms[0][3], { 10, 7 }, 'r', 0);
+				place_chair(rooms[0][3], { 12, 7 }, 'l');
+				place_table(rooms[0][3], { 13, 5 }, 'u', 0);
+				place_table(rooms[0][3], { 13, 9 }, 'd', 0);
+
+				place_crate2(rooms[0][3], { 19, 6 }, 0);
+				place_crate2(rooms[0][3], { 19, 9 }, 0);
+				place_lightbox(rooms[0][3], { 18, 4 }, 0);
 			}
 
 			rooms[1][2].id = 13;
@@ -155,6 +228,19 @@ namespace crow {
 			crow::door* door13_r = new door(this, false, 'r', &rooms[1][2]);
 			{
 				rooms[1][2].generate_tilemap();
+
+				place_serverbox(rooms[1][2], { 20, 13 }, 'd');
+				place_serverbox(rooms[1][2], { 7, 13 }, 'd');
+				place_chair(rooms[1][2], { 19, 11 }, 'u');
+				place_chair(rooms[1][2], { 6, 11 }, 'u');
+
+				place_table(rooms[1][2], { 12, 7 }, 'u', 1);
+				place_chair(rooms[1][2], { 15, 7 }, 'l');
+				place_chair(rooms[1][2], { 9, 7 }, 'r');
+				
+				place_couch(rooms[1][2], { 8, 1 }, 'u', 2);
+				place_couch(rooms[1][2], { 16, 1 }, 'u', 2);
+
 			}
 
 			rooms[1][3].id = 14;
@@ -167,6 +253,14 @@ namespace crow {
 				rooms[1][3].objects.push_back(doorp14);
 				rooms[1][3].objects.push_back(doorp15);
 				rooms[1][3].generate_tilemap();
+
+				place_crate2(rooms[1][3], { 23, 11 }, 0);
+				place_crate2(rooms[1][3], { 23, 8 }, 0);
+				place_crate2(rooms[1][3], { 23, 6 }, 0);
+
+				place_crate2(rooms[1][3], { 16, 10 }, 0);
+				place_crate2(rooms[1][3], { 11, 4 }, 0);
+				place_crate2(rooms[1][3], { 6, 9 }, 0);
 			}
 
 			rooms[3][2].id = 15;
@@ -179,6 +273,19 @@ namespace crow {
 				rooms[3][2].objects.push_back(doorp15_u);
 				rooms[3][2].objects.push_back(doorp8);
 				rooms[3][2].generate_tilemap();
+
+				place_serverbox(rooms[3][2], { 3, 0 }, 'u');
+				place_serverbox(rooms[3][2], { 7, 0 }, 'u');
+				place_serverbox(rooms[3][2], { 11, 0 }, 'u');
+				place_serverbox(rooms[3][2], { 15, 0 }, 'u');
+				place_serverbox(rooms[3][2], { 19, 0 }, 'u');
+				place_serverbox(rooms[3][2], { 23, 0 }, 'u');
+
+				place_electricbox(rooms[3][2], { 14, 5 }, 'd');
+				place_electricbox(rooms[3][2], { 18, 5 }, 'd');
+				place_electricbox(rooms[3][2], { 3, 12 }, 'd');
+				place_electricbox(rooms[3][2], { 20, 10 }, 'd');
+
 			}
 		} break;
 		case 2: {
