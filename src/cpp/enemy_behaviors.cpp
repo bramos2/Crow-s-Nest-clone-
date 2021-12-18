@@ -429,12 +429,19 @@ namespace crow {
 		if (!m.entities->mesh_ptrs[m.index]->animator->is_acting) { // animtion finished playing
 			//// door is closed
 			if (m.target->is_active == false) {
-				// sound effect of destroyed target
-				crow::audio::play_sfx(crow::audio::SFX::ENEMY_ATTACK);
 
 				m.target->dissable();
 				if (!m.target->is_broken) {
-					return crow::status::RUNNING;
+					m.target->interact(m.index, *m.entities, m.inter_index);
+					m.target = nullptr;
+					m.interacting = false;
+					m.is_roaming = true;
+					m.roam_timer = 0.f;
+					m.entities->mesh_ptrs[m.index]->animator->performed_action = false;
+					return crow::status::PASSED;
+				} else {
+					// sound effect of destroyed target
+					crow::audio::play_sfx(crow::audio::SFX::ENEMY_ATTACK);
 				}
 			}
 			else { // door is open
@@ -474,6 +481,7 @@ namespace crow {
 				// sound effect of destroyed target
 				crow::audio::play_sfx(crow::audio::SFX::ENEMY_ATTACK);
 
+				m.killed_target = m.target;
 				m.target->dissable();
 				m.target = nullptr;
 				m.counter--;

@@ -12,6 +12,7 @@ cbuffer MCB_t
     matrix projection;
     matrix matrices[30];
     float3 lightColor;
+    float4 amblight;
     float surfaceShininess;
     float3 lightPos;
     float lightPower;

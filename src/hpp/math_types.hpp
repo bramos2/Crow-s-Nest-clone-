@@ -254,6 +254,16 @@ namespace crow
 			return *this;
 		}
 
+		inline float4e& operator+=(float4e rhs)
+		{
+			x += rhs.x;
+			y += rhs.y; 
+			z += rhs.z;
+			w += rhs.w;
+
+			return *this;
+		}
+
 		inline friend float4e operator*(float4e lhs, float rhs)
 		{
 			return { lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs };
@@ -496,6 +506,16 @@ namespace crow
 		inline colored_vertex(const float3e& p, uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : pos{ p }, color{ r/255.0f, g/255.0f, b/255.0f, a/255.0f } {}
 	};
 
+	struct textured_vertex {
+		float3e pos = { 0.0f, 0.0f, 0.0f };
+		float size = 0;
+		float transparency = 0;
+		float rotation = 0;
+
+		// cast this to a texture pointer later
+		void* texture;
+	};
+
 	struct mesh_vertex
 	{
 		float pos[3] = { 0.0f, 0.0f, 0.0f };
@@ -513,6 +533,11 @@ namespace crow
 	static float randFloat(float min, float max)
 	{
 		return (max - min) * (rand() / (float)RAND_MAX) + min;
+	}
+
+	static int randInt(int min, int max)
+	{
+		return rand() % (max - min) + min;
 	}
 
 	struct mat_t

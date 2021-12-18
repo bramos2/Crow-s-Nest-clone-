@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dxgi1_2.h>
+#include <d3d11_2.h>
 #include <vector>
 #include <string>
 #include "math_types.hpp"
@@ -116,6 +118,22 @@ namespace crow {
 		// returns the multiplications of the inverted bindpose and the updated tween_frame
 		void mult_curr_frame();
 	};
+	
+	enum class emitter_type : int {
+		NONE = -1, // don't do anything special, just use the prototype particle
+		PLAYER_BLOOD = 0, // blood of a human character getting slashed
+		OBJ_DAMAGE, // an object is hit
+		BROKEN_WIRE, 
+		BROKEN_MACHINERY, // similar to above, used for broken consoles
+		STEAM,
+		WATER_SPRAY,
+		GAS_SPRAY,
+		DUST,
+		FOG,
+		STEAM_V2,
+		EXPLOD,
+		OBJ_DAMAGE_V2
+	};
 
 	// particle data
 	struct particle
@@ -123,15 +141,37 @@ namespace crow {
 		crow::float3e pos = crow::float3e(0.f, 0.f, 0.f);
 		crow::float3e prev_pos = crow::float3e(0.f, 0.f, 0.f);
 		crow::float4e color = crow::float4e(0.5f, 0.f, 1.f, 1.f);
-		crow::float3e vel = crow::float3e(0.f, 0.f, 0.f);
-		float life_span;
+		crow::float4e color2 = crow::float4e(0.5f, 0.f, 1.f, 1.f);
+		crow::float3e vel = crow::float3e(5.f, 1.f, 5.f);
+		// "gravity" or change in velocity
+		crow::float3e gravity = crow::float3e(0.f, -2.f, 0.f);
+		crow::float4e color_gravity = crow::float4e(0.f, 0.f, 0.f, 0.f);
+		float life_span = 3.0f;
+		float min_life_span = 0.3f;
+		float size = 1.0f;
+		float size_gravity = 1.0f;
+		float transparency = 1.0f;
+		float transparency_gravity = 1.0f;
+
+		// if assigned, we will use this for drawing instead of debug renderer
+		ID3D11ShaderResourceView* texture;// = nullptr;
+		// NOT dynamic memory, do NOT call new or delete
 	};
 
 	struct emitter_sp
 	{
-		crow::float3e pos = crow::float3e(0.f,0.f,0.f);
-		crow::float4e color = crow::float4e(0.5f, 0.f, 1.f, 1.f);
+		// contains all relevant fields for the spawned particles to mimic
+		crow::particle prototype;
+
 		sorted_pool_t<particle, 1024> pool;
+
+		// how much dt to spawn particles for. -1 means infinite
+		float life_span = -1.0f;
+
+		crow::emitter_type type = crow::emitter_type::NONE;
+
+		// room that this emitter lives in
+		int room_id = 1;
 	};
 
 	// load mesh data from a .bin file and stores it in given mesh

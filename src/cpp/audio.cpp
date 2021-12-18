@@ -116,7 +116,7 @@ namespace crow {
           load_sfx("res/sfx/Monster_Step_3.wav", SFX::ENEMY_FOOTSTEP);
           load_sfx("res/sfx/Monster_Scream.wav", SFX::ENEMY_APPEAR);
           load_sfx("res/sfx/Door_Bang.wav", SFX::ENEMY_ATTACK);
-          load_sfx("res/sfx/Alarm_Blaring.wav", SFX::ALARM);
+          load_sfx("res/sfx/Alarm_Blaring2.wav", SFX::ALARM);
 
           // loading bgm
           load_bgm("res/bgm/cavethemeb4.ogg", BGM::NORMAL);
@@ -124,6 +124,7 @@ namespace crow {
           load_bgm("res/bgm/synth_wave_alex.mp3", BGM::DETECTED);
           load_bgm("res/bgm/breathe.mp3", BGM::GAME_OVER);
           load_bgm("res/bgm/game_overcredits.wav", BGM::GAME_WIN);
+          load_bgm("res/bgm/driving.mp3", BGM::ESCAPE);
 
           sound_loaded = true;
         }

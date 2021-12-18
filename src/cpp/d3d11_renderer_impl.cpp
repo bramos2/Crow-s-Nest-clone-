@@ -97,15 +97,60 @@ namespace crow {
 		// draw!
 		context->Draw(crow::debug_renderer::get_line_vert_count(), 0);
 		crow::debug_renderer::clear_lines();
+
+
+
+		// now do the same for textures
+
+		
+		context->OMSetBlendState(blend, nullptr, 0xFFFFFFFF);
+		
+		context->IASetVertexBuffers( 0, 0, nullptr, nullptr, nullptr);
+		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		context->IASetInputLayout(input_layout[INPUT_LAYOUT::BILLBOARD]);
+		context->VSSetShader(vertex_shader[VERTEX_SHADER::BILLBOARD], nullptr, 0);
+		context->PSSetShader(pixel_shader[PIXEL_SHADER::BILLBOARD], nullptr, 0);
+		context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::BILLBOARD]);
+
+		BBB_t b;
+		b.modeling = XMMatrixTranspose(XMMatrixIdentity());
+		b.projection = view.proj_final;
+		b.view = view.view_final;
+		for (int i = 0; i < crow::debug_renderer::get_tex_vert_count(); i++) {
+			const crow::textured_vertex& v = crow::debug_renderer::get_tex_verts()[i];
+
+			// update const buffer
+			b.pos = XMFLOAT4(v.pos.x, v.pos.y, v.pos.z, v.size);
+			b.etc.x = v.transparency;
+			context->UpdateSubresource(constant_buffer[CONSTANT_BUFFER::BILLBOARD], 0, NULL, &b, sizeof(BBB_t), 0);
+
+			// load texture
+			ID3D11ShaderResourceView* srvs[] = { ((ID3D11ShaderResourceView*)v.texture) };
+			context->PSSetShaderResources(0, 1, srvs);
+
+			// draw!
+			context->Draw(4, 0);
+			
+		context->ClearDepthStencilView(depthStencilView[VIEW_DEPTH_STENCIL::DEFAULT], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		}
+
+
+		// transparency is no longer supported
+		context->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+
+		crow::debug_renderer::clear_textures();
 	}
 
 	void impl_t::draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view)
 	{
+		
 		MCB_s s_buff;
 		MCB_t a_buff;
 
 		a_buff.projection = s_buff.projection = view.proj_final;
 		a_buff.view = s_buff.view = view.view_final;
+		a_buff.amblight = entities.amblight;
+		s_buff.amblight = entities.amblight;
 
 		for (int i = 0; i < inds.size(); i++) {
 			bool animated = (entities.mesh_ptrs[inds[i]]->a_mesh != nullptr);
@@ -121,6 +166,7 @@ namespace crow {
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::STATIC_MESH], nullptr, 0);
 				context->PSSetShader(pixel_shader[PIXEL_SHADER::STATIC_MESH], nullptr, 0);
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]);
+				context->PSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]);
 				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
 				if (entities.s_resource_view[inds[i]]) {
@@ -153,6 +199,7 @@ namespace crow {
 				context->VSSetShader(vertex_shader[VERTEX_SHADER::ANIM_MESH], nullptr, 0);
 				context->PSSetShader(pixel_shader[PIXEL_SHADER::ANIM_MESH], nullptr, 0);
 				context->VSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::ANIM_MESH]);
+				context->PSSetConstantBuffers(0, 1, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]); // todo::AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 				context->IASetIndexBuffer(entities.mesh_ptrs[inds[i]]->index_buffer, DXGI_FORMAT_R32_UINT, 0);
 
 				if (entities.s_resource_view[inds[i]]) {
@@ -180,6 +227,11 @@ namespace crow {
 				context->DrawIndexed((int)entities.mesh_ptrs[inds[i]]->a_mesh->indicies.size(), 0, 0);
 			}
 		}
+	}
+
+	void impl_t::draw_particle_t(particle& p, view_t view)
+	{
+
 	}
 
 	void impl_t::update(float delta) {
@@ -253,6 +305,7 @@ namespace crow {
 		safe_release(context);
 		safe_release(swapchain);
 		safe_release(device);
+		safe_release(blend);
 
 		// ImGui deinit
 		ImGui_ImplDX11_Shutdown();
@@ -331,6 +384,19 @@ namespace crow {
 		}
 
 		assert(!FAILED(hr));
+
+		// initialize blender for transparent particles
+		D3D11_BLEND_DESC blendy;
+		ZeroMemory(&blendy, sizeof(blendy));
+		blendy.RenderTarget[0].BlendEnable = true;
+		blendy.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendy.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendy.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendy.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+		blendy.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_DEST_ALPHA;
+		blendy.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendy.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		HRESULT blend_s = device->CreateBlendState( &blendy, &blend);
 
 		// ALL IMGUI SETUP GOES HERE
 		ImGui::CreateContext();
@@ -508,6 +574,27 @@ namespace crow {
 
 			hr = device->CreateInputLayout(mILdesc, ARRAYSIZE(mILdesc), vs_mesh_vertex_blob.data(), vs_mesh_vertex_blob.size(), &input_layout[INPUT_LAYOUT::STATIC_MESH]);
 		}
+
+		// there is no need to be afraid
+		{
+			binary_blob_t vs_billboard_blob = load_binary_blob("vs_billboard.cso");
+			binary_blob_t ps_billboard_blob = load_binary_blob("ps_billboard.cso");
+
+			hr = device->CreateVertexShader(vs_billboard_blob.data(), vs_billboard_blob.size(), NULL, &vertex_shader[VERTEX_SHADER::BILLBOARD]);
+			assert(!FAILED(hr));
+
+			hr = device->CreatePixelShader(ps_billboard_blob.data(), ps_billboard_blob.size(), NULL, &pixel_shader[PIXEL_SHADER::BILLBOARD]);
+			assert(!FAILED(hr));
+
+			D3D11_INPUT_ELEMENT_DESC mILdesc[] =
+			{
+				{"POSITION",     0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+				{"TEXCOORD",     0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+				{"ETC",          0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+			};
+
+			hr = device->CreateInputLayout(mILdesc, ARRAYSIZE(mILdesc), vs_billboard_blob.data(), vs_billboard_blob.size(), &input_layout[INPUT_LAYOUT::BILLBOARD]);
+		}
 	}
 
 	void impl_t::create_constant_buffers()
@@ -542,6 +629,16 @@ namespace crow {
 		mcbs_bd.CPUAccessFlags = 0;
 
 		hr = device->CreateBuffer(&mcbs_bd, NULL, &constant_buffer[CONSTANT_BUFFER::STATIC_MESH]);
+
+		D3D11_BUFFER_DESC bbb_bd;
+		ZeroMemory(&bbb_bd, sizeof(bbb_bd));
+
+		bbb_bd.Usage = D3D11_USAGE_DEFAULT;
+		bbb_bd.ByteWidth = sizeof(BBB_t);
+		bbb_bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		bbb_bd.CPUAccessFlags = 0;
+
+		hr = device->CreateBuffer(&bbb_bd, NULL, &constant_buffer[CONSTANT_BUFFER::BILLBOARD]);
 	}
 
 	void impl_t::create_vertex_buffers()
@@ -555,6 +652,7 @@ namespace crow {
 		srd.pSysMem = crow::debug_renderer::get_line_verts();
 
 		hr = device->CreateBuffer(&desc, &srd, &vertex_buffer[VERTEX_BUFFER::COLORED_VERTEX]);
+
 
 		////buffer for terrain mesh
 		//CD3D11_BUFFER_DESC desc2 = CD3D11_BUFFER_DESC(
@@ -858,8 +956,34 @@ namespace crow {
 			crow::float4e(1.0, 1.0f, 1.0f, 1.0f));  // color for both
 	}
 
-	void impl_t::set_sorted_particles(emitter_sp& emitter, int particles)
+	void impl_t::set_sorted_particles(emitter_sp& emitter, emitter_type type, int particles)
 	{
+		// ran out of life
+		if (emitter.life_span == 0) return;
+
+		// particle count correction based on emitter type
+		switch (type) {
+		case emitter_type::PLAYER_BLOOD: particles = 10; break;
+		case emitter_type::OBJ_DAMAGE: particles = 20; break;
+		case emitter_type::BROKEN_WIRE:
+			if (randInt(0, 100) < 90) return;
+			particles = randInt(0, 3);
+			break;
+		case emitter_type::BROKEN_MACHINERY: 
+			if (randInt(0, 100) < 60) return;
+			particles = 1;
+			break;
+		case emitter_type::GAS_SPRAY: particles = 5; break;
+		case emitter_type::WATER_SPRAY: particles = 10; break;
+		case emitter_type::FOG: particles = 1; break;
+		case emitter_type::STEAM_V2: 
+			if (randInt(0, 100) < 97) return;
+			particles = 1;
+			break;
+		case emitter_type::DUST: particles = 6; break;
+		case emitter_type::OBJ_DAMAGE_V2: particles = 1; break;
+		}
+
 		for (unsigned int i = 0; i < particles; ++i)
 		{
 			int16_t indx = emitter.pool.alloc();
@@ -867,10 +991,157 @@ namespace crow {
 				return;
 
 			particle p;
-			p.pos = p.prev_pos = emitter.pos;
-			p.color = emitter.color;
-			p.vel = crow::float3e(randFloat(-5.0f, 5.0f), 1.f, randFloat(-5.0f, 5.0f));
-			p.life_span = randFloat(0.3f, 3.0f);
+			p = emitter.prototype;
+			
+			// generate particle based on type
+			switch (type) {
+
+			case emitter_type::PLAYER_BLOOD: {
+				// rad = radius
+				float rad = 4.f;
+
+				p.color = crow::float4e(0.7f, 0, 0, 1);
+				p.color2 = crow::float4e(0.8f, 0, 0, 1);
+				p.vel = crow::float3e(randFloat(35.f, 40.0f), randFloat(-rad, rad), randFloat(-rad, rad));
+				p.life_span = randFloat(0.025f, 0.15f);
+			} break;
+
+			case emitter_type::OBJ_DAMAGE: {
+				// rad = radius
+				float rad = 4.f;
+				float color = 0.3f;
+				
+				p.color = crow::float4e(color, color, color, 1);
+				p.color2 = crow::float4e(1, 1, 1, 1);
+				p.vel = crow::float3e(randFloat(-rad, rad), randFloat(-rad, rad), randFloat(-rad, rad));
+				p.gravity = p.vel * -0.65f;
+				p.life_span = randFloat(0.3f, 0.9f);
+
+			} break;
+
+			case emitter_type::BROKEN_WIRE: {
+				// rad = radius
+				float rad = 1.f;
+				
+				p.gravity.y = -80.f;
+				p.color = p.color2 = crow::float4e(1, 1, 0, 1);
+				p.vel = crow::float3e(randFloat(-rad, rad), 30, randFloat(-rad, rad));
+				p.life_span = randFloat(2.0f, 3.0f);
+
+			} break;
+
+			case emitter_type::BROKEN_MACHINERY: {
+				// rad = radius
+				float rad = 0.1f;
+				float color_g = -0.25f;
+
+				p.color2 = crow::float4e(0.75f, 0.75f, 0.75f, 1);
+				p.color = crow::float4e(0.8f, 0.8f, 0.8f, 1);
+				p.color_gravity = crow::float4e(color_g, color_g, color_g, color_g);
+				p.gravity = crow::float3e(-1, 2, 0);
+				p.vel = crow::float3e(1 + randFloat(-0.25f, 0.5f), 2, randFloat(-0.25f, 0.5f));
+				p.pos += crow::float3e(randFloat(-rad, rad), randFloat(-rad, rad), randFloat(-rad, rad));
+				p.prev_pos = p.pos;
+				p.life_span = randFloat(0.75f, 2.f);
+			} break;
+
+			case emitter_type::WATER_SPRAY: {
+				// rad = radius
+				float rad = 4.f;
+				
+				if (randInt(0, 2)) {
+					p.color = crow::float4e(0.5f, 0.6f, 1, 1);
+					p.color2 = crow::float4e(0.75f, 0.9f, 1, 1);
+				} else {
+					p.color = crow::float4e(0.1f, 0.2f, 1, 1);
+					p.color2 = crow::float4e(0.6f, 0.8f, 1, 1);
+				}
+
+				p.vel = crow::float3e(randFloat(-rad, rad), randFloat(35.f, 40.0f), randFloat(-rad, rad));
+				p.life_span = randFloat(0.025f, 0.08f);
+			} break;
+
+			case emitter_type::GAS_SPRAY: {
+				// rad = radius
+				float rad = 4.f;
+				
+
+				if (randInt(0, 2)) {
+					p.color = crow::float4e(0.5f, 1.0f, 0.04f, 1);
+					p.color2 = crow::float4e(0.8f, 0.9f, 0.3f, 1);
+				} else {
+					p.color = crow::float4e(0.3f, 0.8f, 0.1f, 1);
+					p.color2 = crow::float4e(0.35f, 0.8f, 0.6f, 1);
+				}
+
+				p.vel = crow::float3e(randFloat(-rad, rad), randFloat(35.f, 40.0f), randFloat(-rad, rad));
+				p.life_span = randFloat(0.025f, 0.08f);
+			} break;
+
+			case emitter_type::STEAM: {
+				// rad = radius
+				float rad = 1.0f;
+
+				p.color = crow::float4e(0.6f, 0.6f, 0.6f, 1);
+				p.color2 = crow::float4e(0.8f, 0.8f, 0.8f, 1);
+				p.gravity = crow::float3e(0, 2, 0);
+				p.vel = crow::float3e(randFloat(-0.25f, 0.5f), 2, randFloat(-0.25f, 0.5f));
+				p.pos += crow::float3e(randFloat(-rad, rad), randFloat(-rad, rad), randFloat(-rad, rad));
+				p.prev_pos = p.pos;
+				p.life_span = randFloat(0.75f, 2.f);
+			} break;
+
+			case emitter_type::STEAM_V2: {
+				// rad = radius
+				float rad = 0.6f;
+
+				p.color = crow::float4e(0.6f, 0.6f, 0.6f, 1);
+				p.color2 = crow::float4e(0.8f, 0.8f, 0.8f, 1);
+				p.gravity = crow::float3e(0, 2, 0);
+				p.size_gravity = 1;
+				p.transparency_gravity = -0.35f;
+				p.transparency = randFloat(0.65f, 0.9f);
+				p.vel = crow::float3e(randFloat(-0.25f, 0.5f), 2, randFloat(-0.25f, 0.5f));
+				p.pos += crow::float3e(randFloat(-rad, rad), randFloat(-rad, rad), randFloat(-rad, rad));
+				p.prev_pos = p.pos;
+				p.life_span = randFloat(1.5f, 2.f);
+			} break;
+
+			case emitter_type::DUST: {
+				// rad = radius
+				float rad = 1.0f;
+
+				p.size_gravity = -0.5f;
+				p.transparency_gravity = -0.6f;
+				p.vel = crow::float3e(randFloat(-rad, rad), 0, randFloat(-rad, rad));
+				p.life_span = randFloat(0.75f, 2.f);
+				p.pos.y += 2;
+				p.prev_pos.y += 2;
+
+				// do not generate any more particles
+				emitter.life_span = 0;
+			} break;
+
+			case emitter_type::OBJ_DAMAGE_V2: {
+				// rad = radius
+				float rad = 1.0f;
+
+				p.pos.y += 0.5f;
+				p.vel = crow::float3e(0, 0, 0);
+				p.size_gravity = 2.f;
+				p.transparency_gravity = -1.f;
+				p.gravity = crow::float3e(0.02f, 0.02f, 0.02f);
+				p.life_span = randFloat(0.75f, 2.f);
+
+				// do not generate any more particles
+				emitter.life_span = 0;
+			} break;
+
+			default:
+				p.vel = crow::float3e(randFloat(-p.vel.x, p.vel.x), randFloat(-p.vel.y, p.vel.y), randFloat(-p.vel.z, p.vel.z));
+				p.life_span = randFloat(p.min_life_span, p.life_span);
+				break;
+			}
 
 			emitter.pool[indx] = p;
 		}
@@ -878,6 +1149,16 @@ namespace crow {
 
 	void impl_t::update_sorted_particles(emitter_sp& emitter, float delta)
 	{
+		// emitter lifespan processing
+		if (emitter.life_span > 0) {
+			// tick down lifespan
+			emitter.life_span -= delta;
+			// prevent underflow
+			if (emitter.life_span < 0) emitter.life_span = 0;
+		}
+		
+		// negative numbers (ie -1.0f) don't get processed, and will run indefinitely
+
 		for (int i = 0; i < emitter.pool.size(); ++i)
 		{
 			particle& p = emitter.pool[i];
@@ -890,14 +1171,25 @@ namespace crow {
 			{
 				p.prev_pos = p.pos;
 				p.pos += p.vel * delta;
+				p.vel += p.gravity * delta; // apply gravity
+				p.size += p.size_gravity * delta;
+				p.transparency += p.transparency_gravity * delta;
 				p.pos.y -= 0.1f * delta;
 				p.life_span -= delta;
+				p.color += p.color_gravity * delta;
+				p.color2 += p.color_gravity * delta;
 
-				crow::debug_renderer::add_line(
-					p.prev_pos,
-					p.pos,
-					emitter.color
-				);
+				if (p.texture == nullptr) {
+					crow::debug_renderer::add_line(
+						p.prev_pos, p.pos,
+						p.color   , p.color2
+					);
+				// render this particle as a texture rather than a debug line
+				} else if (p.pos.y > 0) {
+					crow::debug_renderer::add_texture(
+						p.pos, p.size, p.transparency, p.texture
+					);
+				}
 			}
 		}
 	}

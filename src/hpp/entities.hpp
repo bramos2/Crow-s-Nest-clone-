@@ -37,6 +37,8 @@ namespace crow {
 		//std::vector<float> curr_anim;
 
 
+		// ambient light value
+		DirectX::XMFLOAT4 amblight = { 0.5f, 0.5f, 0.5f, 0};
 		uint32_t current_size = 0;
 
 		// calls both allocate and init enty

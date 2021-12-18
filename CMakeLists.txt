@@ -118,6 +118,7 @@ set(IMGUI_FILES
 )
 
 set(VERTEX_SHADERS 
+  src/shader/vs_billboard.hlsl
   src/shader/vs_coloredvertex.hlsl
   src/shader/vs_cube.hlsl
   src/shader/vs_meshvertex.hlsl
@@ -125,6 +126,7 @@ set(VERTEX_SHADERS
 )
 
 set(PIXEL_SHADERS
+  src/shader/ps_billboard.hlsl
   src/shader/ps_coloredvertex.hlsl
   src/shader/ps_cube.hlsl
   src/shader/ps_meshvertex.hlsl
@@ -137,6 +139,7 @@ set(OTHER_SHADERS
   src/shader/mcb.hlsli
   src/shader/mvp.hlsli
   src/shader/scb.hlsli
+  src/shader/bbb.hlsli
 )
 
 target_sources(

@@ -24,6 +24,7 @@
 #include "../shader/mvp.hlsli"
 #include "../shader/mcb.hlsli"
 #include "../shader/scb.hlsli"
+#include "../shader/bbb.hlsli"
 //#include "frustum_culling.hpp"
 //#include "pools.hpp"
 
@@ -60,15 +61,15 @@ namespace crow
 	};
 
 	struct CONSTANT_BUFFER {
-		enum { MVP = 0, ANIM_MESH, STATIC_MESH, COUNT };
+		enum { MVP = 0, ANIM_MESH, STATIC_MESH, BILLBOARD, COUNT };
 	};
 
 	struct VERTEX_SHADER {
-		enum { BUFFERLESS_CUBE = 0, COLORED_VERTEX, ANIM_MESH, STATIC_MESH, COUNT };
+		enum { BUFFERLESS_CUBE = 0, COLORED_VERTEX, ANIM_MESH, STATIC_MESH, BILLBOARD, COUNT };
 	};
 
 	struct PIXEL_SHADER {
-		enum { BUFFERLESS_CUBE = 0, COLORED_VERTEX, ANIM_MESH, STATIC_MESH, COUNT };
+		enum { BUFFERLESS_CUBE = 0, COLORED_VERTEX, ANIM_MESH, STATIC_MESH, BILLBOARD, COUNT };
 	};
 
 	struct VIEW_RENDER_TARGET {
@@ -80,7 +81,7 @@ namespace crow
 	};
 
 	struct INPUT_LAYOUT {
-		enum { COLORED_VERTEX = 0, ANIM_MESH, STATIC_MESH, COUNT };
+		enum { COLORED_VERTEX = 0, ANIM_MESH, STATIC_MESH, BILLBOARD, COUNT };
 	};
 
 	struct STATE_RASTERIZER {
@@ -177,6 +178,8 @@ namespace crow
 
 		ID3D11SamplerState* samplerState[STATE_SAMPLER::COUNT]{};
 
+		ID3D11BlendState* blend;
+
 		/* Add more as needed...
 		ID3D11SamplerState*			sampler_state[STATE_SAMPLER::COUNT]{};
 
@@ -205,6 +208,8 @@ namespace crow
 		void draw_debug_lines(view_t& view);
 
 		void draw_entities(crow::entities& entities, std::vector<size_t> inds, view_t view);
+
+		void draw_particle_t(particle& p, view_t view);
 
 		/*Update functions
 		* *******
@@ -265,7 +270,7 @@ namespace crow
 		void DrawGrid();
 
 		////allocates particles into sorted emitter array
-		void set_sorted_particles(emitter_sp& emitter, int particles);
+		void set_sorted_particles(emitter_sp& emitter, emitter_type type, int particles = 30);
 		
 		//// allocates particles and index of particle in free pool and sorted pool
 		//void set_free_particles(Emitter_fp<int16_t>& emitter, pool_t<Particle, 1024>& pPool, int particles)

@@ -132,6 +132,7 @@ void crow::minimap::draw_call(game_manager& state) {
             current_level->selected_room = &current_room;
             //crow::update_room_cam(current_level->selected_room, state.view);
             crow::update_room_cam(pac(state.cam_pos), pac(state.cam_rotation), state.view);
+            state.change_room_tex();
         }
         ImGui::Button((state.debug_mode ? std::to_string(current_room.id).c_str() : std::string("##") + std::to_string(current_room.id)).c_str(), room_wh);
         

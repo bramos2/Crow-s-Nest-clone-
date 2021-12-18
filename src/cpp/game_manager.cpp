@@ -73,7 +73,22 @@ namespace crow {
 		p_impl->create_texture("res/textures/player.dds", textures[texture_list::PLAYER]);
 		p_impl->create_texture("res/textures/enemy1.dds", textures[texture_list::AI]);
 		p_impl->create_texture("res/textures/npc.dds", textures[texture_list::NPC]);
-		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR1]);
+		p_impl->create_texture("res/textures/floor_1.dds", textures[texture_list::FLOOR0]);
+		p_impl->create_texture("res/textures/T_49_Diffuse.dds", textures[texture_list::FLOOR1]);
+		
+		p_impl->create_texture("res/textures/T_04_Diffuse.dds", textures[texture_list::FLOOR2]);
+		p_impl->create_texture("res/textures/T_23_Diffuse.dds", textures[texture_list::FLOOR2_2]);
+		p_impl->create_texture("res/textures/T_11_Diffuse2.dds", textures[texture_list::FLOOR4]);
+		p_impl->create_texture("res/textures/T_05_Diffuse.dds", textures[texture_list::FLOOR5]);
+		p_impl->create_texture("res/textures/T_07_Diffuse.dds", textures[texture_list::FLOOR5_2]);
+		p_impl->create_texture("res/textures/T_14_Diffuse.dds", textures[texture_list::FLOOR5_ENTRANCE]);
+		p_impl->create_texture("res/textures/T_02_Diffuse.dds", textures[texture_list::FLOOR5_SD]);
+		p_impl->create_texture("res/textures/T_19_Diffuse.dds", textures[texture_list::FLOOR_CARGO]);
+
+		p_impl->create_texture("res/textures/T_48_Diffuse.dds", textures[texture_list::WALL1]);
+		p_impl->create_texture("res/textures/T_08_Diffuse.dds", textures[texture_list::WALL2]);
+		p_impl->create_texture("res/textures/Texture_3_Diffuse.dds", textures[texture_list::WALL4]);
+
 		p_impl->create_texture("res/textures/door_open.dds", textures[texture_list::DOOR_OPEN]);
 		p_impl->create_texture("res/textures/door_closed.dds", textures[texture_list::DOOR_CLOSED]);
 		p_impl->create_texture("res/textures/door_exit.dds", textures[texture_list::DOOR_EXIT]);
@@ -81,6 +96,8 @@ namespace crow {
 		p_impl->create_texture("res/textures/exit_light_d.dds", textures[texture_list::EXIT_LIGHT_D]);
 		p_impl->create_texture("res/textures/exit_light_s.dds", textures[texture_list::EXIT_LIGHT_S]);
 		p_impl->create_texture("res/textures/console1_d.dds", textures[texture_list::CONSOLE1_D]);
+		p_impl->create_texture("res/textures/console1_d_purple.dds", textures[texture_list::CONSOLE1_D_PURPLE]);
+		p_impl->create_texture("res/textures/console1_d_red.dds", textures[texture_list::CONSOLE1_D_RED]);
 		p_impl->create_texture("res/textures/console1_s.dds", textures[texture_list::CONSOLE1_S]);
 		p_impl->create_texture("res/textures/console2.dds", textures[texture_list::CONSOLE2]);
 
@@ -99,11 +116,18 @@ namespace crow {
 		p_impl->create_texture("res/textures/light_box.dds", textures[texture_list::LIGHT_BOX]);
 
 		p_impl->create_texture("res/textures/console3_d.dds", textures[texture_list::CONSOLE3]);
+		p_impl->create_texture("res/textures/console3_d_red.dds", textures[texture_list::CONSOLE3_RED]);
 		p_impl->create_texture("res/textures/console3_s.dds", textures[texture_list::CONSOLE3_E]);
 		p_impl->create_texture("res/textures/shadow_full.dds", textures[texture_list::SHADOW]);
 
+		p_impl->create_texture("res/textures/gui/select.dds", textures[texture_list::GUI_SELECT]);
+		p_impl->create_texture("res/textures/gui/select2.dds", textures[texture_list::GUI_SELECT2]);
 		p_impl->create_texture("res/textures/gui/pause.dds", textures[texture_list::GUI_PAUSE]);
 		p_impl->create_texture("res/textures/gui/Crows_Nest.dds", textures[texture_list::GUI_LOGO]);
+
+		p_impl->create_texture("res/textures/effect/whitePuff00.dds", textures[texture_list::EFFECT_STEAM]);
+		p_impl->create_texture("res/textures/effect/dust.dds", textures[texture_list::EFFECT_DUST]);
+		p_impl->create_texture("res/textures/effect/star_08.dds", textures[texture_list::EFFECT_HIT1]);
 
 		p_impl->create_texture("res/textures/splash/full-sail-university.160x100.dds", textures[texture_list::SPLASH_FS]);
 		p_impl->create_texture("res/textures/splash/GPGames_LogoOriginal.dds", textures[texture_list::SPLASH_GD]);
@@ -172,9 +196,10 @@ namespace crow {
 		load_game();
 
 		// open the game
-		current_state = game_state::MAIN_MENU;
-		// you can comment this line to skip the logos, just remember to uncomment it again
 		current_state = game_state::S_SPLASH_FS;
+#ifndef NDEBUG
+		current_state = game_state::MAIN_MENU;
+#endif
 		init_credits();
 		 
 		load_texture_data();
@@ -188,18 +213,6 @@ namespace crow {
 
 		// updates that run irregardless of the game state
 		current_message.update(dt);
-		if (current_level.interacting && current_message.progress_max &&
-			current_message.progress_max == current_message.progress) {
-			// stops broken ambient sound when a console is repaired
-			crow::object_type interact_type = current_level.interacting->type;
-			if (interact_type == crow::object_type::POWER_CONSOLE ||
-				interact_type == crow::object_type::PRESSURE_CONSOLE ||
-				interact_type == crow::object_type::OXYGEN_CONSOLE
-				) crow::audio::stop_bgs();
-
-			current_level.interacting->activate(*this);
-			current_level.interacting = nullptr;
-		}
 		//left_click_time += dt;
 		//right_click_time += dt;
 
@@ -231,13 +244,52 @@ namespace crow {
 
 		// game state update
 		switch (current_state) {
+		case game_state::PAUSED:
+			update_particles(dt);
+			break;
 		case game_state::PLAYING: {
+			if (current_level.interacting && current_message.progress_max &&
+				current_message.progress_max == current_message.progress) {
+				// stops broken ambient sound when a console is repaired
+				crow::object_type interact_type = current_level.interacting->type;
+				if (interact_type == crow::object_type::POWER_CONSOLE ||
+					interact_type == crow::object_type::PRESSURE_CONSOLE ||
+					interact_type == crow::object_type::OXYGEN_CONSOLE
+					) crow::audio::stop_bgs();
+
+				current_level.interacting->activate(*this);
+				current_level.interacting = nullptr;
+			}
+
 			// the last thing that happens in update should always be player controls
 			poll_controls(dt);
 
 			// all ai updates (player and enemy) here
 			if (current_level.found_ai) {
 				if (true) ai_bt.run(dt);
+				if (ai_bt.aim->killed_target) {
+					int i = emitters.size();
+					emitters.push_back(emitter_sp());
+					emitters[i].room_id = room_with_enemy();
+					emitters[i].life_span = 0.25f;
+
+					if (ai_bt.aim->killed_target->type == crow::object_type::PLAYER) {
+						emitters[i].type = emitter_type::PLAYER_BLOOD;
+						emitters[i].prototype.pos = entities.get_world_position(0);
+						emitters[i].prototype.pos.y += 0.5f;
+					} else if (ai_bt.aim->killed_target->type != crow::object_type::AI){
+						emitters[i].type = emitter_type::OBJ_DAMAGE;
+
+						// figure out POS
+						float2e tpos = tpos = current_level.selected_room->tiles.get_tile_wpos(ai_bt.aim->killed_target->x, ai_bt.aim->killed_target->y);
+
+						emitters[i].prototype.pos = float3e(tpos.x, 0.5f, tpos.y);
+						//emitters[i].prototype.pos = state.entities.get_world_position(object_indices.back());
+					} else {
+						emitters.pop_back();
+					}
+					ai_bt.aim->killed_target = nullptr;
+				}
 
 				// NOTE: This is only running the first AI, we should run the AI's based on which are in the current level instead
 					size_t j = crow::entity::AI_1;
@@ -273,7 +325,23 @@ namespace crow {
 			//current_level.selected_room->tiles.debug_print_map();
 			// animations need to be updated before checking if the player is alive
 			update_animations(dt);
+			update_particles(dt);
 			entities.update_transform_data(dt);
+			
+			// update self-destruct timer
+			if (self_destruct_timer > 0) {
+				self_destruct_timer -= dt;
+
+				// ran out of time, you dead boi
+				if (self_destruct_timer <= 0) {
+					// forcibly end the game
+					end_game();
+					prev_state = current_state = game_state::GAME_OVER;
+					state_time = 0;
+					audio::play_bgm(audio::BGM::GAME_OVER);
+					break;
+				}
+			}
 
 			// check for worker alive to end the game if he is dead
 			if (!player_data.player_interact.is_active) {
@@ -362,6 +430,7 @@ namespace crow {
 			entities.world_matrix[(int)crow::entity::SPHYNX] = ai_bt.e_matrix.final_matrix;
 
 			update_animations(dt);
+			update_particles(dt);
 			entities.update_transform_data(dt);
 
 			if (current_state != game_state::GAME_WIN && state_time > 4.5f && buttons_frame[controls::l_mouse] == 1) {
@@ -433,14 +502,9 @@ namespace crow {
 
 
 			if ((GetKeyState('R') & 0x8000) != 0 && current_level.selected_room) {
-				//crow::update_room_cam(current_level.selected_room, view); 
 				crow::update_room_cam(pac(cam_pos), pac(cam_rotation), view);
+				change_room_tex();
 			}
-
-			// particle stuff
-			p_impl->set_sorted_particles(emitter1, 30);
-			p_impl->update_sorted_particles(emitter1, dt);
-
 
 			// VERY LAST thing to do should be to update the camera
 			view.update();
@@ -471,6 +535,55 @@ namespace crow {
 				//key_frame kf = get_tween_frame(entities.mesh_ptrs[i]->anim, entities.anim_time[i]);
 				//mult_invbp_tframe(entities.mesh_ptrs[i]->anim, kf, entities.framexbind[i]);
 			}
+		}
+	}
+
+	void game_manager::update_particles(double dt) {
+		/* // emitter test stuff
+		if (emitters.size() != 8) {
+			emitters.resize(8);
+
+			emitters[0].room_id = 1;
+			emitters[0].type = emitter_type::OBJ_DAMAGE_V2;
+			emitters[0].prototype.pos = float3e(-5.5f, 0.5f, 5);
+			emitters[0].prototype.texture = textures[texture_list::EFFECT_HIT1];
+
+
+			emitters[1].type = emitter_type::PLAYER_BLOOD;
+			emitters[1].prototype.pos = float3e(2, 0, 5);
+
+			
+			emitters[2].type = emitter_type::BROKEN_WIRE;
+			emitters[2].prototype.pos = float3e(2, 0, -5);
+			
+			emitters[3].type = emitter_type::WATER_SPRAY;
+			emitters[3].prototype.pos = float3e(-2, 0, -5);
+			
+			emitters[5].type = emitter_type::STEAM_V2;
+			emitters[5].prototype.pos = float3e(-2, 0, 5);
+			emitters[5].prototype.texture = textures[texture_list::EFFECT_STEAM];
+
+			emitters[4].type = emitter_type::BROKEN_MACHINERY;
+			emitters[4].prototype.pos = float3e(2, 0, 0);
+
+			emitters[7].type = emitter_type::DUST;
+			emitters[7].prototype.texture = textures[texture_list::EFFECT_DUST];
+			emitters[7].prototype.pos = float3e(-4, 0, 0);
+
+			emitters[6].type = emitter_type::GAS_SPRAY;
+			emitters[6].prototype.pos = float3e(-4, 0, -5);
+		}
+		//*/
+		
+
+		for (int i = 0; i < emitters.size(); i++) {
+			if (emitters[i].room_id != current_level.selected_room->id) continue;
+
+			// makes sure broken emitter only plays if the console is not working
+			if (emitters[i].type == emitter_type::BROKEN_MACHINERY && current_level.selected_room->has_broken_console() != 1) continue;
+
+			p_impl->set_sorted_particles(emitters[i], emitters[i].type);
+			p_impl->update_sorted_particles(emitters[i], dt);
 		}
 	}
 
@@ -620,6 +733,30 @@ namespace crow {
 		return false;
 	}
 
+	int game_manager::room_with_worker() {
+		for (auto& rv : current_level.rooms) {
+			for (auto& r : rv) {
+				if (r.id <= 0) { // not valid room
+					continue;
+				}
+				if (r.has_player) return r.id;
+			}
+		}
+		return 0;
+	}
+
+	int game_manager::room_with_enemy() {
+		for (auto& rv : current_level.rooms) {
+			for (auto& r : rv) {
+				if (r.id <= 0) { // not valid room
+					continue;
+				}
+				if (r.has_ai) return r.id;
+			}
+		}
+		return 0;
+	}
+
 	void game_manager::room_updates(double dt) {
 		// updating the heat values for the doors in the level and oxygen
 		for (auto& rv : current_level.rooms) {
@@ -711,7 +848,7 @@ namespace crow {
 		// processing for enemy appear sound
 		if (current_level.selected_room->has_player && current_level.selected_room->has_ai) {
 			if (enemy_appear_sound_cooldown <= 0) {
-				audio::play_bgm(audio::BGM::DETECTED);
+				if (self_destruct_timer < 0) audio::play_bgm(audio::BGM::DETECTED);
 				crow::audio::play_sfx(crow::audio::SFX::ENEMY_APPEAR);
 
 				// display the enemy appearance message for the first time it appears
@@ -728,8 +865,7 @@ namespace crow {
 				}
 			}
 			enemy_appear_sound_cooldown = enemy_appear_sound_max_cooldown;
-		}
-		else {
+		} else if (self_destruct_timer < 0) {
 			int reset_bgm = enemy_appear_sound_cooldown > 0 ? 1 : 0;
 
 			// decrement the sound cooldown to allow it to play again
@@ -787,10 +923,34 @@ namespace crow {
 	}
 
 	void game_manager::render_game() {
-		p_impl->draw_debug_lines(view);
 		//p_impl->draw_mesh(view);
 
 		if (current_level.selected_room && entities.current_size > 0) {
+			if (self_destruct_timer < 0) {
+				// normal lighting based on power
+				if (current_level.power_console != nullptr && current_level.power_console->is_broken) {
+					entities.amblight = { 0.25f, 0.25f, 0.25f, 0 };
+				}
+				else {
+					entities.amblight = { 0.5f, 0.5f, 0.5f, 0 };
+				}
+			} else {
+				// red flash for sd timer
+
+				// truncated timer
+				int int_time = (int)self_destruct_timer;
+				float ms_remaining = self_destruct_timer - int_time;
+
+				// whether or not the listed time is odd
+				int odd = int_time % 2;
+
+				if (odd) {
+					entities.amblight = { 0.50f + ms_remaining / 4.0f, 0.5f, 0.5f, 0 };
+				} else {
+					entities.amblight = { 0.75f - ms_remaining / 4.0f, 0.5f, 0.5f, 0 };
+				}
+			}
+
 			// drawing all entities
 			p_impl->draw_entities(entities, current_level.selected_room->object_indices, view);
 
@@ -865,6 +1025,7 @@ namespace crow {
 				}
 			}
 		}
+		p_impl->draw_debug_lines(view);
 	}
 
 	void game_manager::game_over() {
@@ -999,6 +1160,10 @@ namespace crow {
 		load_all_meshes();
 		load_animation_data();
 
+		// prevents the game from crashing when you died while en-route to an interactable
+		player_data.target = nullptr;
+		player_data.interacting = false;
+
 		//assigning animatiors, could be done inside function if meshes have been initialized
 		all_meshes[mesh_types::PLAYER].animator = &animators[animator_list::PLAYER];
 		all_meshes[mesh_types::AI_1].animator = &animators[animator_list::AI_1];
@@ -1105,7 +1270,6 @@ namespace crow {
 	}
 
 	void game_manager::change_level(int lv) {
-		level_number = lv;
 		audio::stop_bgs();
 		c_buffered_message.reset();
 
@@ -1130,8 +1294,10 @@ namespace crow {
 			current_state = prev_state = game_state::GAME_WIN;
 			state_time = 0;
 		} else {
+			// continue with next level
 			current_state = prev_state = game_state::LEVEL_WIN;
 			state_time = 0;
+			level_number = lv;
 		}
 	}
 
@@ -1161,8 +1327,15 @@ namespace crow {
 		live_entities_inter.push_back(&ai2_it);
 		live_entities_inter.push_back(&ai3_it);
 
-		
-		
+		// clear emitters
+		emitters.resize(0);
+
+		// so that the music doesnt restart for no reason
+		enemy_appear_sound_cooldown = 0;
+
+		// don't explode
+		self_destruct_timer = -1;
+		good_ending = false;
 
 		// load the level data first
 		current_level.load_level(this, lv);
@@ -1180,6 +1353,7 @@ namespace crow {
 		current_level.select_default_room();
 		//crow::update_room_cam(current_level.selected_room, view);
 		crow::update_room_cam(pac(cam_pos), pac(cam_rotation), view);
+		change_room_tex();
 		current_level.p_inter = &player_data.player_interact;
 
 		// setting up minimap
@@ -1247,6 +1421,9 @@ namespace crow {
 		entities.mesh_ptrs[1] = &all_meshes[mesh_types::AI];
 		entities.s_resource_view[1] = textures[texture_list::AI];
 
+		// clear emitters
+		emitters.resize(0);
+
 		// re-store the framexbind. this is necessary to stop crashes.
 		// we may want to change this approach in the future (reset instead of restore)
 		entities.framexbind[0] = temp0;
@@ -1294,5 +1471,13 @@ namespace crow {
 		GetClientRect(p_impl->hwnd, &r);
 
 		return ImVec2((float)(r.right - r.left), (float)(r.bottom - r.top));
+	}
+
+	void game_manager::change_room_tex() {
+		entities.s_resource_view[entity::FLOOR] = current_level.selected_room->floor_tex;
+		entities.s_resource_view[entity::WALL_U] = current_level.selected_room->wall_tex_u;
+		entities.s_resource_view[entity::WALL_D] = current_level.selected_room->wall_tex_d;
+		entities.s_resource_view[entity::WALL_L] = current_level.selected_room->wall_tex_l;
+		entities.s_resource_view[entity::WALL_R] = current_level.selected_room->wall_tex_r;
 	}
 }

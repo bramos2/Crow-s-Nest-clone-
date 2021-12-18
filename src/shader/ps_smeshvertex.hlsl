@@ -19,15 +19,13 @@ struct PS_OUTPUT
     float4 color : SV_TARGET;
 };
 
-static const float4 ambientLight = { 0.75f, 0.75f, 0.75f, 0.0f };
-
 PS_OUTPUT main(VS_OUT input)
 {
     PS_OUTPUT output = (PS_OUTPUT) 0;
     float4 matDiffuse = tx_diffuse.Sample(samLinear, input.uv);
     float4 matSpecular = tx_specular.Sample(samLinear, input.uv);
     float4 emissive = tx_emissive.Sample(samLinear, input.uv);
-    float4 ambient = matDiffuse * ambientLight;
+    float4 ambient = matDiffuse * amblight;
    
     float4 color = ambient + emissive;
     

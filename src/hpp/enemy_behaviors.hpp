@@ -35,6 +35,8 @@ class ai_manager {
   const float run_speed = 8.f;
   // The current interactible the ai is chasing
   crow::interactible *target = nullptr;
+  // THIS VARIABLE SHOULDN'T EXIST BUT I HAVE NO IDEA HOW TO USE THIS THING LMAO SO WHATEVER IF IT WORKS IT WORKS AMIRITE OR AMILEFT
+  crow::interactible *killed_target = nullptr;
   // this will be used for the AI's decision making process.
   //crow::interactible *prev_target = nullptr;
   // This variable is used to determine when the AI will break a console or door

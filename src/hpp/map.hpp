@@ -48,6 +48,11 @@ struct room {
   int id = 0;
   crow::tile_map tiles;
   crow::theta_star pather;
+  ID3D11ShaderResourceView* floor_tex  = nullptr;
+  ID3D11ShaderResourceView* wall_tex_u = nullptr;
+  ID3D11ShaderResourceView* wall_tex_d = nullptr;
+  ID3D11ShaderResourceView* wall_tex_l = nullptr;
+  ID3D11ShaderResourceView* wall_tex_r = nullptr;
 
   /*float3e cam_pos = float3e(0.f, 20.f, -2.f);
   float3e cam_rotation = float3e(-85.f, 0.f, 0.f);*/
@@ -124,6 +129,9 @@ struct level {
   // pressure console in this floor. if there is no console, or if the consle is
   // not broken, then pressure will not decrease (increase?)
   crow::pressure_console* pressure_console;
+  // the power console in this floor. if the console exists and is broken, then
+  // doors will not be able to function.
+  crow::pg_console* power_console;
 
   // loads a level from file
   void load_level(std::string filepath);

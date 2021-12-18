@@ -45,23 +45,72 @@ namespace crow {
 
 	// self destruct console
 	void sd_console::interact(size_t const index, crow::entities& entity, int inter_index) {
-		if (is_broken) {
-			is_broken = false;
+		if (power != nullptr && (power->is_broken)) {
+			current_level->msg = message("This console needs the power on to be used.");
+
+			return;
 		}
-		is_active = true;
+
+
+		if (is_active) {
+			current_level->msg = message("SELF DESTRUCT SEQUENCE ALREADY ACTIVE. EVACUATE IMMEDIATELY!");
+		}
+		else {
+			current_level->interacting = this;
+			current_level->msg = message("Activating self-destruct sequence...", crow::default_message_time - 1.0f,
+				crow::default_interact_wait);
+			// TODO::we can use the return from this function to stop the sound if the action is cancelled
+			int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
+		}
 	}
 
-	sd_console::sd_console() { type = crow::object_type::SD_CONSOLE; }
+	void sd_console::activate(crow::game_manager& state) {
+		is_broken = false;
+		is_active = true;
+		state.self_destruct_timer = 180;
+		state.good_ending = true;
+
+		// self-destruct song
+		crow::audio::play_bgm(crow::audio::BGM::ESCAPE);
+		crow::audio::play_sfx(crow::audio::SFX::ALARM);
+		// uh-oh we gon' splode
+		state.current_message = message("SELF DESTRUCT SEQUENCE ACTIVATED. EVACUATE IMMEDIATELY!");
+	}
+
+	sd_console::sd_console(crow::level* _lv) {
+		current_level = _lv;
+		type = crow::object_type::SD_CONSOLE;
+		is_active = false;
+		health = 99;
+	}
+
+	void sd_console::dissable() {
+		/* THE SD CONSOLE IS TOO POWERFUL TO BE DISSABLED */
+	}
+
+	void pg_console::activate(crow::game_manager& state) {
+		is_broken = false;
+	}
 
 	// power generator console
 	void pg_console::interact(size_t const index, crow::entities& entity, int inter_index) {
-		if (is_broken) {
-			is_broken = false;
+		if (!is_broken) {
+			current_level->msg = message("The power is already working!");
 		}
-		is_active = true;
+		else {
+			current_level->interacting = this;
+			current_level->msg = message("Restoring power grid...", crow::default_message_time - 1.0f,
+				crow::default_interact_wait);
+			// TODO::we can use the return from this function to stop the sound if the action is cancelled
+			int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
+		}
 	}
 
-	pg_console::pg_console() { type = crow::object_type::POWER_CONSOLE; }
+	pg_console::pg_console(crow::level* _lv) {
+		current_level = _lv;
+		type = crow::object_type::POWER_CONSOLE;
+		_lv->power_console = this;
+	}
 
 	// oxygen console
 	oxygen_console::oxygen_console(crow::level* _lv) {
@@ -312,6 +361,12 @@ namespace crow {
 
 	// exit door
 	void exit::interact(size_t const index, crow::entities& entity, int inter_index) {
+		if (power != nullptr && (power->is_broken)) {
+			current_level->msg = message("The door won't open because it has no power.");
+
+			return;
+		}
+
 		//std::printf("\ninteracted with exit, congrats! loaded level: %i",
 		//	level_num + 1);
 		state->change_level(level_num + 1);
@@ -337,5 +392,79 @@ namespace crow {
 		type = crow::object_type::PLAYER;
 		is_active = true;
 		entity_index = crow::entity::WORKER;
+	}
+
+	void m_door_panel::interact(size_t const index, crow::entities& entity, int inter_index) {
+		std::string text;
+		int broken = -1;
+
+		for (auto& door : doors) {
+			if (door->is_broken) {
+				current_level->msg = message("DOOR IS BROKEN, CANNOT LOCK...");
+				if (broken != 0) broken = 1;
+				continue;
+			}
+
+			// this will prevent the game from crashing if the door is improperly configured
+			if (!door->neighbor) {
+				printf("error! a door attached to the panel doesn't have a neighbor attached!\n");
+				continue;
+			}
+
+			if (!door->is_active) {
+				text = "UNLOCKING...";
+				broken = 0;
+			} else if (!text.size()) {
+				text = "LOCKING...";
+				broken = 0;
+			}
+		}
+
+		if (broken == 0) {
+			current_level->interacting = this;
+			current_level->msg = message(text, crow::default_message_time - 1.0f,
+				crow::default_interact_wait);
+		}
+		// TODO::we can use the return from this function to stop the sound if the action is cancelled
+		int temp = crow::audio::play_sfx(crow::audio::SFX::INTERACT);
+	}
+
+	void m_door_panel::activate(crow::game_manager& state) {
+		int sound = 0;
+
+		for (auto& door : doors) {
+			// don't activate broken doors
+			if (door->is_broken) continue;
+
+			// toggle the door state
+			door->is_active = door->neighbor->is_active = !door->is_active;
+
+			// buffer the sound (we don't want to play a sound per door locked/unlocked)
+			if (door->is_active) {
+				sound = 1;
+			} else {
+				if (!sound) sound = 2;
+			}
+		}
+
+		if (sound == 1) {
+			crow::audio::play_sfx(crow::audio::SFX::DOOR_UNLOCK);
+		} else if (sound == 2) {
+			crow::audio::play_sfx(crow::audio::SFX::DOOR_LOCK);
+		}
+	}
+
+	m_door_panel::m_door_panel(crow::level* _lv) {
+		type = crow::object_type::DOOR_PANEL_V2;
+		current_level = _lv;
+	}
+	
+	m_door_panel::m_door_panel(crow::level* _lv, char _tile, float2e offset) {
+		type = crow::object_type::DOOR_PANEL_V2;
+		current_level = _lv;
+
+		set_tile(_tile);
+		x += offset.x;
+		y += offset.y;
 	}
 }  // namespace crow

@@ -20,6 +20,7 @@ namespace crow {
 		DOOR,
 		EXIT,
 		DOOR_PANEL,
+		DOOR_PANEL_V2,
 		OXYGEN_CONSOLE,
 		PRESSURE_CONSOLE,
 		FLOOR,
@@ -31,7 +32,7 @@ namespace crow {
 
 	// when current_level == final_level, we will skip to the win screen instead of
 	// attempting to advance to the next level
-	static constexpr int final_level = 4;
+	static constexpr int final_level = 5;
 
 	struct interactible {
 		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
@@ -45,7 +46,7 @@ namespace crow {
 		unsigned int y = 0;
 		bool is_active = false;
 		bool is_broken = false;
-		int health = 5;
+		int health = 2;
 		float heat = 0;
 		// location of this object in the entities system, assigned when meshes are generated
 		int entity_index = -1;
@@ -60,7 +61,8 @@ namespace crow {
 	struct pg_console : public interactible {
 		// TODO: gives power to a level
 		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
-		pg_console();
+		virtual void activate(crow::game_manager& state);
+		pg_console(crow::level* _lv);
 	};
 
 	struct oxygen_console : public interactible {
@@ -108,7 +110,11 @@ namespace crow {
 	struct sd_console : public interactible {
 		// TODO: tick up optional task
 		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
-		sd_console();
+		virtual void activate(crow::game_manager& state);
+		virtual void dissable();
+		sd_console(crow::level* _lv);
+
+		pg_console* power = nullptr;
 	};
 
 	struct exit : public interactible {
@@ -119,6 +125,7 @@ namespace crow {
 		exit(game_manager* _state, crow::level* _lv, int _level_num);
 
 		game_manager* state = nullptr;
+		pg_console* power = nullptr;
 		int level_num = 0;
 	};
 
@@ -127,6 +134,15 @@ namespace crow {
 		// May not be needed, should be assigned to the player for the AI
 		virtual void dissable();
 		player_interact();
+	};
+
+	struct m_door_panel : public interactible {
+		virtual void interact(size_t const index, crow::entities& entity, int inter_index = -1);
+		virtual void activate(crow::game_manager& state);
+		m_door_panel(crow::level* _lv);
+		m_door_panel(crow::level* _lv, char _tile, float2e offset = {0, 0});
+
+		std::vector<crow::door*> doors;
 	};
 
 }  // namespace crow

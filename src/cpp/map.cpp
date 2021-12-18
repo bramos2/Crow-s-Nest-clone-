@@ -38,6 +38,45 @@ namespace crow {
 
 		// then we need to allocate state.entities
 		state.entities.allocate_and_init(total_entities);
+		
+		// floor and wall textures (defaults)
+		switch (state.level_number) {
+		case 1:
+			if (!floor_tex)  floor_tex  = state.textures[game_manager::texture_list::FLOOR1];
+			if (!wall_tex_u) wall_tex_u = state.textures[game_manager::texture_list::WALL1];
+			if (!wall_tex_l) wall_tex_l = state.textures[game_manager::texture_list::WALL1];
+			if (!wall_tex_d) wall_tex_d = state.textures[game_manager::texture_list::WALL1];
+			if (!wall_tex_r) wall_tex_r = state.textures[game_manager::texture_list::WALL1];
+			break;
+		case 2:
+			if (!floor_tex)  floor_tex  = state.textures[game_manager::texture_list::FLOOR2];
+			if (!wall_tex_u) wall_tex_u = state.textures[game_manager::texture_list::WALL2];
+			if (!wall_tex_l) wall_tex_l = state.textures[game_manager::texture_list::WALL2];
+			if (!wall_tex_d) wall_tex_d = state.textures[game_manager::texture_list::WALL2];
+			if (!wall_tex_r) wall_tex_r = state.textures[game_manager::texture_list::WALL2];
+			break;
+		case 4:
+			if (!floor_tex)  floor_tex  = state.textures[game_manager::texture_list::FLOOR4];
+			if (!wall_tex_u) wall_tex_u = state.textures[game_manager::texture_list::WALL4];
+			if (!wall_tex_l) wall_tex_l = state.textures[game_manager::texture_list::WALL4];
+			if (!wall_tex_d) wall_tex_d = state.textures[game_manager::texture_list::WALL4];
+			if (!wall_tex_r) wall_tex_r = state.textures[game_manager::texture_list::WALL4];
+			break;
+		case 5:
+			if (!floor_tex)  floor_tex  = state.textures[game_manager::texture_list::FLOOR5];
+			if (!wall_tex_u) wall_tex_u = state.textures[game_manager::texture_list::FLOOR5_2];
+			if (!wall_tex_l) wall_tex_l = state.textures[game_manager::texture_list::FLOOR5_2];
+			if (!wall_tex_d) wall_tex_d = state.textures[game_manager::texture_list::FLOOR5_2];
+			if (!wall_tex_r) wall_tex_r = state.textures[game_manager::texture_list::FLOOR5_2];
+			break;
+		default:
+			if (!floor_tex)  floor_tex  = state.textures[game_manager::texture_list::FLOOR0];
+			if (!wall_tex_u) wall_tex_u = state.textures[game_manager::texture_list::FLOOR0];
+			if (!wall_tex_l) wall_tex_l = state.textures[game_manager::texture_list::FLOOR0];
+			if (!wall_tex_d) wall_tex_d = state.textures[game_manager::texture_list::FLOOR0];
+			if (!wall_tex_r) wall_tex_r = state.textures[game_manager::texture_list::FLOOR0];
+			break;
+		}
 
 		// floor
 		object_indices.push_back(entity::FLOOR);
@@ -142,6 +181,27 @@ namespace crow {
 
 				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
 				} break;
+			case object_type::DOOR_PANEL_V2: {
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE3];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE3_RED];
+
+				// automatically rotate this thing based on its position
+				if (i->x == this->width - 1) {
+					state.entities.rotate_world_matrix(object_indices.back(), -90.f, -90.f);
+				} else if (i->x == 0) { // left wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0.f, 90.f, 90.f);
+				} else if (i->y == this->length - 1) { // top wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0, 180.f, 90.f);
+				} else { // bottom wall
+					state.entities.rotate_world_matrix(object_indices.back(), 0, 0, 90.f);
+				}
+
+				// move this thing up
+				XMFLOAT3 door_pos = state.entities.get_world_position(object_indices.back());
+				state.entities.set_world_position(object_indices.back(), door_pos.x, door_pos.y + 2, door_pos.z);
+
+				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
+				} break;
 			case object_type::OXYGEN_CONSOLE:
 				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE2];
 				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE2];
@@ -158,6 +218,11 @@ namespace crow {
 				}
 
 				state.entities.scale_world_matrix(object_indices.back(), 0.8f);
+
+				state.emitters.push_back(emitter_sp());
+				state.emitters[state.emitters.size() - 1].prototype.pos = state.entities.get_world_position(object_indices.back());
+				state.emitters[state.emitters.size() - 1].type = emitter_type::BROKEN_MACHINERY;
+				state.emitters[state.emitters.size() - 1].room_id = id;
 			case object_type::PRESSURE_CONSOLE: {
 				// gonna use julio's version of this unless we have any problems
 				/*
@@ -182,6 +247,30 @@ namespace crow {
 				state.entities.scale_world_matrix(object_indices.back(), 0.04f);
 				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
 				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D];
+				state.entities.specular[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_S];
+
+				state.emitters.push_back(emitter_sp());
+				state.emitters[state.emitters.size() - 1].prototype.pos = state.entities.get_world_position(object_indices.back());
+				state.emitters[state.emitters.size() - 1].type = emitter_type::BROKEN_MACHINERY;
+				state.emitters[state.emitters.size() - 1].room_id = id;
+				break;
+			}
+			case object_type::POWER_CONSOLE: {
+				state.entities.scale_world_matrix(object_indices.back(), 0.04f);
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D_PURPLE];
+				state.entities.specular[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_S];
+
+				state.emitters.push_back(emitter_sp());
+				state.emitters[state.emitters.size() - 1].prototype.pos = state.entities.get_world_position(object_indices.back());
+				state.emitters[state.emitters.size() - 1].type = emitter_type::BROKEN_MACHINERY;
+				state.emitters[state.emitters.size() - 1].room_id = id;
+				break;
+			}
+			case object_type::SD_CONSOLE: {
+				state.entities.scale_world_matrix(object_indices.back(), 0.04f);
+				state.entities.mesh_ptrs[object_indices.back()] = &state.all_meshes[game_manager::mesh_types::CONSOLE1];
+				state.entities.s_resource_view[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_D_RED];
 				state.entities.specular[object_indices.back()] = state.textures[game_manager::texture_list::CONSOLE1_S];
 				break;
 			}

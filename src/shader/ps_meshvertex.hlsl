@@ -19,7 +19,7 @@ struct PS_OUTPUT
     float4 color : SV_TARGET;
 };
 
-static const float4 ambientLight = { 0.75f, 0.75f, 0.75f, 0.0f };
+static const float4 ambientLight = { 0.5f, 0.5f, 0.5f, 0.0f };
 
 PS_OUTPUT main(VS_OUT input)
 {

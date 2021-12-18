@@ -51,8 +51,10 @@ namespace crow {
 		bool debug_mode = 0;
 		bool pressing_key = false;
 
+		bool good_ending = false;
+		float self_destruct_timer = -1;
 		int menu_position = 0;
-		int level_number = 0;
+		int level_number = 1;
 		int mwheel_delta = 0;
 		float2e mouse_pos;
 		// use this for any imgui functions that may for some reason need the mouse pos
@@ -125,8 +127,19 @@ namespace crow {
 			enum {
 				PLAYER = 0,
 				AI,
+				FLOOR0,
 				FLOOR1,
+				FLOOR2,
+				FLOOR2_2, // can also use this in floor 1
+				FLOOR4,
+				FLOOR5,
+				FLOOR5_2,
+				FLOOR5_ENTRANCE,
+				FLOOR5_SD,
+				FLOOR_CARGO,
 				WALL1,
+				WALL2,
+				WALL4,
 				DOOR_OPEN,
 				DOOR_CLOSED,
 				DOOR_EXIT,
@@ -134,6 +147,8 @@ namespace crow {
 				EXIT_LIGHT_D,
 				EXIT_LIGHT_S,
 				CONSOLE1_D,
+				CONSOLE1_D_PURPLE,
+				CONSOLE1_D_RED,
 				CONSOLE1_S,
 				CONSOLE2,
 				BED1,
@@ -149,10 +164,16 @@ namespace crow {
 				DESK12,
 				DESK3,
 				CONSOLE3,
+				CONSOLE3_RED,
 				CONSOLE3_E,
 				SHADOW,
+				GUI_SELECT,
+				GUI_SELECT2,
 				GUI_PAUSE,
 				GUI_LOGO,
+				EFFECT_STEAM,
+				EFFECT_DUST,
+				EFFECT_HIT1,
 				SPLASH_FS,
 				SPLASH_GD,
 				SPLASH_LV,
@@ -222,8 +243,8 @@ namespace crow {
 			};
 		};
 
-		// test particle stuff
-		crow::emitter_sp emitter1;
+		// particle stuffs
+		std::vector<crow::emitter_sp> emitters;
 
 		// s_bin = filepath to model file to load (mandatory)
 		// s_mat = filepath to mat file to load (optional)
@@ -236,13 +257,20 @@ namespace crow {
 		void load_animation_data();
 		void init_app(void* window_handle);
 
+		void change_room_tex();
+
 		// all update functions
 		void update();
 		void poll_controls(double dt);
 		void update_animations(double dt);
+		void update_particles(double dt);
 		bool l_click_update();
 		bool r_click_update();
 		bool enemy_and_player_in_same_room();
+		// gives you the index of the room with the worker in it
+		int room_with_worker();
+		// ditto but for the killer dude thingy
+		int room_with_enemy();
 		// updates room metadata such as oxygen remaining, pressure, doors, etc
 		void room_updates(double dt);
 		// updates various things related to sound
@@ -273,6 +301,7 @@ namespace crow {
 		void imgui_on_draw();
 
 		void draw_main_menu(ImVec2 wh);
+		void draw_move_pos(ImVec2 wh);
 		void draw_pause_button(ImVec2 wh);
 		void draw_pause_menu(ImVec2 wh);
 		void draw_control_message(ImVec2 wh);
@@ -280,6 +309,7 @@ namespace crow {
 		void draw_options_menu(ImVec2 wh);
 		void draw_oxygen_remaining(ImVec2 wh);
 		void draw_pressure_remaining(ImVec2 wh);
+		void draw_sd_timer(ImVec2 wh);
 		void draw_splash(ImVec2 wh);
 		void draw_credits(ImVec2 wh);
 		void draw_level_win_screen(ImVec2 wh);
@@ -287,8 +317,6 @@ namespace crow {
 
 		// imgui sucks
 		ImVec2 imgui_wsize;
-
-		// various helper functions
 
 		// draws some imgui text in the center of the current window
 		void imgui_centertext(std::string text, float scale, ImVec2 wh);

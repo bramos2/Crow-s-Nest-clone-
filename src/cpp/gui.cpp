@@ -31,10 +31,12 @@ namespace crow {
         case game_state::PLAYING:
             minimap.draw_call(*this);
             current_message.display(1, wh);
+            draw_move_pos(wh);
             draw_pause_button(wh);
             draw_control_message(wh);
             draw_oxygen_remaining(wh);
             draw_pressure_remaining(wh);
+            draw_sd_timer(wh);
             break;
         case game_state::PAUSED:
             draw_pause_menu(wh);
@@ -205,6 +207,47 @@ namespace crow {
         }
     }
 
+    void game_manager::draw_move_pos(ImVec2 wh) {
+        // player not moving
+        if (!player_data.path_result.size() || !current_level.selected_room->has_player) return;
+
+        const int texture_flag =
+            ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+        float2e tpos = player_data.path_result[0];
+        if (player_data.target != nullptr) tpos = current_level.selected_room->tiles.get_tile_wpos(player_data.target->x, player_data.target->y);
+
+        float4_a tpos_4;
+        tpos_4.x = tpos.x; tpos_4.y = 0; tpos_4.z = tpos.y; tpos_4.w = 1; 
+        //tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose((DirectX::XMMATRIX&)view.view_mat));
+        //tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)view.proj_final);
+        tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose(view.view_final));
+        tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose(view.proj_final));
+
+        
+        float2e tpos_ndc = {(((tpos_4.x / tpos_4.w) + 1) * (wh.x / 2)),
+                            ((1 - (tpos_4.y / tpos_4.w)) * (wh.y / 2))};
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
+        // set size parameters for the pause button icon
+        ImVec2 select_wh = {0.0666666f * wh.x, 0.1185185185185186f * wh.y};
+        ImVec2 select_xy = {tpos_ndc.x - select_wh.x / 2, tpos_ndc.y - select_wh.y / 2};
+        ImGui::SetNextWindowPos(select_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(select_wh, ImGuiCond_Always);
+
+        // finally create the select icon
+        ImGui::Begin("w_move_to", nullptr, texture_flag);
+        ImGui::Image(textures[texture_list::GUI_SELECT2], select_wh);
+
+        ImGui::End();
+        ImGui::PopStyleVar(4);
+    }
+
     void game_manager::draw_pause_button(ImVec2 wh) {
       // pass this flag into ImGui::Begin when you need to spawn a window
       // that / only contains a texture
@@ -213,16 +256,16 @@ namespace crow {
           ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-      // remove formatting for GUI windows to draw plain textures as GUI
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
-      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
-      // set size parameters for the pause button icon
-      ImVec2 pause_button_xy = {wh.x - (0.0333333f * wh.x), 0};
-      ImVec2 pause_button_wh = {0.0333333f * wh.x, 0.0592592592592593f * wh.y};
-      ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
-      ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
+        // remove formatting for GUI windows to draw plain textures as GUI
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
+        // set size parameters for the pause button icon
+        ImVec2 pause_button_xy = {wh.x - (0.0333333f * wh.x), 0};
+        ImVec2 pause_button_wh = {0.0333333f * wh.x, 0.0592592592592593f * wh.y};
+        ImGui::SetNextWindowPos(pause_button_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(pause_button_wh, ImGuiCond_Always);
         // color for bg of button
         ImGui::PushStyleColor(ImGuiCol_Button,        { 0.0f, 0.0f, 0.0f, 0.0f});
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, { 1.f, 1.f, 1.f, 0.1f});
@@ -241,6 +284,59 @@ namespace crow {
         ImGui::PopStyleVar(4);
         // pop the color too
         ImGui::PopStyleColor(3);
+
+        // actual size of the window cuz imgui is weirdo
+        ImVec2 real_size = get_window_size();
+        
+        // finding for possible interact thingy
+		float3e mouse_point = crow::mouse_to_floor(view, mouse_pos, static_cast<int>(real_size.x), static_cast<int>(real_size.y));
+        if (mouse_point.y == -1) return;
+
+		const crow::tile* clicked_tile = current_level.selected_room->get_tile_at(float2e(mouse_point.x, mouse_point.z));
+
+        if (!clicked_tile) return;
+
+		crow::interactible* target = nullptr;
+
+		for (auto& i : current_level.selected_room->objects) {
+			if (clicked_tile->row != i->y || clicked_tile->col != i->x) {
+				continue;
+			}
+
+			target = i;
+			break;
+		}
+
+        if (!target) return;
+        // get position of TARGET
+        float2e tpos = current_level.selected_room->tiles.get_tile_wpos(clicked_tile->col, clicked_tile->row);
+        float4_a tpos_4;
+        tpos_4.x = tpos.x; tpos_4.y = 0; tpos_4.z = tpos.y; tpos_4.w = 1; 
+        //tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose((DirectX::XMMATRIX&)view.view_mat));
+        //tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)view.proj_final);
+        tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose(view.view_final));
+        tpos_4 = MatrixVectorMult(tpos_4, (float4x4_a&)DirectX::XMMatrixTranspose(view.proj_final));
+
+        
+        float2e tpos_ndc = {(((tpos_4.x / tpos_4.w) + 1) * (wh.x / 2)),
+                            ((1 - (tpos_4.y / tpos_4.w)) * (wh.y / 2))};
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0, 0 });
+        // set size parameters for the pause button icon
+        ImVec2 select_wh = {0.0666666f * wh.x, 0.1185185185185186f * wh.y};
+        ImVec2 select_xy = {tpos_ndc.x - select_wh.x / 2, tpos_ndc.y - select_wh.y / 2};
+        ImGui::SetNextWindowPos(select_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(select_wh, ImGuiCond_Always);
+
+        // finally create the select icon
+        ImGui::Begin("Select", nullptr, texture_flag);
+        ImGui::Image(textures[texture_list::GUI_SELECT], select_wh);
+
+        ImGui::End();
+        ImGui::PopStyleVar(4);
     }
 
     void game_manager::draw_pause_menu(ImVec2 wh) {  // set size parameters for the pause
@@ -524,6 +620,59 @@ namespace crow {
         ImGui::End();
     }
 
+    void game_manager::draw_sd_timer(ImVec2 wh) {
+        if (self_destruct_timer < 0) { return; }
+
+        float scale = 5;
+        
+
+        std::string text;
+
+        // load the time remaining into the string
+        int time_int = (int)self_destruct_timer;
+        int time_sec = time_int % 60;
+        int time_min = time_int / 60;
+        
+        int time_sec_10 = time_sec / 10;
+        int time_sec_01 = time_sec % 10;
+
+        int time_ms = (int)((self_destruct_timer - time_int) * 1000);
+        int time_ms_100 = time_ms / 100;
+        int time_ms_010 = time_ms / 10 % 10;
+        int time_ms_001 = time_ms % 10;
+
+        text += '0' + time_min;
+        text += ":";
+        text += '0' + time_sec_10;
+        text += '0' + time_sec_01;
+        text += ".";
+        text += '0' + time_ms_100;
+        text += '0' + time_ms_010;
+        text += '0' + time_ms_001;
+
+        float text_size =
+            wh.x / 960.f * ImGui::GetFontSize() * text.size() / 2 * scale;
+
+        ImVec2 sd_window_xy = {wh.x / 2.0f - ((text_size / 2.0f)) - wh.x * 0.15f,
+                                wh.y * 0.02f};
+        ImVec2 sd_window_wh = {text_size + wh.x * 0.3f,
+                                wh.y * 0.048f + wh.y * 0.08f};
+
+       ImGui::SetNextWindowBgAlpha(0.0f);
+
+        ImGui::SetNextWindowPos(sd_window_xy, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(sd_window_wh, ImGuiCond_Always);
+        ImGui::Begin("sd_timer", 0, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration |
+          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+          ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+        ImGui::SetWindowFontScale(wh.x / 960.f * scale);
+        ImGui::SetCursorPos({wh.x * 0.15f, wh.y * -0.01f});
+        ImGui::Text(text.c_str());
+
+        ImGui::End();
+    }
+
     void game_manager::draw_options_menu(ImVec2 wh) {
         bool in_game = current_level.rooms.size();
 
@@ -771,12 +920,15 @@ namespace crow {
         if (state_time > 0.5f) {
             ImGui::SetCursorPosY(wh.y * 0.3f);
             ImGui::NewLine();
-            imgui_centertext("The worker has escaped.", 2.0f, wh);
+            
+            if (good_ending) imgui_centertext("The facility blew up with the creature still inside.", 2.0f, wh);
+            else imgui_centertext("The worker has escaped.", 2.0f, wh);
         
             if (state_time > 2.5f) {
                 ImGui::SetCursorPosY(wh.y * 0.6f);
                 ImGui::NewLine();
-                imgui_centertext("He is safe from harm... for now.", 2.0f, wh);
+                if (good_ending) imgui_centertext("It was never seen again.", 2.0f, wh);
+                else imgui_centertext("He is safe from harm... for now.", 2.0f, wh);
             }
         }
 

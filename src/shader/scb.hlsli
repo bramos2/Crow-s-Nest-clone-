@@ -10,4 +10,5 @@ cbuffer MCB_s
     matrix world;
     matrix view;
     matrix projection;
+    float4 amblight;
 };
